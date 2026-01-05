@@ -2,25 +2,115 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Building2, Edit, Plus, Check, X, Archive, Info, Loader2 } from "lucide-react"
+import { Building2, Edit, Plus, Check, X, Archive, Info } from "lucide-react"
 import { RegisterPayerDialog } from "@/components/register-payer-dialog"
 import { EditPayerDialog } from "@/components/edit-payer-dialog"
 import { RegisterUsageDialog } from "@/components/register-usage-dialog"
 import { EditUsageDialog } from "@/components/edit-usage-dialog"
 import { UsageDetailsDialog } from "@/components/usage-details-dialog"
 import type { PayerAccount, UsageAccount } from "@/lib/types"
-import { accountsApi } from "@/lib/api"
+
+const payerAccounts: PayerAccount[] = [
+  {
+    id: "1",
+    accountId: "123456789012",
+    accountName: "Production Payer",
+    name: "Production Payer",
+    type: "PAYER",
+    distributorName: "AWS Distributor Inc.",
+    legalEntityName: "Tech Solutions GmbH",
+    vatNumber: "DE123456789",
+    crossAccountRoleArn: "arn:aws:iam::123456789012:role/BillingDataAccessRole",
+    status: "Registered",
+    lastTransactionDate: "2025-01-15",
+  },
+  {
+    id: "2",
+    accountId: "234567890123",
+    accountName: "Development Payer",
+    name: "Development Payer",
+    type: "PAYER",
+    distributorName: "AWS Distributor Inc.",
+    legalEntityName: "Dev Partners Ltd.",
+    vatNumber: "DE987654321",
+    crossAccountRoleArn: "arn:aws:iam::234567890123:role/BillingDataAccessRole",
+    status: "Registered",
+    lastTransactionDate: "2025-01-10",
+  },
+]
+
+const usageAccounts: UsageAccount[] = [
+  {
+    id: "345678901234",
+    name: "Acme Corporation",
+    type: "USAGE",
+    customer: "Acme Corporation",
+    status: "Registered",
+    vatNumber: "DE123456789",
+    resellerDiscount: 15,
+    customerDiscount: 10,
+    rebateCredits: true,
+    fundsUtilization: 65,
+    totalUsage: 32500.0,
+    totalDeposit: 50000.0,
+    distributorName: "AWS Distributor Inc.",
+    lastTransactionDate: "2025-01-14",
+  },
+  {
+    id: "456789012345",
+    name: "TechStart GmbH",
+    type: "USAGE",
+    customer: "TechStart GmbH",
+    status: "Registered",
+    vatNumber: "DE987654321",
+    resellerDiscount: 20,
+    customerDiscount: 15,
+    rebateCredits: true,
+    fundsUtilization: 42,
+    totalUsage: 21000.0,
+    totalDeposit: 50000.0,
+    distributorName: "AWS Distributor Inc.",
+    lastTransactionDate: "2025-01-12",
+  },
+  {
+    id: "567890123456",
+    name: "Global Solutions Ltd",
+    type: "USAGE",
+    customer: "Global Solutions Ltd",
+    status: "Unregistered",
+    vatNumber: "GB123456789",
+    resellerDiscount: 0,
+    customerDiscount: 0,
+    rebateCredits: false,
+    fundsUtilization: 88,
+    totalUsage: 44000.0,
+    totalDeposit: 50000.0,
+    distributorName: "AWS Distributor Inc.",
+    lastTransactionDate: "2025-01-08",
+  },
+  {
+    id: "678901234567",
+    name: "Innovation Labs",
+    type: "USAGE",
+    customer: "Innovation Labs",
+    status: "Archived",
+    vatNumber: "FR123456789",
+    resellerDiscount: 18,
+    customerDiscount: 12,
+    rebateCredits: true,
+    fundsUtilization: 34,
+    totalUsage: 17000.0,
+    totalDeposit: 50000.0,
+    distributorName: "Cloud Partners Ltd.",
+    lastTransactionDate: "2024-12-20",
+  },
+]
 
 export function AccountsGrid() {
-  const [payerAccounts, setPayerAccounts] = useState<PayerAccount[]>([])
-  const [usageAccounts, setUsageAccounts] = useState<UsageAccount[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  
   const [payerDialogOpen, setPayerDialogOpen] = useState(false)
   const [editPayerDialogOpen, setEditPayerDialogOpen] = useState(false)
   const [selectedPayerAccount, setSelectedPayerAccount] = useState<PayerAccount | null>(null)
@@ -30,29 +120,6 @@ export function AccountsGrid() {
   const [selectedUsageAccount, setSelectedUsageAccount] = useState<UsageAccount | null>(null)
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
   const [selectedAccount, setSelectedAccount] = useState<UsageAccount | null>(null)
-
-  useEffect(() => {
-    loadAccounts()
-  }, [])
-
-  const loadAccounts = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      const [payerResponse, usageResponse] = await Promise.all([
-        accountsApi.getPayerAccounts(),
-        accountsApi.getUsageAccounts()
-      ])
-      
-      setPayerAccounts(payerResponse.data)
-      setUsageAccounts(usageResponse.data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load accounts')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const openDetailsDialog = (account: UsageAccount, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -66,37 +133,15 @@ export function AccountsGrid() {
     setEditPayerDialogOpen(true)
   }
 
-  const handleArchiveAccount = async (account: PayerAccount, e: React.MouseEvent) => {
+  const handleArchiveAccount = (account: PayerAccount, e: React.MouseEvent) => {
     e.stopPropagation()
-    try {
-      await accountsApi.archivePayerAccount(account.id)
-      await loadAccounts() // Reload data
-    } catch (err) {
-      console.error('Failed to archive account:', err)
-    }
+    console.log("Archiving account:", account.id)
   }
 
   const openRegisterUsageDialog = (e: React.MouseEvent) => {
     e.stopPropagation()
     setSelectedPayerForUsage(payerAccounts[0])
     setUsageDialogOpen(true)
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-red-600 mb-4">Error loading accounts: {error}</p>
-        <Button onClick={loadAccounts}>Retry</Button>
-      </div>
-    )
   }
 
   const openEditUsageDialog = (account: UsageAccount, e: React.MouseEvent) => {
@@ -312,28 +357,21 @@ export function AccountsGrid() {
         </section>
       </div>
 
-      <RegisterPayerDialog 
-        open={payerDialogOpen} 
-        onOpenChange={setPayerDialogOpen}
-        onSuccess={loadAccounts}
-      />
+      <RegisterPayerDialog open={payerDialogOpen} onOpenChange={setPayerDialogOpen} />
       <EditPayerDialog
         open={editPayerDialogOpen}
         onOpenChange={setEditPayerDialogOpen}
         account={selectedPayerAccount}
-        onSuccess={loadAccounts}
       />
       <RegisterUsageDialog
         open={usageDialogOpen}
         onOpenChange={setUsageDialogOpen}
         payerAccount={selectedPayerForUsage}
-        onSuccess={loadAccounts}
       />
       <EditUsageDialog
         open={editUsageDialogOpen}
         onOpenChange={setEditUsageDialogOpen}
         account={selectedUsageAccount}
-        onSuccess={loadAccounts}
       />
       {selectedAccount && (
         <UsageDetailsDialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen} account={selectedAccount} />
