@@ -223,6 +223,9 @@ export function AccountsGrid() {
                         <CardTitle className="text-base font-semibold leading-tight text-[#00243E]">
                           {account.customer}
                         </CardTitle>
+                        {account.status === "Registered" && (
+                          <Badge className="bg-[#026172] text-white hover:bg-[#026172]/90">Registered</Badge>
+                        )}
                         {account.status === "Unregistered" && (
                           <Badge className="bg-[#EC9400] text-white hover:bg-[#EC9400]/90">Unregistered</Badge>
                         )}
