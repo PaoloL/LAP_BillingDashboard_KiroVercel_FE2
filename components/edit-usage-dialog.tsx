@@ -23,16 +23,17 @@ interface EditUsageDialogProps {
   account: {
     id: string
     customer: string
-    status: "Active" | "Inactive"
+    status: "Unregistered" | "Registered" | "Archived"
     vatNumber: string
-    discountValue: number
+    resellerDiscount: number
+    customerDiscount: number
     rebateCredits: boolean
   } | null
 }
 
 export function EditUsageDialog({ open, onOpenChange, account }: EditUsageDialogProps) {
-  const [resellerDiscount, setResellerDiscount] = useState<number>(account?.discountValue || 0)
-  const [customerDiscount, setCustomerDiscount] = useState<number>(account?.discountValue || 0)
+  const [resellerDiscount, setResellerDiscount] = useState<number>(account?.resellerDiscount || 0)
+  const [customerDiscount, setCustomerDiscount] = useState<number>(account?.customerDiscount || 0)
   const [rebateCredits, setRebateCredits] = useState<boolean>(account?.rebateCredits || false)
   const [validationError, setValidationError] = useState<string | null>(null)
 

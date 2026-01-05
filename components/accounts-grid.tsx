@@ -12,7 +12,6 @@ import { EditPayerDialog } from "@/components/edit-payer-dialog"
 import { RegisterUsageDialog } from "@/components/register-usage-dialog"
 import { EditUsageDialog } from "@/components/edit-usage-dialog"
 import { UsageDetailsDialog } from "@/components/usage-details-dialog"
-import { cn } from "@/lib/utils"
 import type { PayerAccount, UsageAccount } from "@/lib/types"
 
 const payerAccounts: PayerAccount[] = [
@@ -45,10 +44,13 @@ const payerAccounts: PayerAccount[] = [
 const usageAccounts: UsageAccount[] = [
   {
     id: "345678901234",
+    name: "Acme Corporation",
+    type: "USAGE",
     customer: "Acme Corporation",
-    status: "Registered" as const,
+    status: "Registered",
     vatNumber: "DE123456789",
-    discountValue: 10,
+    resellerDiscount: 15,
+    customerDiscount: 10,
     rebateCredits: true,
     fundsUtilization: 65,
     totalUsage: 32500.0,
@@ -56,10 +58,13 @@ const usageAccounts: UsageAccount[] = [
   },
   {
     id: "456789012345",
+    name: "TechStart GmbH",
+    type: "USAGE",
     customer: "TechStart GmbH",
-    status: "Registered" as const,
+    status: "Registered",
     vatNumber: "DE987654321",
-    discountValue: 15,
+    resellerDiscount: 20,
+    customerDiscount: 15,
     rebateCredits: true,
     fundsUtilization: 42,
     totalUsage: 21000.0,
@@ -67,10 +72,13 @@ const usageAccounts: UsageAccount[] = [
   },
   {
     id: "567890123456",
+    name: "Global Solutions Ltd",
+    type: "USAGE",
     customer: "Global Solutions Ltd",
-    status: "Unregistered" as const,
+    status: "Unregistered",
     vatNumber: "GB123456789",
-    discountValue: 5,
+    resellerDiscount: 0,
+    customerDiscount: 0,
     rebateCredits: false,
     fundsUtilization: 88,
     totalUsage: 44000.0,
@@ -78,10 +86,13 @@ const usageAccounts: UsageAccount[] = [
   },
   {
     id: "678901234567",
+    name: "Innovation Labs",
+    type: "USAGE",
     customer: "Innovation Labs",
-    status: "Registered" as const,
+    status: "Archived",
     vatNumber: "FR123456789",
-    discountValue: 12,
+    resellerDiscount: 18,
+    customerDiscount: 12,
     rebateCredits: true,
     fundsUtilization: 34,
     totalUsage: 17000.0,
@@ -215,20 +226,12 @@ export function AccountsGrid() {
                         {account.status === "Unregistered" && (
                           <Badge className="bg-[#EC9400] text-white hover:bg-[#EC9400]/90">Unregistered</Badge>
                         )}
+                        {account.status === "Archived" && (
+                          <Badge className="bg-gray-500 text-white hover:bg-gray-500/90">Archived</Badge>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground">{account.id}</p>
                     </div>
-                    <Badge
-                      variant="secondary"
-                      className={cn(
-                        "ml-2",
-                        account.status === "Registered"
-                          ? "bg-green-500/10 text-green-600 hover:bg-green-500/20"
-                          : "bg-gray-500/10 text-gray-600 hover:bg-gray-500/20",
-                      )}
-                    >
-                      {account.status}
-                    </Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -250,7 +253,7 @@ export function AccountsGrid() {
                   <div className="flex items-center justify-between border-t border-border pt-3">
                     <div className="space-y-0.5">
                       <p className="text-xs text-muted-foreground">Customer Discount</p>
-                      <p className="text-xs font-medium text-[#026172]">{account.discountValue}%</p>
+                      <p className="text-xs font-medium text-[#026172]">{account.customerDiscount}%</p>
                     </div>
                     <div className="flex items-center gap-1">
                       {account.rebateCredits ? (
@@ -275,7 +278,7 @@ export function AccountsGrid() {
                         <Plus className="h-4 w-4" />
                         Register
                       </Button>
-                    ) : (
+                    ) : account.status === "Registered" ? (
                       <>
                         <Button
                           onClick={(e) => openEditUsageDialog(account, e)}
@@ -296,6 +299,16 @@ export function AccountsGrid() {
                           Details
                         </Button>
                       </>
+                    ) : (
+                      <Button
+                        onClick={(e) => openDetailsDialog(account, e)}
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 gap-2 border-gray-500 text-gray-600 hover:bg-gray-500/10"
+                      >
+                        <Info className="h-4 w-4" />
+                        Details
+                      </Button>
                     )}
                   </div>
                 </CardContent>

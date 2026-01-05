@@ -30,7 +30,7 @@ export interface PayerAccount extends Account {
 
 export interface UsageAccount extends Account {
   customer: string
-  status: "Registered" | "Unregistered"
+  status: "Unregistered" | "Registered" | "Archived"
   vatNumber: string
   resellerDiscount: number // Percentage
   customerDiscount: number // Percentage
