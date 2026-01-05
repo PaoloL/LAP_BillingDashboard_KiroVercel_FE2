@@ -14,16 +14,17 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { validateDiscounts } from "@/lib/types"
+import type { PayerAccount } from "@/lib/types"
 
 interface RegisterUsageDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  payerAccount?: PayerAccount | null
 }
 
-export function RegisterUsageDialog({ open, onOpenChange }: RegisterUsageDialogProps) {
+export function RegisterUsageDialog({ open, onOpenChange, payerAccount }: RegisterUsageDialogProps) {
   const [resellerDiscount, setResellerDiscount] = useState<number>(0)
   const [customerDiscount, setCustomerDiscount] = useState<number>(0)
   const [rebateCredits, setRebateCredits] = useState<boolean>(false)
@@ -61,7 +62,11 @@ export function RegisterUsageDialog({ open, onOpenChange }: RegisterUsageDialogP
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle className="text-[#00243E]">Register Usage Account</DialogTitle>
-          <DialogDescription>Add a new usage account with billing configuration</DialogDescription>
+          <DialogDescription>
+            {payerAccount
+              ? `Add a new usage account under ${payerAccount.accountName}`
+              : "Add a new usage account with billing configuration"}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-6 py-4">
@@ -79,18 +84,17 @@ export function RegisterUsageDialog({ open, onOpenChange }: RegisterUsageDialogP
                 <Label htmlFor="vat">VAT Number</Label>
                 <Input id="vat" placeholder="DE123456789" required />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="payer">Payer Account</Label>
-                <Select>
-                  <SelectTrigger id="payer">
-                    <SelectValue placeholder="Select payer account" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="prod">Production Payer</SelectItem>
-                    <SelectItem value="dev">Development Payer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {payerAccount && (
+                <div className="grid gap-2">
+                  <Label htmlFor="payer">Payer Account</Label>
+                  <Input
+                    id="payer"
+                    value={`${payerAccount.accountName} (${payerAccount.accountId})`}
+                    disabled
+                    className="bg-muted"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="grid gap-4">

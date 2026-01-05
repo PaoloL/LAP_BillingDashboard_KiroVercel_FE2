@@ -97,6 +97,7 @@ export function AccountsGrid() {
   const [editPayerDialogOpen, setEditPayerDialogOpen] = useState(false)
   const [selectedPayerAccount, setSelectedPayerAccount] = useState<PayerAccount | null>(null)
   const [usageDialogOpen, setUsageDialogOpen] = useState(false)
+  const [selectedPayerForUsage, setSelectedPayerForUsage] = useState<PayerAccount | null>(null)
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
   const [selectedAccount, setSelectedAccount] = useState<(typeof usageAccounts)[0] | null>(null)
 
@@ -114,6 +115,12 @@ export function AccountsGrid() {
   const handleArchiveAccount = (account: PayerAccount, e: React.MouseEvent) => {
     e.stopPropagation()
     console.log("Archiving account:", account.id)
+  }
+
+  const openRegisterUsageDialog = (account: PayerAccount, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setSelectedPayerForUsage(account)
+    setUsageDialogOpen(true)
   }
 
   return (
@@ -172,7 +179,16 @@ export function AccountsGrid() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">{account.accountId}</p>
+                  <p className="text-sm text-muted-foreground mb-3">{account.accountId}</p>
+                  <Button
+                    onClick={(e) => openRegisterUsageDialog(account, e)}
+                    size="sm"
+                    variant="outline"
+                    className="w-full gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Register Usage Account
+                  </Button>
                 </CardContent>
               </Card>
             ))}
@@ -181,16 +197,8 @@ export function AccountsGrid() {
 
         {/* Usage Accounts Section */}
         <section>
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4">
             <h2 className="text-xl font-semibold text-[#00243E]">Usage Accounts</h2>
-            <Button
-              onClick={() => setUsageDialogOpen(true)}
-              size="sm"
-              className="gap-2 bg-[#00243E] hover:bg-[#00243E]/90"
-            >
-              <Plus className="h-4 w-4" />
-              Register Usage Account
-            </Button>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -273,7 +281,11 @@ export function AccountsGrid() {
         onOpenChange={setEditPayerDialogOpen}
         account={selectedPayerAccount}
       />
-      <RegisterUsageDialog open={usageDialogOpen} onOpenChange={setUsageDialogOpen} />
+      <RegisterUsageDialog
+        open={usageDialogOpen}
+        onOpenChange={setUsageDialogOpen}
+        payerAccount={selectedPayerForUsage}
+      />
       {selectedAccount && (
         <UsageDetailsDialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen} account={selectedAccount} />
       )}
