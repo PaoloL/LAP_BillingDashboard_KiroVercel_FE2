@@ -117,9 +117,8 @@ export function AccountsGrid() {
     console.log("Archiving account:", account.id)
   }
 
-  const openRegisterUsageDialog = (account: PayerAccount, e: React.MouseEvent) => {
-    e.stopPropagation()
-    setSelectedPayerForUsage(account)
+  const openRegisterUsageDialog = () => {
+    setSelectedPayerForUsage(payerAccounts[0])
     setUsageDialogOpen(true)
   }
 
@@ -180,15 +179,6 @@ export function AccountsGrid() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-3">{account.accountId}</p>
-                  <Button
-                    onClick={(e) => openRegisterUsageDialog(account, e)}
-                    size="sm"
-                    variant="outline"
-                    className="w-full gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Register Usage Account
-                  </Button>
                 </CardContent>
               </Card>
             ))}
@@ -268,6 +258,18 @@ export function AccountsGrid() {
                       <span className="text-xs text-muted-foreground">Rebate</span>
                     </div>
                   </div>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      openRegisterUsageDialog()
+                    }}
+                    size="sm"
+                    variant="outline"
+                    className="w-full gap-2 border-[#00243E] text-[#00243E] hover:bg-[#00243E]/10"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Register
+                  </Button>
                 </CardContent>
               </Card>
             ))}
