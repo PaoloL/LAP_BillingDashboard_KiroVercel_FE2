@@ -25,12 +25,12 @@ export interface PayerAccount extends Account {
   legalEntityName: string
   vatNumber: string
   crossAccountRoleArn: string
-  status: "Active" | "Archived"
+  status: "Registered" | "Archived"
 }
 
 export interface UsageAccount extends Account {
   customer: string
-  status: "Active" | "Inactive"
+  status: "Registered" | "Unregistered"
   vatNumber: string
   resellerDiscount: number // Percentage
   customerDiscount: number // Percentage

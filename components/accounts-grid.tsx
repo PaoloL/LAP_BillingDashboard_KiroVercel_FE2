@@ -13,7 +13,7 @@ import { RegisterUsageDialog } from "@/components/register-usage-dialog"
 import { EditUsageDialog } from "@/components/edit-usage-dialog"
 import { UsageDetailsDialog } from "@/components/usage-details-dialog"
 import { cn } from "@/lib/utils"
-import type { PayerAccount } from "@/lib/types"
+import type { PayerAccount, UsageAccount } from "@/lib/types"
 
 const payerAccounts: PayerAccount[] = [
   {
@@ -26,7 +26,7 @@ const payerAccounts: PayerAccount[] = [
     legalEntityName: "Tech Solutions GmbH",
     vatNumber: "DE123456789",
     crossAccountRoleArn: "arn:aws:iam::123456789012:role/BillingDataAccessRole",
-    status: "Active",
+    status: "Registered",
   },
   {
     id: "2",
@@ -38,58 +38,54 @@ const payerAccounts: PayerAccount[] = [
     legalEntityName: "Dev Partners Ltd.",
     vatNumber: "DE987654321",
     crossAccountRoleArn: "arn:aws:iam::234567890123:role/BillingDataAccessRole",
-    status: "Active",
+    status: "Registered",
   },
 ]
 
-const usageAccounts = [
+const usageAccounts: UsageAccount[] = [
   {
     id: "345678901234",
     customer: "Acme Corporation",
-    status: "Active" as const,
+    status: "Registered" as const,
     vatNumber: "DE123456789",
-    discountValue: 10, // This represents customerDiscount in v7
+    discountValue: 10,
     rebateCredits: true,
     fundsUtilization: 65,
     totalUsage: 32500.0,
     totalDeposit: 50000.0,
-    registered: true,
   },
   {
     id: "456789012345",
     customer: "TechStart GmbH",
-    status: "Active" as const,
+    status: "Registered" as const,
     vatNumber: "DE987654321",
     discountValue: 15,
     rebateCredits: true,
     fundsUtilization: 42,
     totalUsage: 21000.0,
     totalDeposit: 50000.0,
-    registered: true,
   },
   {
     id: "567890123456",
     customer: "Global Solutions Ltd",
-    status: "Inactive" as const,
+    status: "Unregistered" as const,
     vatNumber: "GB123456789",
     discountValue: 5,
     rebateCredits: false,
     fundsUtilization: 88,
     totalUsage: 44000.0,
     totalDeposit: 50000.0,
-    registered: false,
   },
   {
     id: "678901234567",
     customer: "Innovation Labs",
-    status: "Active" as const,
+    status: "Registered" as const,
     vatNumber: "FR123456789",
     discountValue: 12,
     rebateCredits: true,
     fundsUtilization: 34,
     totalUsage: 17000.0,
     totalDeposit: 50000.0,
-    registered: true,
   },
 ]
 
@@ -100,11 +96,11 @@ export function AccountsGrid() {
   const [usageDialogOpen, setUsageDialogOpen] = useState(false)
   const [selectedPayerForUsage, setSelectedPayerForUsage] = useState<PayerAccount | null>(null)
   const [editUsageDialogOpen, setEditUsageDialogOpen] = useState(false)
-  const [selectedUsageAccount, setSelectedUsageAccount] = useState<(typeof usageAccounts)[0] | null>(null)
+  const [selectedUsageAccount, setSelectedUsageAccount] = useState<UsageAccount | null>(null)
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
-  const [selectedAccount, setSelectedAccount] = useState<(typeof usageAccounts)[0] | null>(null)
+  const [selectedAccount, setSelectedAccount] = useState<UsageAccount | null>(null)
 
-  const openDetailsDialog = (account: (typeof usageAccounts)[0], e: React.MouseEvent) => {
+  const openDetailsDialog = (account: UsageAccount, e: React.MouseEvent) => {
     e.stopPropagation()
     setSelectedAccount(account)
     setDetailsDialogOpen(true)
@@ -127,7 +123,7 @@ export function AccountsGrid() {
     setUsageDialogOpen(true)
   }
 
-  const openEditUsageDialog = (account: (typeof usageAccounts)[0], e: React.MouseEvent) => {
+  const openEditUsageDialog = (account: UsageAccount, e: React.MouseEvent) => {
     e.stopPropagation()
     setSelectedUsageAccount(account)
     setEditUsageDialogOpen(true)
@@ -216,7 +212,7 @@ export function AccountsGrid() {
                         <CardTitle className="text-base font-semibold leading-tight text-[#00243E]">
                           {account.customer}
                         </CardTitle>
-                        {!account.registered && (
+                        {account.status === "Unregistered" && (
                           <Badge className="bg-[#EC9400] text-white hover:bg-[#EC9400]/90">Unregistered</Badge>
                         )}
                       </div>
@@ -226,7 +222,7 @@ export function AccountsGrid() {
                       variant="secondary"
                       className={cn(
                         "ml-2",
-                        account.status === "Active"
+                        account.status === "Registered"
                           ? "bg-green-500/10 text-green-600 hover:bg-green-500/20"
                           : "bg-gray-500/10 text-gray-600 hover:bg-gray-500/20",
                       )}
@@ -270,7 +266,7 @@ export function AccountsGrid() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    {!account.registered ? (
+                    {account.status === "Unregistered" ? (
                       <Button
                         onClick={(e) => openRegisterUsageDialog(e)}
                         size="sm"
