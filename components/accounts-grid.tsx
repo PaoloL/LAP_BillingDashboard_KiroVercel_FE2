@@ -6,10 +6,11 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Building2, Edit, Plus, Check, X, Archive } from "lucide-react"
+import { Building2, Edit, Plus, Check, X, Archive, Info } from "lucide-react"
 import { RegisterPayerDialog } from "@/components/register-payer-dialog"
 import { EditPayerDialog } from "@/components/edit-payer-dialog"
 import { RegisterUsageDialog } from "@/components/register-usage-dialog"
+import { EditUsageDialog } from "@/components/edit-usage-dialog"
 import { UsageDetailsDialog } from "@/components/usage-details-dialog"
 import { cn } from "@/lib/utils"
 import type { PayerAccount } from "@/lib/types"
@@ -98,10 +99,13 @@ export function AccountsGrid() {
   const [selectedPayerAccount, setSelectedPayerAccount] = useState<PayerAccount | null>(null)
   const [usageDialogOpen, setUsageDialogOpen] = useState(false)
   const [selectedPayerForUsage, setSelectedPayerForUsage] = useState<PayerAccount | null>(null)
+  const [editUsageDialogOpen, setEditUsageDialogOpen] = useState(false)
+  const [selectedUsageAccount, setSelectedUsageAccount] = useState<(typeof usageAccounts)[0] | null>(null)
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
   const [selectedAccount, setSelectedAccount] = useState<(typeof usageAccounts)[0] | null>(null)
 
-  const openDetailsDialog = (account: (typeof usageAccounts)[0]) => {
+  const openDetailsDialog = (account: (typeof usageAccounts)[0], e: React.MouseEvent) => {
+    e.stopPropagation()
     setSelectedAccount(account)
     setDetailsDialogOpen(true)
   }
@@ -117,9 +121,16 @@ export function AccountsGrid() {
     console.log("Archiving account:", account.id)
   }
 
-  const openRegisterUsageDialog = () => {
+  const openRegisterUsageDialog = (e: React.MouseEvent) => {
+    e.stopPropagation()
     setSelectedPayerForUsage(payerAccounts[0])
     setUsageDialogOpen(true)
+  }
+
+  const openEditUsageDialog = (account: (typeof usageAccounts)[0], e: React.MouseEvent) => {
+    e.stopPropagation()
+    setSelectedUsageAccount(account)
+    setEditUsageDialogOpen(true)
   }
 
   return (
@@ -258,18 +269,39 @@ export function AccountsGrid() {
                       <span className="text-xs text-muted-foreground">Rebate</span>
                     </div>
                   </div>
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      openRegisterUsageDialog()
-                    }}
-                    size="sm"
-                    variant="outline"
-                    className="w-full gap-2 border-[#00243E] text-[#00243E] hover:bg-[#00243E]/10"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Register
-                  </Button>
+                  <div className="flex gap-2">
+                    {!account.registered ? (
+                      <Button
+                        onClick={(e) => openRegisterUsageDialog(e)}
+                        size="sm"
+                        className="flex-1 gap-2 bg-[#00243E] hover:bg-[#00243E]/90"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Register
+                      </Button>
+                    ) : (
+                      <>
+                        <Button
+                          onClick={(e) => openEditUsageDialog(account, e)}
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 gap-2 border-[#00243E] text-[#00243E] hover:bg-[#00243E]/10"
+                        >
+                          <Edit className="h-4 w-4" />
+                          Edit
+                        </Button>
+                        <Button
+                          onClick={(e) => openDetailsDialog(account, e)}
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 gap-2 border-[#00243E] text-[#00243E] hover:bg-[#00243E]/10"
+                        >
+                          <Info className="h-4 w-4" />
+                          Details
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -287,6 +319,11 @@ export function AccountsGrid() {
         open={usageDialogOpen}
         onOpenChange={setUsageDialogOpen}
         payerAccount={selectedPayerForUsage}
+      />
+      <EditUsageDialog
+        open={editUsageDialogOpen}
+        onOpenChange={setEditUsageDialogOpen}
+        account={selectedUsageAccount}
       />
       {selectedAccount && (
         <UsageDetailsDialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen} account={selectedAccount} />
