@@ -26,6 +26,7 @@ const payerAccounts: PayerAccount[] = [
     vatNumber: "DE123456789",
     crossAccountRoleArn: "arn:aws:iam::123456789012:role/BillingDataAccessRole",
     status: "Registered",
+    lastTransactionDate: "2025-01-15",
   },
   {
     id: "2",
@@ -38,6 +39,7 @@ const payerAccounts: PayerAccount[] = [
     vatNumber: "DE987654321",
     crossAccountRoleArn: "arn:aws:iam::234567890123:role/BillingDataAccessRole",
     status: "Registered",
+    lastTransactionDate: "2025-01-10",
   },
 ]
 
@@ -55,6 +57,8 @@ const usageAccounts: UsageAccount[] = [
     fundsUtilization: 65,
     totalUsage: 32500.0,
     totalDeposit: 50000.0,
+    distributorName: "AWS Distributor Inc.",
+    lastTransactionDate: "2025-01-14",
   },
   {
     id: "456789012345",
@@ -69,6 +73,8 @@ const usageAccounts: UsageAccount[] = [
     fundsUtilization: 42,
     totalUsage: 21000.0,
     totalDeposit: 50000.0,
+    distributorName: "AWS Distributor Inc.",
+    lastTransactionDate: "2025-01-12",
   },
   {
     id: "567890123456",
@@ -83,6 +89,8 @@ const usageAccounts: UsageAccount[] = [
     fundsUtilization: 88,
     totalUsage: 44000.0,
     totalDeposit: 50000.0,
+    distributorName: "AWS Distributor Inc.",
+    lastTransactionDate: "2025-01-08",
   },
   {
     id: "678901234567",
@@ -97,6 +105,8 @@ const usageAccounts: UsageAccount[] = [
     fundsUtilization: 34,
     totalUsage: 17000.0,
     totalDeposit: 50000.0,
+    distributorName: "Cloud Partners Ltd.",
+    lastTransactionDate: "2024-12-20",
   },
 ]
 
@@ -167,7 +177,9 @@ export function AccountsGrid() {
                     </div>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2">
-                        <CardTitle className="text-base font-semibold text-[#00243E]">{account.accountName}</CardTitle>
+                        <CardTitle className="text-base font-semibold text-[#00243E]">
+                          {account.accountName} ({account.accountId})
+                        </CardTitle>
                         {account.status === "Archived" && (
                           <Badge className="bg-gray-500 text-white hover:bg-gray-500/90">Archived</Badge>
                         )}
@@ -196,7 +208,18 @@ export function AccountsGrid() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground mb-3">{account.accountId}</p>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Distributor</p>
+                      <p className="text-sm font-medium text-foreground">{account.distributorName}</p>
+                    </div>
+                    {account.lastTransactionDate && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Last Transaction</p>
+                        <p className="text-sm font-medium text-foreground">{account.lastTransactionDate}</p>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -221,7 +244,7 @@ export function AccountsGrid() {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <CardTitle className="text-base font-semibold leading-tight text-[#00243E]">
-                          {account.customer}
+                          {account.customer} ({account.id})
                         </CardTitle>
                         {account.status === "Registered" && (
                           <Badge className="bg-[#026172] text-white hover:bg-[#026172]/90">Registered</Badge>
@@ -233,11 +256,24 @@ export function AccountsGrid() {
                           <Badge className="bg-gray-500 text-white hover:bg-gray-500/90">Archived</Badge>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">{account.id}</p>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  <div className="space-y-2 border-b border-border pb-3">
+                    {account.distributorName && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Distributor</p>
+                        <p className="text-sm font-medium text-foreground">{account.distributorName}</p>
+                      </div>
+                    )}
+                    {account.lastTransactionDate && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Last Transaction</p>
+                        <p className="text-sm font-medium text-foreground">{account.lastTransactionDate}</p>
+                      </div>
+                    )}
+                  </div>
                   <div>
                     <div className="mb-2 flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Funds Utilization</span>

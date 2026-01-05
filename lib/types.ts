@@ -26,6 +26,7 @@ export interface PayerAccount extends Account {
   vatNumber: string
   crossAccountRoleArn: string
   status: "Registered" | "Archived"
+  lastTransactionDate?: string
 }
 
 export interface UsageAccount extends Account {
@@ -38,6 +39,8 @@ export interface UsageAccount extends Account {
   fundsUtilization: number
   totalUsage: number
   totalDeposit: number
+  distributorName?: string
+  lastTransactionDate?: string
 }
 
 export interface Transaction {
