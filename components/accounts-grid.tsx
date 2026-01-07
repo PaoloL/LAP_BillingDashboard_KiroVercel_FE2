@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -13,104 +13,13 @@ import { RegisterUsageDialog } from "@/components/register-usage-dialog"
 import { EditUsageDialog } from "@/components/edit-usage-dialog"
 import { UsageDetailsDialog } from "@/components/usage-details-dialog"
 import type { PayerAccount, UsageAccount } from "@/lib/types"
-
-const payerAccounts: PayerAccount[] = [
-  {
-    id: "1",
-    accountId: "123456789012",
-    accountName: "Production Payer",
-    name: "Production Payer",
-    type: "PAYER",
-    distributorName: "AWS Distributor Inc.",
-    legalEntityName: "Tech Solutions GmbH",
-    vatNumber: "DE123456789",
-    crossAccountRoleArn: "arn:aws:iam::123456789012:role/BillingDataAccessRole",
-    status: "Registered",
-    lastTransactionDate: "2025-01-15",
-  },
-  {
-    id: "2",
-    accountId: "234567890123",
-    accountName: "Development Payer",
-    name: "Development Payer",
-    type: "PAYER",
-    distributorName: "AWS Distributor Inc.",
-    legalEntityName: "Dev Partners Ltd.",
-    vatNumber: "DE987654321",
-    crossAccountRoleArn: "arn:aws:iam::234567890123:role/BillingDataAccessRole",
-    status: "Registered",
-    lastTransactionDate: "2025-01-10",
-  },
-]
-
-const usageAccounts: UsageAccount[] = [
-  {
-    id: "345678901234",
-    name: "Acme Corporation",
-    type: "USAGE",
-    customer: "Acme Corporation",
-    status: "Registered",
-    vatNumber: "DE123456789",
-    resellerDiscount: 15,
-    customerDiscount: 10,
-    rebateCredits: true,
-    fundsUtilization: 65,
-    totalUsage: 32500.0,
-    totalDeposit: 50000.0,
-    distributorName: "AWS Distributor Inc.",
-    lastTransactionDate: "2025-01-14",
-  },
-  {
-    id: "456789012345",
-    name: "TechStart GmbH",
-    type: "USAGE",
-    customer: "TechStart GmbH",
-    status: "Registered",
-    vatNumber: "DE987654321",
-    resellerDiscount: 20,
-    customerDiscount: 15,
-    rebateCredits: true,
-    fundsUtilization: 42,
-    totalUsage: 21000.0,
-    totalDeposit: 50000.0,
-    distributorName: "AWS Distributor Inc.",
-    lastTransactionDate: "2025-01-12",
-  },
-  {
-    id: "567890123456",
-    name: "Global Solutions Ltd",
-    type: "USAGE",
-    customer: "Global Solutions Ltd",
-    status: "Unregistered",
-    vatNumber: "GB123456789",
-    resellerDiscount: 0,
-    customerDiscount: 0,
-    rebateCredits: false,
-    fundsUtilization: 88,
-    totalUsage: 44000.0,
-    totalDeposit: 50000.0,
-    distributorName: "AWS Distributor Inc.",
-    lastTransactionDate: "2025-01-08",
-  },
-  {
-    id: "678901234567",
-    name: "Innovation Labs",
-    type: "USAGE",
-    customer: "Innovation Labs",
-    status: "Archived",
-    vatNumber: "FR123456789",
-    resellerDiscount: 18,
-    customerDiscount: 12,
-    rebateCredits: true,
-    fundsUtilization: 34,
-    totalUsage: 17000.0,
-    totalDeposit: 50000.0,
-    distributorName: "Cloud Partners Ltd.",
-    lastTransactionDate: "2024-12-20",
-  },
-]
+import { dataService } from "@/lib/data/data-service"
 
 export function AccountsGrid() {
+  const [payerAccounts, setPayerAccounts] = useState<PayerAccount[]>([])
+  const [usageAccounts, setUsageAccounts] = useState<UsageAccount[]>([])
+  const [loading, setLoading] = useState(true)
+
   const [payerDialogOpen, setPayerDialogOpen] = useState(false)
   const [editPayerDialogOpen, setEditPayerDialogOpen] = useState(false)
   const [selectedPayerAccount, setSelectedPayerAccount] = useState<PayerAccount | null>(null)
@@ -121,33 +30,51 @@ export function AccountsGrid() {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
   const [selectedAccount, setSelectedAccount] = useState<UsageAccount | null>(null)
 
-  const openDetailsDialog = (account: UsageAccount, e: React.MouseEvent) => {
-    e.stopPropagation()
-    setSelectedAccount(account)
-    setDetailsDialogOpen(true)
-  }
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true)
+        const [payers, usage] = await Promise.all([dataService.getPayerAccounts(), dataService.getUsageAccounts()])
+        setPayerAccounts(payers)
+        setUsageAccounts(usage)
+      } catch (error) {
+        console.error("[v0] Failed to load accounts:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [])
 
   const openEditPayerDialog = (account: PayerAccount, e: React.MouseEvent) => {
-    e.stopPropagation()
     setSelectedPayerAccount(account)
     setEditPayerDialogOpen(true)
   }
 
   const handleArchiveAccount = (account: PayerAccount, e: React.MouseEvent) => {
-    e.stopPropagation()
-    console.log("Archiving account:", account.id)
+    // Implement archive logic here
+  }
+
+  const openDetailsDialog = (account: UsageAccount) => {
+    setSelectedAccount(account)
+    setDetailsDialogOpen(true)
   }
 
   const openRegisterUsageDialog = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setSelectedPayerForUsage(payerAccounts[0])
-    setUsageDialogOpen(true)
+    // Implement register usage logic here
   }
 
   const openEditUsageDialog = (account: UsageAccount, e: React.MouseEvent) => {
-    e.stopPropagation()
     setSelectedUsageAccount(account)
     setEditUsageDialogOpen(true)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-muted-foreground">Loading accounts...</p>
+      </div>
+    )
   }
 
   return (

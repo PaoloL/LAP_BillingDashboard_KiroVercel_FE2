@@ -2,117 +2,9 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/format"
 import { ChevronDown, ChevronRight } from "lucide-react"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import type { TransactionDetail } from "@/lib/types"
-
-const transactionsByPeriod: Record<string, TransactionDetail[]> = {
-  "January 2025": [
-    {
-      id: "txn-001",
-      dateTime: new Date("2025-01-15T14:30:00"),
-      payerAccount: {
-        name: "AWS Main Account",
-        id: "123456789012",
-      },
-      usageAccount: {
-        name: "Acme Corporation",
-        id: "aws-123456",
-      },
-      costBreakdown: {
-        usage: 12345.67,
-        fee: 100.0,
-        discount: -1234.56,
-        adjustment: -50.0,
-        tax: 2345.67,
-      },
-      distributorCost: {
-        usd: 13500.0,
-        eur: 12345.67,
-      },
-      sellerCost: {
-        usd: 12150.0,
-        eur: 11111.1,
-      },
-      customerCost: {
-        usd: 10930.0,
-        eur: 10000.0,
-      },
-      exchangeRate: 1.093,
-      dataType: "Export",
-      info: "Monthly AWS usage",
-    },
-    {
-      id: "txn-002",
-      dateTime: new Date("2025-01-20T09:15:00"),
-      payerAccount: {
-        name: "AWS Main Account",
-        id: "123456789012",
-      },
-      usageAccount: {
-        name: "TechStart GmbH",
-        id: "aws-789012",
-      },
-      costBreakdown: {
-        usage: 8765.43,
-        fee: 50.0,
-        discount: -876.54,
-        adjustment: 0,
-        tax: 1576.23,
-      },
-      distributorCost: {
-        usd: 9500.0,
-        eur: 8765.43,
-      },
-      sellerCost: {
-        usd: 8550.0,
-        eur: 7888.89,
-      },
-      customerCost: {
-        usd: 7588.0,
-        eur: 7000.0,
-      },
-      exchangeRate: 1.084,
-      dataType: "Manual",
-      info: "AWS EC2 and S3 usage",
-    },
-  ],
-  "December 2024": [
-    {
-      id: "txn-003",
-      dateTime: new Date("2024-12-10T16:45:00"),
-      payerAccount: {
-        name: "AWS Main Account",
-        id: "123456789012",
-      },
-      usageAccount: {
-        name: "Global Solutions",
-        id: "aws-345678",
-      },
-      costBreakdown: {
-        usage: 15678.9,
-        fee: 150.0,
-        discount: -1567.89,
-        adjustment: 100.0,
-        tax: 2981.09,
-      },
-      distributorCost: {
-        usd: 17000.0,
-        eur: 15678.9,
-      },
-      sellerCost: {
-        usd: 15300.0,
-        eur: 14111.01,
-      },
-      customerCost: {
-        usd: 14634.0,
-        eur: 13500.0,
-      },
-      exchangeRate: 1.084,
-      dataType: "Export",
-      info: "Full stack deployment",
-    },
-  ],
-}
+import { dataService } from "@/lib/data/data-service"
 
 function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -268,15 +160,36 @@ interface TransactionsListProps {
 }
 
 export function TransactionsList({ dateRange, sortBy = "date", sortOrder = "desc" }: TransactionsListProps) {
+  const [transactionsByPeriod, setTransactionsByPeriod] = useState<Record<string, TransactionDetail[]>>({})
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true)
+        const data = await dataService.getTransactions({
+          startDate: dateRange?.from,
+          endDate: dateRange?.to,
+          sortBy,
+          sortOrder,
+        })
+        setTransactionsByPeriod(data)
+      } catch (error) {
+        console.error("[v0] Failed to load transactions:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [dateRange, sortBy, sortOrder])
+
   const filteredAndSortedTransactions = useMemo(() => {
     let allTransactions: TransactionDetail[] = []
 
-    // Flatten all transactions
     Object.values(transactionsByPeriod).forEach((transactions) => {
       allTransactions = [...allTransactions, ...transactions]
     })
 
-    // Apply date range filter
     if (dateRange?.from || dateRange?.to) {
       allTransactions = allTransactions.filter((transaction) => {
         const txDate = transaction.dateTime
@@ -290,19 +203,16 @@ export function TransactionsList({ dateRange, sortBy = "date", sortOrder = "desc
       })
     }
 
-    // Apply sorting
     allTransactions.sort((a, b) => {
       if (sortBy === "date") {
         const comparison = a.dateTime.getTime() - b.dateTime.getTime()
         return sortOrder === "asc" ? comparison : -comparison
       } else {
-        // Sort by usage account name
         const comparison = a.usageAccount.name.localeCompare(b.usageAccount.name)
         return sortOrder === "asc" ? comparison : -comparison
       }
     })
 
-    // Group by period
     const grouped: Record<string, TransactionDetail[]> = {}
     allTransactions.forEach((transaction) => {
       const period = transaction.dateTime.toLocaleDateString("en-US", { month: "long", year: "numeric" })
@@ -313,7 +223,15 @@ export function TransactionsList({ dateRange, sortBy = "date", sortOrder = "desc
     })
 
     return grouped
-  }, [dateRange, sortBy, sortOrder])
+  }, [transactionsByPeriod, dateRange, sortBy, sortOrder])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-muted-foreground">Loading transactions...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
