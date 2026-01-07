@@ -6,7 +6,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Building2, Edit, Plus, Check, X, Archive, Info } from "lucide-react"
+import { Building2, Edit, Plus, Check, X, Archive, ArchiveRestore, Trash2, Eye } from "lucide-react"
 import { RegisterPayerDialog } from "@/components/register-payer-dialog"
 import { EditPayerDialog } from "@/components/edit-payer-dialog"
 import { RegisterUsageDialog } from "@/components/register-usage-dialog"
@@ -47,26 +47,65 @@ export function AccountsGrid() {
   }, [])
 
   const openEditPayerDialog = (account: PayerAccount, e: React.MouseEvent) => {
+    e.stopPropagation()
     setSelectedPayerAccount(account)
     setEditPayerDialogOpen(true)
   }
 
-  const handleArchiveAccount = (account: PayerAccount, e: React.MouseEvent) => {
-    // Implement archive logic here
+  const handleArchivePayerAccount = (account: PayerAccount, e: React.MouseEvent) => {
+    e.stopPropagation()
+    console.log("[v0] Archive payer account:", account.id)
+    // TODO: Implement API call to archive account
   }
 
-  const openDetailsDialog = (account: UsageAccount) => {
+  const handleUnarchivePayerAccount = (account: PayerAccount, e: React.MouseEvent) => {
+    e.stopPropagation()
+    console.log("[v0] Unarchive payer account:", account.id)
+    // TODO: Implement API call to unarchive account
+  }
+
+  const handleDeletePayerAccount = (account: PayerAccount, e: React.MouseEvent) => {
+    e.stopPropagation()
+    console.log("[v0] Delete payer account:", account.id)
+    // TODO: Implement API call to delete account
+  }
+
+  const openDetailsDialog = (account: UsageAccount, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
     setSelectedAccount(account)
     setDetailsDialogOpen(true)
   }
 
-  const openRegisterUsageDialog = (e: React.MouseEvent) => {
-    // Implement register usage logic here
+  const openRegisterUsageDialog = (account: UsageAccount, e: React.MouseEvent) => {
+    e.stopPropagation()
+    // Find the payer account for this usage account
+    const payerAccount = payerAccounts.find((p) => p.id === account.id.split("-")[0])
+    setSelectedPayerForUsage(payerAccount || null)
+    setUsageDialogOpen(true)
   }
 
   const openEditUsageDialog = (account: UsageAccount, e: React.MouseEvent) => {
+    e.stopPropagation()
     setSelectedUsageAccount(account)
     setEditUsageDialogOpen(true)
+  }
+
+  const handleArchiveUsageAccount = (account: UsageAccount, e: React.MouseEvent) => {
+    e.stopPropagation()
+    console.log("[v0] Archive usage account:", account.id)
+    // TODO: Implement API call to archive account
+  }
+
+  const handleUnarchiveUsageAccount = (account: UsageAccount, e: React.MouseEvent) => {
+    e.stopPropagation()
+    console.log("[v0] Unarchive usage account:", account.id)
+    // TODO: Implement API call to unarchive account
+  }
+
+  const handleDeleteUsageAccount = (account: UsageAccount, e: React.MouseEvent) => {
+    e.stopPropagation()
+    console.log("[v0] Delete usage account:", account.id)
+    // TODO: Implement API call to delete account
   }
 
   if (loading) {
@@ -114,24 +153,49 @@ export function AccountsGrid() {
                     </div>
                   </div>
                   <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={(e) => openEditPayerDialog(account, e)}
-                      title="Edit"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={(e) => handleArchiveAccount(account, e)}
-                      title="Archive"
-                    >
-                      <Archive className="h-4 w-4" />
-                    </Button>
+                    {account.status === "Registered" ? (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-[#00243E] hover:bg-[#00243E]/10 hover:text-[#00243E]"
+                          onClick={(e) => openEditPayerDialog(account, e)}
+                          title="Edit"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-[#EC9400] hover:bg-[#EC9400]/10 hover:text-[#EC9400]"
+                          onClick={(e) => handleArchivePayerAccount(account, e)}
+                          title="Archive"
+                        >
+                          <Archive className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-[#026172] hover:bg-[#026172]/10 hover:text-[#026172]"
+                          onClick={(e) => handleUnarchivePayerAccount(account, e)}
+                          title="Unarchive"
+                        >
+                          <ArchiveRestore className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700"
+                          onClick={(e) => handleDeletePayerAccount(account, e)}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -161,11 +225,7 @@ export function AccountsGrid() {
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {usageAccounts.map((account) => (
-              <Card
-                key={account.id}
-                className="cursor-pointer transition-all hover:scale-[1.02] hover:shadow-md"
-                onClick={() => openDetailsDialog(account)}
-              >
+              <Card key={account.id} className="transition-all hover:shadow-md">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
@@ -234,10 +294,10 @@ export function AccountsGrid() {
                       <span className="text-xs text-muted-foreground">Rebate</span>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1 border-t border-border pt-3">
                     {account.status === "Unregistered" ? (
                       <Button
-                        onClick={(e) => openRegisterUsageDialog(e)}
+                        onClick={(e) => openRegisterUsageDialog(account, e)}
                         size="sm"
                         className="flex-1 gap-2 bg-[#00243E] hover:bg-[#00243E]/90"
                       >
@@ -247,34 +307,54 @@ export function AccountsGrid() {
                     ) : account.status === "Registered" ? (
                       <>
                         <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 text-[#00243E] hover:bg-[#00243E]/10 hover:text-[#00243E]"
                           onClick={(e) => openEditUsageDialog(account, e)}
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 gap-2 border-[#00243E] text-[#00243E] hover:bg-[#00243E]/10"
+                          title="Edit"
                         >
                           <Edit className="h-4 w-4" />
-                          Edit
                         </Button>
                         <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 text-[#00243E] hover:bg-[#00243E]/10 hover:text-[#00243E]"
                           onClick={(e) => openDetailsDialog(account, e)}
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 gap-2 border-[#00243E] text-[#00243E] hover:bg-[#00243E]/10"
+                          title="Details"
                         >
-                          <Info className="h-4 w-4" />
-                          Details
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 text-[#EC9400] hover:bg-[#EC9400]/10 hover:text-[#EC9400]"
+                          onClick={(e) => handleArchiveUsageAccount(account, e)}
+                          title="Archive"
+                        >
+                          <Archive className="h-4 w-4" />
                         </Button>
                       </>
                     ) : (
-                      <Button
-                        onClick={(e) => openDetailsDialog(account, e)}
-                        size="sm"
-                        variant="outline"
-                        className="flex-1 gap-2 border-gray-500 text-gray-600 hover:bg-gray-500/10"
-                      >
-                        <Info className="h-4 w-4" />
-                        Details
-                      </Button>
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 text-[#026172] hover:bg-[#026172]/10 hover:text-[#026172]"
+                          onClick={(e) => handleUnarchiveUsageAccount(account, e)}
+                          title="Unarchive"
+                        >
+                          <ArchiveRestore className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 text-red-600 hover:bg-red-50 hover:text-red-700"
+                          onClick={(e) => handleDeleteUsageAccount(account, e)}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
                     )}
                   </div>
                 </CardContent>
