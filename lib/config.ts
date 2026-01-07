@@ -3,5 +3,6 @@ export const config = {
   useMockData:
     process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true" ||
     (typeof window !== "undefined" && window.location.hostname.includes("v0.app")),
-  apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api",
+  apiBaseUrl:
+    process.env.NEXT_PUBLIC_API_GATEWAY_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api",
 } as const
