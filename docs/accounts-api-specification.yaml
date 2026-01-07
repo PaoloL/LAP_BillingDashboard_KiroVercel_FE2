@@ -12,7 +12,18 @@ info:
     - **Payer Account**: Registered → Archived
     - **Usage Account**: Unregistered → Registered → Archived
     
-  version: 1.0.0
+    ## UI Button Actions by Status
+    
+    ### Payer Account Actions:
+    - **Registered/Active**: Edit, Archive
+    - **Archived**: Unarchive, Delete
+    
+    ### Usage Account Actions:
+    - **Unregistered**: Register
+    - **Registered/Active**: Edit, Details, Archive
+    - **Archived**: Unarchive, Delete
+    
+  version: 1.1.0
   contact:
     name: API Support
     email: support@example.com
@@ -84,27 +95,6 @@ paths:
                       $ref: '#/components/schemas/PayerAccount'
                   pagination:
                     $ref: '#/components/schemas/Pagination'
-              examples:
-                success:
-                  value:
-                    data:
-                      - id: "550e8400-e29b-41d4-a716-446655440000"
-                        accountId: "123456789012"
-                        accountName: "Production Payer"
-                        distributorName: "AWS Distributor Inc."
-                        legalEntityName: "AWS Distributor Legal Entity Ltd."
-                        vatNumber: "DE123456789"
-                        crossAccountRoleArn: "arn:aws:iam::123456789012:role/BillingDataAccessRole"
-                        status: "Registered"
-                        lastTransactionDate: "2025-01-15T10:30:00Z"
-                        usageAccountCount: 5
-                        createdAt: "2024-01-10T09:00:00Z"
-                        updatedAt: "2025-01-15T10:30:00Z"
-                    pagination:
-                      page: 1
-                      limit: 20
-                      totalItems: 1
-                      totalPages: 1
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
@@ -122,16 +112,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CreatePayerAccountRequest'
-            examples:
-              complete:
-                summary: Complete payer account registration
-                value:
-                  accountId: "123456789012"
-                  accountName: "Production Payer"
-                  distributorName: "AWS Distributor Inc."
-                  legalEntityName: "AWS Distributor Legal Entity Ltd."
-                  vatNumber: "DE123456789"
-                  crossAccountRoleArn: "arn:aws:iam::123456789012:role/BillingDataAccessRole"
       responses:
         '201':
           description: Payer account registered successfully
@@ -201,14 +181,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UpdatePayerAccountRequest'
-            examples:
-              update:
-                summary: Update payer account details
-                value:
-                  distributorName: "Updated Distributor Inc."
-                  legalEntityName: "Updated Legal Entity Ltd."
-                  vatNumber: "DE987654321"
-                  crossAccountRoleArn: "arn:aws:iam::123456789012:role/NewBillingRole"
       responses:
         '200':
           description: Payer account updated successfully
@@ -229,12 +201,44 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     
+    delete:
+      tags:
+        - Payer Accounts
+      summary: Delete payer account
+      description: |
+        Permanently delete a payer account. Only archived accounts can be deleted.
+        This operation cannot be undone.
+      operationId: deletePayerAccount
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '204':
+          description: Payer account deleted successfully (no content)
+        '400':
+          description: Bad request - cannot delete active account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  code: "CANNOT_DELETE_ACTIVE_ACCOUNT"
+                  message: "Cannot delete a payer account with status 'Registered'. Archive it first."
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /payer-accounts/{accountId}/status:
     patch:
       tags:
         - Payer Accounts
-      summary: Archive payer account
-      description: Change payer account status from "Registered" to "Archived"
-      operationId: archivePayerAccount
+      summary: Change payer account status
+      description: |
+        Archive or unarchive a payer account.
+        - Archive: Changes status from "Registered" to "Archived"
+        - Unarchive: Changes status from "Archived" to "Registered"
+      operationId: changePayerAccountStatus
       parameters:
         - $ref: '#/components/parameters/AccountId'
       requestBody:
@@ -248,11 +252,11 @@ paths:
               properties:
                 status:
                   type: string
-                  enum: [Archived]
-                  description: Status must be "Archived"
+                  enum: [Registered, Archived]
+                  description: New status for the payer account
       responses:
         '200':
-          description: Payer account archived successfully
+          description: Payer account status changed successfully
           content:
             application/json:
               schema:
@@ -325,30 +329,6 @@ paths:
                       $ref: '#/components/schemas/UsageAccount'
                   pagination:
                     $ref: '#/components/schemas/Pagination'
-              examples:
-                success:
-                  value:
-                    data:
-                      - id: "660e8400-e29b-41d4-a716-446655440001"
-                        accountId: "987654321098"
-                        customer: "Acme Corporation"
-                        status: "Registered"
-                        payerAccountId: "123456789012"
-                        distributorName: "AWS Distributor Inc."
-                        vatNumber: "DE123456789"
-                        resellerDiscount: 15.5
-                        customerDiscount: 10.0
-                        rebateCredits: true
-                        lastTransactionDate: "2025-01-15T14:20:00Z"
-                        totalUsage: 5000.00
-                        totalDeposit: -500.00
-                        createdAt: "2024-02-01T10:00:00Z"
-                        updatedAt: "2025-01-15T14:20:00Z"
-                    pagination:
-                      page: 1
-                      limit: 20
-                      totalItems: 1
-                      totalPages: 1
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
@@ -368,17 +348,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateUsageAccountRequest'
-            examples:
-              complete:
-                summary: Complete usage account registration
-                value:
-                  accountId: "987654321098"
-                  customer: "Acme Corporation"
-                  payerAccountId: "123456789012"
-                  vatNumber: "DE123456789"
-                  resellerDiscount: 15.5
-                  customerDiscount: 10.0
-                  rebateCredits: true
       responses:
         '201':
           description: Usage account registered successfully
@@ -467,14 +436,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UpdateUsageAccountRequest'
-            examples:
-              update:
-                summary: Update financial configuration
-                value:
-                  vatNumber: "DE987654321"
-                  resellerDiscount: 18.0
-                  customerDiscount: 12.0
-                  rebateCredits: false
       responses:
         '200':
           description: Usage account updated successfully
@@ -495,13 +456,44 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
     
+    delete:
+      tags:
+        - Usage Accounts
+      summary: Delete usage account
+      description: |
+        Permanently delete a usage account. Only archived accounts can be deleted.
+        This operation cannot be undone.
+      operationId: deleteUsageAccount
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '204':
+          description: Usage account deleted successfully (no content)
+        '400':
+          description: Bad request - cannot delete non-archived account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  code: "CANNOT_DELETE_NON_ARCHIVED_ACCOUNT"
+                  message: "Cannot delete a usage account unless it is archived"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /usage-accounts/{accountId}/status:
     patch:
       tags:
         - Usage Accounts
       summary: Change usage account status
       description: |
         Change usage account status through the workflow:
-        Unregistered → Registered → Archived
+        - Register: Unregistered → Registered
+        - Archive: Registered → Archived
+        - Unarchive: Archived → Registered
       operationId: changeUsageAccountStatus
       parameters:
         - $ref: '#/components/parameters/AccountId'
@@ -540,7 +532,7 @@ paths:
               example:
                 error:
                   code: "INVALID_STATUS_TRANSITION"
-                  message: "Cannot change status from Archived to Registered"
+                  message: "Cannot transition from current status to requested status"
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
