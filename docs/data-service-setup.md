@@ -10,7 +10,7 @@ The billing dashboard uses a data service layer that automatically switches betw
 
 Create a `.env.local` file in your project root:
 
-```bash
+\`\`\`bash
 # Use mock data (true) or API (false)
 NEXT_PUBLIC_USE_MOCK_DATA=false
 
@@ -19,7 +19,7 @@ NEXT_PUBLIC_API_GATEWAY_BASE_URL=https://qwvzcttk3b.execute-api.eu-west-1.amazon
 
 # OR use generic API base URL
 NEXT_PUBLIC_API_BASE_URL=http://localhost:3000/api
-```
+\`\`\`
 
 ### Automatic Detection
 
@@ -43,12 +43,12 @@ Smart layer that switches between mock and API
 
 ## Usage in Components
 
-```typescript
+\`\`\`typescript
 import { dataService } from "@/lib/data/data-service"
 
 // Automatically uses mock or API based on config
 const accounts = await dataService.getPayerAccounts()
-```
+\`\`\`
 
 ## Backend API Requirements
 
@@ -74,11 +74,11 @@ Your backend should implement these endpoints:
 
 If you already have an AWS API Gateway:
 
-```bash
+\`\`\`bash
 # .env.local
 NEXT_PUBLIC_USE_MOCK_DATA=false
 NEXT_PUBLIC_API_GATEWAY_BASE_URL=https://your-api-id.execute-api.region.amazonaws.com/stage
-```
+\`\`\`
 
 The application will automatically use `NEXT_PUBLIC_API_GATEWAY_BASE_URL` if it's set, falling back to `NEXT_PUBLIC_API_BASE_URL` if not.
 
@@ -86,7 +86,7 @@ The application will automatically use `NEXT_PUBLIC_API_GATEWAY_BASE_URL` if it'
 
 For local backend testing:
 
-```bash
+\`\`\`bash
 # .env.local
 NEXT_PUBLIC_USE_MOCK_DATA=false
 NEXT_PUBLIC_API_BASE_URL=http://localhost:3000/api

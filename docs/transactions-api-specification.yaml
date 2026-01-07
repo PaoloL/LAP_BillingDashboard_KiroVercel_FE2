@@ -1,0 +1,929 @@
+openapi: 3.0.3
+info:
+  title: Transactions API
+  description: |
+    API specification for managing billing transactions in the AWS Billing Dashboard.
+    
+    This API handles transaction operations including:
+    - Recording usage, credits, deposits, and fees
+    - Retrieving transaction history with filtering and sorting
+    - Viewing detailed cost breakdowns
+    - Managing exchange rates and data types (Export/Manual)
+    
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@billing.example.com
+
+servers:
+  - url: https://api.billing.example.com/v1
+    description: Production API
+  - url: https://staging-api.billing.example.com/v1
+    description: Staging API
+  - url: http://localhost:3001/api/v1
+    description: Local Development
+
+tags:
+  - name: Transactions
+    description: Transaction management operations
+
+paths:
+  /transactions:
+    get:
+      summary: List transactions
+      description: |
+        Retrieve a paginated list of transactions with optional filtering and sorting.
+        Transactions are grouped by period (month/year) and include detailed cost breakdowns.
+      operationId: listTransactions
+      tags:
+        - Transactions
+      parameters:
+        - name: startDate
+          in: query
+          description: Filter transactions from this date (ISO 8601 format)
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2025-01-01"
+        - name: endDate
+          in: query
+          description: Filter transactions up to this date (ISO 8601 format)
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2025-01-31"
+        - name: payerAccountId
+          in: query
+          description: Filter by payer account ID
+          required: false
+          schema:
+            type: string
+            example: "PA001"
+        - name: usageAccountId
+          in: query
+          description: Filter by usage account ID
+          required: false
+          schema:
+            type: string
+            example: "UA001"
+        - name: type
+          in: query
+          description: Filter by transaction type
+          required: false
+          schema:
+            type: string
+            enum: [Usage, Credit, Deposit, Fee]
+        - name: dataType
+          in: query
+          description: Filter by data source type
+          required: false
+          schema:
+            type: string
+            enum: [Export, Manual]
+        - name: sortBy
+          in: query
+          description: Sort transactions by field
+          required: false
+          schema:
+            type: string
+            enum: [date, name]
+            default: date
+        - name: sortOrder
+          in: query
+          description: Sort order direction
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - name: page
+          in: query
+          description: Page number for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of transactions per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: Successfully retrieved transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/TransactionDetail'
+                    description: Transactions grouped by period (e.g., "January 2025")
+                  pagination:
+                    $ref: '#/components/schemas/PaginationMetadata'
+              example:
+                data:
+                  "January 2025":
+                    - id: "TX001"
+                      dateTime: "2025-01-15T10:30:00Z"
+                      payerAccount:
+                        name: "AWS Main"
+                        id: "123456789012"
+                      usageAccount:
+                        name: "Production"
+                        id: "UA001"
+                      costBreakdown:
+                        usage: 1500.00
+                        fee: 50.00
+                        discount: -150.00
+                        adjustment: 0.00
+                        tax: 84.00
+                      distributorCost:
+                        usd: 1300.00
+                        eur: 1189.47
+                      sellerCost:
+                        usd: 1400.00
+                        eur: 1281.05
+                      customerCost:
+                        usd: 1484.00
+                        eur: 1357.95
+                      exchangeRate: 1.093
+                      dataType: "Export"
+                pagination:
+                  page: 1
+                  limit: 50
+                  total: 125
+                  totalPages: 3
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create transaction
+      description: |
+        Register a new transaction in the billing system.
+        Transactions can be of type Usage, Credit, Deposit, or Fee.
+      operationId: createTransaction
+      tags:
+        - Transactions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransactionRequest'
+            example:
+              type: "Usage"
+              usageAccountId: "UA001"
+              amount: 1500.00
+              date: "2025-01-15"
+              notes: "Monthly AWS usage charge"
+              exchangeRate: 1.093
+              dataType: "Export"
+      responses:
+        '201':
+          description: Transaction created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TransactionDetail'
+                  message:
+                    type: string
+              example:
+                data:
+                  id: "TX001"
+                  dateTime: "2025-01-15T10:30:00Z"
+                  payerAccount:
+                    name: "AWS Main"
+                    id: "123456789012"
+                  usageAccount:
+                    name: "Production"
+                    id: "UA001"
+                  costBreakdown:
+                    usage: 1500.00
+                    fee: 50.00
+                    discount: -150.00
+                    adjustment: 0.00
+                    tax: 84.00
+                  distributorCost:
+                    usd: 1300.00
+                    eur: 1189.47
+                  sellerCost:
+                    usd: 1400.00
+                    eur: 1281.05
+                  customerCost:
+                    usd: 1484.00
+                    eur: 1357.95
+                  exchangeRate: 1.093
+                  dataType: "Export"
+                message: "Transaction created successfully"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Usage account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  code: "ACCOUNT_NOT_FOUND"
+                  message: "Usage account with ID UA999 not found"
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  code: "VALIDATION_ERROR"
+                  message: "Invalid transaction data"
+                  details:
+                    - field: "amount"
+                      message: "Amount must be greater than 0"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /transactions/{transactionId}:
+    get:
+      summary: Get transaction details
+      description: Retrieve detailed information about a specific transaction including full cost breakdown
+      operationId: getTransaction
+      tags:
+        - Transactions
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          description: Unique transaction identifier
+          schema:
+            type: string
+            example: "TX001"
+      responses:
+        '200':
+          description: Transaction details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TransactionDetail'
+              example:
+                data:
+                  id: "TX001"
+                  dateTime: "2025-01-15T10:30:00Z"
+                  payerAccount:
+                    name: "AWS Main"
+                    id: "123456789012"
+                  usageAccount:
+                    name: "Production"
+                    id: "UA001"
+                  costBreakdown:
+                    usage: 1500.00
+                    fee: 50.00
+                    discount: -150.00
+                    adjustment: 0.00
+                    tax: 84.00
+                  distributorCost:
+                    usd: 1300.00
+                    eur: 1189.47
+                  sellerCost:
+                    usd: 1400.00
+                    eur: 1281.05
+                  customerCost:
+                    usd: 1484.00
+                    eur: 1357.95
+                  exchangeRate: 1.093
+                  dataType: "Export"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  code: "TRANSACTION_NOT_FOUND"
+                  message: "Transaction with ID TX999 not found"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      summary: Update transaction
+      description: |
+        Update specific fields of an existing transaction.
+        Only transactions with dataType "Manual" can be updated.
+      operationId: updateTransaction
+      tags:
+        - Transactions
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          description: Unique transaction identifier
+          schema:
+            type: string
+            example: "TX001"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTransactionRequest'
+            example:
+              amount: 1600.00
+              notes: "Updated usage charge with additional services"
+      responses:
+        '200':
+          description: Transaction updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TransactionDetail'
+                  message:
+                    type: string
+              example:
+                message: "Transaction updated successfully"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Cannot update exported transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  code: "EXPORT_TRANSACTION_READONLY"
+                  message: "Transactions with dataType 'Export' cannot be modified"
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Delete transaction
+      description: |
+        Delete a transaction from the system.
+        Only transactions with dataType "Manual" can be deleted.
+      operationId: deleteTransaction
+      tags:
+        - Transactions
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          description: Unique transaction identifier
+          schema:
+            type: string
+            example: "TX001"
+      responses:
+        '204':
+          description: Transaction deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Cannot delete exported transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  code: "EXPORT_TRANSACTION_READONLY"
+                  message: "Transactions with dataType 'Export' cannot be deleted"
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /transactions/summary:
+    get:
+      summary: Get transactions summary
+      description: |
+        Retrieve aggregated transaction metrics for a specified time period.
+        Useful for dashboard displays and reporting.
+      operationId: getTransactionsSummary
+      tags:
+        - Transactions
+      parameters:
+        - name: startDate
+          in: query
+          required: true
+          description: Start date for summary period
+          schema:
+            type: string
+            format: date
+            example: "2025-01-01"
+        - name: endDate
+          in: query
+          required: true
+          description: End date for summary period
+          schema:
+            type: string
+            format: date
+            example: "2025-01-31"
+        - name: groupBy
+          in: query
+          description: Group summary by dimension
+          required: false
+          schema:
+            type: string
+            enum: [payer, usage, type, day, week, month]
+            default: month
+      responses:
+        '200':
+          description: Transaction summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TransactionSummary'
+              example:
+                data:
+                  period:
+                    start: "2025-01-01"
+                    end: "2025-01-31"
+                  totals:
+                    totalTransactions: 156
+                    totalUsage: 45000.00
+                    totalCredits: -5000.00
+                    totalFees: 1500.00
+                    netAmount: 41500.00
+                  byType:
+                    - type: "Usage"
+                      count: 120
+                      amount: 45000.00
+                    - type: "Credit"
+                      count: 30
+                      amount: -5000.00
+                    - type: "Fee"
+                      count: 6
+                      amount: 1500.00
+                  currency:
+                    usd: 45345.00
+                    eur: 41500.00
+                    exchangeRate: 1.093
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    TransactionDetail:
+      type: object
+      required:
+        - id
+        - dateTime
+        - payerAccount
+        - usageAccount
+        - costBreakdown
+        - distributorCost
+        - sellerCost
+        - customerCost
+        - exchangeRate
+        - dataType
+      properties:
+        id:
+          type: string
+          description: Unique transaction identifier
+          example: "TX001"
+        dateTime:
+          type: string
+          format: date-time
+          description: Transaction timestamp (ISO 8601)
+          example: "2025-01-15T10:30:00Z"
+        payerAccount:
+          type: object
+          required:
+            - name
+            - id
+          properties:
+            name:
+              type: string
+              description: Payer account name
+              example: "AWS Main"
+            id:
+              type: string
+              description: AWS account ID (12 digits)
+              pattern: '^\d{12}$'
+              example: "123456789012"
+        usageAccount:
+          type: object
+          required:
+            - name
+            - id
+          properties:
+            name:
+              type: string
+              description: Customer/usage account name
+              example: "Production"
+            id:
+              type: string
+              description: Usage account ID
+              example: "UA001"
+        costBreakdown:
+          type: object
+          required:
+            - usage
+            - fee
+            - discount
+            - adjustment
+            - tax
+          properties:
+            usage:
+              type: number
+              format: double
+              description: Base usage cost in EUR
+              example: 1500.00
+            fee:
+              type: number
+              format: double
+              description: Additional fees in EUR
+              example: 50.00
+            discount:
+              type: number
+              format: double
+              description: Applied discounts in EUR (negative value)
+              example: -150.00
+            adjustment:
+              type: number
+              format: double
+              description: Manual adjustments in EUR
+              example: 0.00
+            tax:
+              type: number
+              format: double
+              description: VAT/tax amount in EUR
+              example: 84.00
+        distributorCost:
+          type: object
+          required:
+            - usd
+            - eur
+          properties:
+            usd:
+              type: number
+              format: double
+              description: Distributor cost in USD
+              example: 1300.00
+            eur:
+              type: number
+              format: double
+              description: Distributor cost in EUR
+              example: 1189.47
+        sellerCost:
+          type: object
+          required:
+            - usd
+            - eur
+          properties:
+            usd:
+              type: number
+              format: double
+              description: Seller/reseller cost in USD
+              example: 1400.00
+            eur:
+              type: number
+              format: double
+              description: Seller/reseller cost in EUR
+              example: 1281.05
+        customerCost:
+          type: object
+          required:
+            - usd
+            - eur
+          properties:
+            usd:
+              type: number
+              format: double
+              description: Final customer cost in USD
+              example: 1484.00
+            eur:
+              type: number
+              format: double
+              description: Final customer cost in EUR
+              example: 1357.95
+        exchangeRate:
+          type: number
+          format: double
+          description: EUR to USD exchange rate
+          example: 1.093
+          minimum: 0
+        dataType:
+          type: string
+          enum: [Export, Manual]
+          description: Data source type (Export from AWS or Manual entry)
+          example: "Export"
+        info:
+          type: string
+          description: Optional additional information
+          example: "Automated monthly billing"
+
+    CreateTransactionRequest:
+      type: object
+      required:
+        - type
+        - usageAccountId
+        - amount
+        - date
+        - exchangeRate
+        - dataType
+      properties:
+        type:
+          type: string
+          enum: [Usage, Credit, Deposit, Fee]
+          description: Transaction type
+          example: "Usage"
+        usageAccountId:
+          type: string
+          description: Target usage account ID
+          example: "UA001"
+        amount:
+          type: number
+          format: double
+          description: Transaction amount in EUR
+          minimum: 0
+          example: 1500.00
+        date:
+          type: string
+          format: date
+          description: Transaction date (ISO 8601 date format)
+          example: "2025-01-15"
+        notes:
+          type: string
+          description: Optional notes about the transaction
+          maxLength: 500
+          example: "Monthly AWS usage charge"
+        exchangeRate:
+          type: number
+          format: double
+          description: EUR to USD exchange rate at transaction time
+          minimum: 0
+          example: 1.093
+        dataType:
+          type: string
+          enum: [Export, Manual]
+          description: Data source type
+          default: "Manual"
+          example: "Manual"
+
+    UpdateTransactionRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: double
+          description: Updated transaction amount in EUR
+          minimum: 0
+          example: 1600.00
+        date:
+          type: string
+          format: date
+          description: Updated transaction date
+          example: "2025-01-16"
+        notes:
+          type: string
+          description: Updated notes
+          maxLength: 500
+          example: "Updated usage charge with additional services"
+        exchangeRate:
+          type: number
+          format: double
+          description: Updated exchange rate
+          minimum: 0
+          example: 1.095
+
+    TransactionSummary:
+      type: object
+      required:
+        - period
+        - totals
+        - byType
+        - currency
+      properties:
+        period:
+          type: object
+          required:
+            - start
+            - end
+          properties:
+            start:
+              type: string
+              format: date
+              example: "2025-01-01"
+            end:
+              type: string
+              format: date
+              example: "2025-01-31"
+        totals:
+          type: object
+          required:
+            - totalTransactions
+            - totalUsage
+            - totalCredits
+            - totalFees
+            - netAmount
+          properties:
+            totalTransactions:
+              type: integer
+              description: Total number of transactions
+              example: 156
+            totalUsage:
+              type: number
+              format: double
+              description: Sum of all usage transactions
+              example: 45000.00
+            totalCredits:
+              type: number
+              format: double
+              description: Sum of all credits (negative value)
+              example: -5000.00
+            totalFees:
+              type: number
+              format: double
+              description: Sum of all fees
+              example: 1500.00
+            netAmount:
+              type: number
+              format: double
+              description: Net amount (usage + fees + credits)
+              example: 41500.00
+        byType:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [Usage, Credit, Deposit, Fee]
+              count:
+                type: integer
+              amount:
+                type: number
+                format: double
+        currency:
+          type: object
+          required:
+            - usd
+            - eur
+            - exchangeRate
+          properties:
+            usd:
+              type: number
+              format: double
+              description: Total in USD
+              example: 45345.00
+            eur:
+              type: number
+              format: double
+              description: Total in EUR
+              example: 41500.00
+            exchangeRate:
+              type: number
+              format: double
+              description: Average exchange rate for period
+              example: 1.093
+
+    PaginationMetadata:
+      type: object
+      required:
+        - page
+        - limit
+        - total
+        - totalPages
+      properties:
+        page:
+          type: integer
+          description: Current page number
+          minimum: 1
+          example: 1
+        limit:
+          type: integer
+          description: Items per page
+          minimum: 1
+          maximum: 100
+          example: 50
+        total:
+          type: integer
+          description: Total number of items
+          example: 125
+        totalPages:
+          type: integer
+          description: Total number of pages
+          example: 3
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: Error code for programmatic handling
+              example: "VALIDATION_ERROR"
+            message:
+              type: string
+              description: Human-readable error message
+              example: "Invalid transaction data"
+            details:
+              type: array
+              description: Detailed validation errors
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: "BAD_REQUEST"
+              message: "Invalid request parameters"
+
+    Unauthorized:
+      description: Authentication required or invalid credentials
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: "UNAUTHORIZED"
+              message: "Authentication required"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: "INTERNAL_ERROR"
+              message: "An unexpected error occurred"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token authentication
+
+security:
+  - BearerAuth: []
