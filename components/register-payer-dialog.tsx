@@ -14,14 +14,26 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { dataService } from "@/lib/data/data-service"
+import { Loader2 } from "lucide-react"
 
 interface RegisterPayerDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onSuccess?: () => void
 }
 
-export function RegisterPayerDialog({ open, onOpenChange }: RegisterPayerDialogProps) {
-  const [accountId, setAccountId] = useState("")
+export function RegisterPayerDialog({ open, onOpenChange, onSuccess }: RegisterPayerDialogProps) {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [formData, setFormData] = useState({
+    accountId: "",
+    accountName: "",
+    distributorName: "",
+    legalEntityName: "",
+    vatNumber: "",
+    crossAccountRoleArn: "",
+  })
   const [accountIdError, setAccountIdError] = useState("")
 
   const validateAccountId = (value: string) => {
@@ -35,7 +47,7 @@ export function RegisterPayerDialog({ open, onOpenChange }: RegisterPayerDialogP
 
   const handleAccountIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, "").slice(0, 12)
-    setAccountId(value)
+    setFormData(prev => ({ ...prev, accountId: value }))
     if (value.length === 12) {
       validateAccountId(value)
     } else if (value.length > 0) {
@@ -45,16 +57,40 @@ export function RegisterPayerDialog({ open, onOpenChange }: RegisterPayerDialogP
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleInputChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({ ...prev, [field]: e.target.value }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!validateAccountId(accountId)) {
+    if (!validateAccountId(formData.accountId)) {
       return
     }
-    // Handle form submission
-    onOpenChange(false)
-    // Reset form
-    setAccountId("")
-    setAccountIdError("")
+
+    try {
+      setLoading(true)
+      setError("")
+      
+      await dataService.createPayerAccount(formData)
+      
+      onSuccess?.()
+      onOpenChange(false)
+      
+      // Reset form
+      setFormData({
+        accountId: "",
+        accountName: "",
+        distributorName: "",
+        legalEntityName: "",
+        vatNumber: "",
+        crossAccountRoleArn: "",
+      })
+      setAccountIdError("")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create payer account')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -66,6 +102,12 @@ export function RegisterPayerDialog({ open, onOpenChange }: RegisterPayerDialogP
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
+            {error && (
+              <div className="text-sm text-red-600 bg-red-50 p-3 rounded">
+                {error}
+              </div>
+            )}
+            
             <div className="grid gap-2">
               <Label htmlFor="account-id">
                 Account ID <span className="text-red-500">*</span>
@@ -73,7 +115,7 @@ export function RegisterPayerDialog({ open, onOpenChange }: RegisterPayerDialogP
               <Input
                 id="account-id"
                 placeholder="123456789012"
-                value={accountId}
+                value={formData.accountId}
                 onChange={handleAccountIdChange}
                 maxLength={12}
                 required
@@ -87,21 +129,39 @@ export function RegisterPayerDialog({ open, onOpenChange }: RegisterPayerDialogP
               <Label htmlFor="account-name">
                 Account Name <span className="text-red-500">*</span>
               </Label>
-              <Input id="account-name" placeholder="Production Payer Account" required />
+              <Input 
+                id="account-name" 
+                placeholder="Production Payer Account" 
+                value={formData.accountName}
+                onChange={handleInputChange('accountName')}
+                required 
+              />
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="distributor-name">
                 Distributor Name <span className="text-red-500">*</span>
               </Label>
-              <Input id="distributor-name" placeholder="AWS Distributor Inc." required />
+              <Input 
+                id="distributor-name" 
+                placeholder="AWS Distributor Inc." 
+                value={formData.distributorName}
+                onChange={handleInputChange('distributorName')}
+                required 
+              />
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="legal-entity">
                 Legal Entity Name <span className="text-red-500">*</span>
               </Label>
-              <Input id="legal-entity" placeholder="MSP/Partner legal entity name" required />
+              <Input 
+                id="legal-entity" 
+                placeholder="MSP/Partner legal entity name" 
+                value={formData.legalEntityName}
+                onChange={handleInputChange('legalEntityName')}
+                required 
+              />
               <p className="text-xs text-muted-foreground">
                 Legal entity name of the MSP/Partner managing this payer account
               </p>
@@ -111,7 +171,13 @@ export function RegisterPayerDialog({ open, onOpenChange }: RegisterPayerDialogP
               <Label htmlFor="vat-number">
                 VAT Number <span className="text-red-500">*</span>
               </Label>
-              <Input id="vat-number" placeholder="DE123456789" required />
+              <Input 
+                id="vat-number" 
+                placeholder="DE123456789" 
+                value={formData.vatNumber}
+                onChange={handleInputChange('vatNumber')}
+                required 
+              />
             </div>
 
             <div className="grid gap-2">
@@ -122,6 +188,8 @@ export function RegisterPayerDialog({ open, onOpenChange }: RegisterPayerDialogP
                 id="role-arn"
                 placeholder="arn:aws:iam::123456789012:role/BillingDataAccessRole"
                 rows={3}
+                value={formData.crossAccountRoleArn}
+                onChange={handleInputChange('crossAccountRoleArn')}
                 required
                 className="font-mono text-sm"
               />
@@ -134,7 +202,8 @@ export function RegisterPayerDialog({ open, onOpenChange }: RegisterPayerDialogP
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-[#00243E] hover:bg-[#00243E]/90">
+            <Button type="submit" className="bg-[#00243E] hover:bg-[#00243E]/90" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Register Payer
             </Button>
           </DialogFooter>

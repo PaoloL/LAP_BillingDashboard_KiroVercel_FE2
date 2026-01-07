@@ -31,20 +31,28 @@ export function AccountsGrid() {
   const [selectedAccount, setSelectedAccount] = useState<UsageAccount | null>(null)
 
   useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true)
-        const [payers, usage] = await Promise.all([dataService.getPayerAccounts(), dataService.getUsageAccounts()])
-        setPayerAccounts(payers)
-        setUsageAccounts(usage)
-      } catch (error) {
-        console.error("[v0] Failed to load accounts:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadData()
+    loadAccounts()
   }, [])
+
+  const loadAccounts = async () => {
+    try {
+      setLoading(true)
+      
+      const [payers, usage] = await Promise.all([
+        dataService.getPayerAccounts(),
+        dataService.getUsageAccounts()
+      ])
+      
+      setPayerAccounts(Array.isArray(payers) ? payers : [])
+      setUsageAccounts(Array.isArray(usage) ? usage : [])
+    } catch (error) {
+      console.error("Failed to load accounts:", error)
+      setPayerAccounts([])
+      setUsageAccounts([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const openEditPayerDialog = (account: PayerAccount, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -52,22 +60,34 @@ export function AccountsGrid() {
     setEditPayerDialogOpen(true)
   }
 
-  const handleArchivePayerAccount = (account: PayerAccount, e: React.MouseEvent) => {
+  const handleArchivePayerAccount = async (account: PayerAccount, e: React.MouseEvent) => {
     e.stopPropagation()
-    console.log("[v0] Archive payer account:", account.id)
-    // TODO: Implement API call to archive account
+    try {
+      await dataService.archivePayerAccount(account.accountId)
+      await loadAccounts() // Reload data
+    } catch (error) {
+      console.error("Failed to archive payer account:", error)
+    }
   }
 
-  const handleUnarchivePayerAccount = (account: PayerAccount, e: React.MouseEvent) => {
+  const handleUnarchivePayerAccount = async (account: PayerAccount, e: React.MouseEvent) => {
     e.stopPropagation()
-    console.log("[v0] Unarchive payer account:", account.id)
-    // TODO: Implement API call to unarchive account
+    try {
+      await dataService.unarchivePayerAccount(account.accountId)
+      await loadAccounts()
+    } catch (error) {
+      console.error("Failed to unarchive payer account:", error)
+    }
   }
 
-  const handleDeletePayerAccount = (account: PayerAccount, e: React.MouseEvent) => {
+  const handleDeletePayerAccount = async (account: PayerAccount, e: React.MouseEvent) => {
     e.stopPropagation()
-    console.log("[v0] Delete payer account:", account.id)
-    // TODO: Implement API call to delete account
+    try {
+      await dataService.deletePayerAccount(account.accountId)
+      await loadAccounts()
+    } catch (error) {
+      console.error("Failed to delete payer account:", error)
+    }
   }
 
   const openDetailsDialog = (account: UsageAccount, e?: React.MouseEvent) => {
@@ -90,22 +110,34 @@ export function AccountsGrid() {
     setEditUsageDialogOpen(true)
   }
 
-  const handleArchiveUsageAccount = (account: UsageAccount, e: React.MouseEvent) => {
+  const handleArchiveUsageAccount = async (account: UsageAccount, e: React.MouseEvent) => {
     e.stopPropagation()
-    console.log("[v0] Archive usage account:", account.id)
-    // TODO: Implement API call to archive account
+    try {
+      await dataService.changeUsageAccountStatus(account.accountId, "Archived")
+      await loadAccounts()
+    } catch (error) {
+      console.error("Failed to archive usage account:", error)
+    }
   }
 
-  const handleUnarchiveUsageAccount = (account: UsageAccount, e: React.MouseEvent) => {
+  const handleUnarchiveUsageAccount = async (account: UsageAccount, e: React.MouseEvent) => {
     e.stopPropagation()
-    console.log("[v0] Unarchive usage account:", account.id)
-    // TODO: Implement API call to unarchive account
+    try {
+      await dataService.changeUsageAccountStatus(account.accountId, "Registered")
+      await loadAccounts()
+    } catch (error) {
+      console.error("Failed to unarchive usage account:", error)
+    }
   }
 
-  const handleDeleteUsageAccount = (account: UsageAccount, e: React.MouseEvent) => {
+  const handleDeleteUsageAccount = async (account: UsageAccount, e: React.MouseEvent) => {
     e.stopPropagation()
-    console.log("[v0] Delete usage account:", account.id)
-    // TODO: Implement API call to delete account
+    try {
+      await dataService.deleteUsageAccount(account.accountId)
+      await loadAccounts()
+    } catch (error) {
+      console.error("Failed to delete usage account:", error)
+    }
   }
 
   if (loading) {
@@ -365,21 +397,28 @@ export function AccountsGrid() {
         </section>
       </div>
 
-      <RegisterPayerDialog open={payerDialogOpen} onOpenChange={setPayerDialogOpen} />
+      <RegisterPayerDialog 
+        open={payerDialogOpen} 
+        onOpenChange={setPayerDialogOpen}
+        onSuccess={loadAccounts}
+      />
       <EditPayerDialog
         open={editPayerDialogOpen}
         onOpenChange={setEditPayerDialogOpen}
         account={selectedPayerAccount}
+        onSuccess={loadAccounts}
       />
       <RegisterUsageDialog
         open={usageDialogOpen}
         onOpenChange={setUsageDialogOpen}
         payerAccount={selectedPayerForUsage}
+        onSuccess={loadAccounts}
       />
       <EditUsageDialog
         open={editUsageDialogOpen}
         onOpenChange={setEditUsageDialogOpen}
         account={selectedUsageAccount}
+        onSuccess={loadAccounts}
       />
       {selectedAccount && (
         <UsageDetailsDialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen} account={selectedAccount} />

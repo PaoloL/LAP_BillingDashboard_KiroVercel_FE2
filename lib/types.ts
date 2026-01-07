@@ -27,11 +27,16 @@ export interface PayerAccount extends Account {
   crossAccountRoleArn: string
   status: "Registered" | "Archived"
   lastTransactionDate?: string
+  usageAccountCount: number
+  createdAt: string
+  updatedAt: string
 }
 
 export interface UsageAccount extends Account {
+  accountId: string // Must be exactly 12 digits
   customer: string
   status: "Unregistered" | "Registered" | "Archived"
+  payerAccountId: string
   vatNumber: string
   resellerDiscount: number // Percentage
   customerDiscount: number // Percentage
@@ -41,6 +46,8 @@ export interface UsageAccount extends Account {
   totalDeposit: number
   distributorName?: string
   lastTransactionDate?: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface Transaction {

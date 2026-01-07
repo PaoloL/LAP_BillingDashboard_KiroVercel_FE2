@@ -27,6 +27,19 @@ export const mockPayerAccounts: PayerAccount[] = [
     status: "Registered",
     lastTransactionDate: "2025-01-10",
   },
+  {
+    id: "3",
+    accountId: "345678901234",
+    accountName: "Archived Payer",
+    name: "Archived Payer",
+    type: "PAYER",
+    distributorName: "AWS Distributor Inc.",
+    legalEntityName: "Old Company Ltd.",
+    vatNumber: "DE111222333",
+    crossAccountRoleArn: "arn:aws:iam::345678901234:role/BillingDataAccessRole",
+    status: "Archived",
+    lastTransactionDate: "2024-12-01",
+  },
 ]
 
 export const mockUsageAccounts: UsageAccount[] = [

@@ -3,11 +3,15 @@ import { mockPayerAccounts, mockUsageAccounts, mockTransactionsByPeriod } from "
 import { apiClient } from "./api-client"
 import type { PayerAccount, UsageAccount, TransactionDetail } from "@/lib/types"
 
+// Create mutable copies for mock data
+let mutablePayerAccounts = [...mockPayerAccounts]
+let mutableUsageAccounts = [...mockUsageAccounts]
+
 export const dataService = {
   // Payer Accounts
   async getPayerAccounts(): Promise<PayerAccount[]> {
     if (config.useMockData) {
-      return Promise.resolve(mockPayerAccounts)
+      return Promise.resolve([...mutablePayerAccounts])
     }
     return apiClient.getPayerAccounts()
   },
@@ -15,27 +19,63 @@ export const dataService = {
   async createPayerAccount(data: Omit<PayerAccount, "id">): Promise<PayerAccount> {
     if (config.useMockData) {
       const newAccount = { ...data, id: Math.random().toString(36).substr(2, 9) }
+      mutablePayerAccounts.push(newAccount as PayerAccount)
       console.log("[v0] Mock: Created payer account", newAccount)
       return Promise.resolve(newAccount as PayerAccount)
     }
     return apiClient.createPayerAccount(data)
   },
 
-  async updatePayerAccount(id: string, data: Partial<PayerAccount>): Promise<PayerAccount> {
+  async updatePayerAccount(accountId: string, data: Partial<PayerAccount>): Promise<PayerAccount> {
     if (config.useMockData) {
-      const account = mockPayerAccounts.find((a) => a.id === id)
-      if (!account) throw new Error("Account not found")
-      const updated = { ...account, ...data }
+      const index = mutablePayerAccounts.findIndex((a) => a.accountId === accountId)
+      if (index === -1) throw new Error("Account not found")
+      const updated = { ...mutablePayerAccounts[index], ...data }
+      mutablePayerAccounts[index] = updated
       console.log("[v0] Mock: Updated payer account", updated)
       return Promise.resolve(updated)
     }
-    return apiClient.updatePayerAccount(id, data)
+    return apiClient.updatePayerAccount(accountId, data)
+  },
+
+  async archivePayerAccount(accountId: string): Promise<void> {
+    if (config.useMockData) {
+      const index = mutablePayerAccounts.findIndex((a) => a.accountId === accountId)
+      if (index === -1) throw new Error("Account not found")
+      mutablePayerAccounts[index] = { ...mutablePayerAccounts[index], status: "Archived" }
+      console.log("[v0] Mock: Archived payer account", accountId)
+      return Promise.resolve()
+    }
+    return apiClient.archivePayerAccount(accountId)
+  },
+
+  async unarchivePayerAccount(accountId: string): Promise<PayerAccount> {
+    if (config.useMockData) {
+      const index = mutablePayerAccounts.findIndex((a) => a.accountId === accountId)
+      if (index === -1) throw new Error("Account not found")
+      const updated = { ...mutablePayerAccounts[index], status: "Registered" as const }
+      mutablePayerAccounts[index] = updated
+      console.log("[v0] Mock: Unarchived payer account", updated)
+      return Promise.resolve(updated)
+    }
+    return apiClient.unarchivePayerAccount(accountId)
+  },
+
+  async deletePayerAccount(accountId: string): Promise<void> {
+    if (config.useMockData) {
+      const index = mutablePayerAccounts.findIndex((a) => a.accountId === accountId)
+      if (index === -1) throw new Error("Account not found")
+      mutablePayerAccounts.splice(index, 1)
+      console.log("[v0] Mock: Deleted payer account", accountId)
+      return Promise.resolve()
+    }
+    return apiClient.deletePayerAccount(accountId)
   },
 
   // Usage Accounts
   async getUsageAccounts(): Promise<UsageAccount[]> {
     if (config.useMockData) {
-      return Promise.resolve(mockUsageAccounts)
+      return Promise.resolve([...mutableUsageAccounts])
     }
     return apiClient.getUsageAccounts()
   },
@@ -43,21 +83,46 @@ export const dataService = {
   async createUsageAccount(data: Omit<UsageAccount, "id">): Promise<UsageAccount> {
     if (config.useMockData) {
       const newAccount = { ...data, id: Math.random().toString(36).substr(2, 9) }
+      mutableUsageAccounts.push(newAccount as UsageAccount)
       console.log("[v0] Mock: Created usage account", newAccount)
       return Promise.resolve(newAccount as UsageAccount)
     }
     return apiClient.createUsageAccount(data)
   },
 
-  async updateUsageAccount(id: string, data: Partial<UsageAccount>): Promise<UsageAccount> {
+  async updateUsageAccount(accountId: string, data: Partial<UsageAccount>): Promise<UsageAccount> {
     if (config.useMockData) {
-      const account = mockUsageAccounts.find((a) => a.id === id)
-      if (!account) throw new Error("Account not found")
-      const updated = { ...account, ...data }
+      const index = mutableUsageAccounts.findIndex((a) => a.accountId === accountId)
+      if (index === -1) throw new Error("Account not found")
+      const updated = { ...mutableUsageAccounts[index], ...data }
+      mutableUsageAccounts[index] = updated
       console.log("[v0] Mock: Updated usage account", updated)
       return Promise.resolve(updated)
     }
-    return apiClient.updateUsageAccount(id, data)
+    return apiClient.updateUsageAccount(accountId, data)
+  },
+
+  async changeUsageAccountStatus(accountId: string, status: string): Promise<UsageAccount> {
+    if (config.useMockData) {
+      const index = mutableUsageAccounts.findIndex((a) => a.accountId === accountId)
+      if (index === -1) throw new Error("Account not found")
+      const updated = { ...mutableUsageAccounts[index], status }
+      mutableUsageAccounts[index] = updated
+      console.log("[v0] Mock: Changed usage account status", updated)
+      return Promise.resolve(updated as UsageAccount)
+    }
+    return apiClient.changeUsageAccountStatus(accountId, status)
+  },
+
+  async deleteUsageAccount(accountId: string): Promise<void> {
+    if (config.useMockData) {
+      const index = mutableUsageAccounts.findIndex((a) => a.accountId === accountId)
+      if (index === -1) throw new Error("Account not found")
+      mutableUsageAccounts.splice(index, 1)
+      console.log("[v0] Mock: Deleted usage account", accountId)
+      return Promise.resolve()
+    }
+    return apiClient.deleteUsageAccount(accountId)
   },
 
   // Transactions

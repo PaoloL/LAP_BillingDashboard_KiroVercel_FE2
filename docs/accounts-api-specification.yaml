@@ -146,7 +146,10 @@ paths:
       tags:
         - Payer Accounts
       summary: Get payer account details
-      description: Retrieve complete details of a specific payer account
+      description: |
+        Retrieve complete details of a specific payer account.
+        
+        **Note**: Use the 12-digit AWS account ID (accountId field) in the URL path, not the internal UUID (id field).
       operationId: getPayerAccount
       parameters:
         - $ref: '#/components/parameters/AccountId'
@@ -171,7 +174,9 @@ paths:
       summary: Update payer account
       description: |
         Update an existing payer account's configuration.
-        Note: Account ID and Account Name cannot be modified after creation.
+        
+        **Note**: Use the 12-digit AWS account ID (accountId field) in the URL path, not the internal UUID (id field).
+        Account ID and Account Name cannot be modified after creation.
       operationId: updatePayerAccount
       parameters:
         - $ref: '#/components/parameters/AccountId'
@@ -208,6 +213,8 @@ paths:
       description: |
         Permanently delete a payer account. Only archived accounts can be deleted.
         This operation cannot be undone.
+        
+        **Note**: Use the 12-digit AWS account ID (accountId field) in the URL path, not the internal UUID (id field).
       operationId: deletePayerAccount
       parameters:
         - $ref: '#/components/parameters/AccountId'
@@ -238,6 +245,8 @@ paths:
         Archive or unarchive a payer account.
         - Archive: Changes status from "Registered" to "Archived"
         - Unarchive: Changes status from "Archived" to "Registered"
+        
+        **Note**: Use the 12-digit AWS account ID (accountId field) in the URL path, not the internal UUID (id field).
       operationId: changePayerAccountStatus
       parameters:
         - $ref: '#/components/parameters/AccountId'
@@ -400,7 +409,10 @@ paths:
       tags:
         - Usage Accounts
       summary: Get usage account details
-      description: Retrieve complete details of a specific usage account including financial configuration
+      description: |
+        Retrieve complete details of a specific usage account including financial configuration.
+        
+        **Note**: Use the 12-digit AWS account ID (accountId field) in the URL path, not the internal UUID (id field).
       operationId: getUsageAccount
       parameters:
         - $ref: '#/components/parameters/AccountId'
@@ -425,7 +437,9 @@ paths:
       summary: Update usage account
       description: |
         Update usage account's financial configuration.
-        Note: Account ID and Customer Name cannot be modified after creation.
+        
+        **Note**: Use the 12-digit AWS account ID (accountId field) in the URL path, not the internal UUID (id field).
+        Account ID and Customer Name cannot be modified after creation.
         Customer discount must not exceed reseller discount.
       operationId: updateUsageAccount
       parameters:
@@ -463,6 +477,8 @@ paths:
       description: |
         Permanently delete a usage account. Only archived accounts can be deleted.
         This operation cannot be undone.
+        
+        **Note**: Use the 12-digit AWS account ID (accountId field) in the URL path, not the internal UUID (id field).
       operationId: deleteUsageAccount
       parameters:
         - $ref: '#/components/parameters/AccountId'
@@ -494,6 +510,8 @@ paths:
         - Register: Unregistered → Registered
         - Archive: Registered → Archived
         - Unarchive: Archived → Registered
+        
+        **Note**: Use the 12-digit AWS account ID (accountId field) in the URL path, not the internal UUID (id field).
       operationId: changeUsageAccountStatus
       parameters:
         - $ref: '#/components/parameters/AccountId'
@@ -544,7 +562,7 @@ components:
       name: accountId
       in: path
       required: true
-      description: 12-digit AWS account ID
+      description: 12-digit AWS account ID (not the internal UUID). Use the accountId field from account objects.
       schema:
         type: string
         pattern: '^\d{12}$'

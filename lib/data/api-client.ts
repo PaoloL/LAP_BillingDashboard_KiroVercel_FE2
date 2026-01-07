@@ -18,7 +18,12 @@ class ApiClient {
     })
 
     if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`)
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.error?.message || `API Error: ${response.statusText}`)
+    }
+
+    if (response.status === 204) {
+      return {} as T
     }
 
     return response.json()
@@ -26,39 +31,80 @@ class ApiClient {
 
   // Payer Accounts
   async getPayerAccounts(): Promise<PayerAccount[]> {
-    return this.request<PayerAccount[]>("/payer-accounts")
+    const response = await this.request<{ data: PayerAccount[] }>("/payer-accounts")
+    return response.data
   }
 
   async createPayerAccount(data: Omit<PayerAccount, "id">): Promise<PayerAccount> {
-    return this.request<PayerAccount>("/payer-accounts", {
+    const response = await this.request<{ data: PayerAccount }>("/payer-accounts", {
       method: "POST",
       body: JSON.stringify(data),
     })
+    return response.data
   }
 
-  async updatePayerAccount(id: string, data: Partial<PayerAccount>): Promise<PayerAccount> {
-    return this.request<PayerAccount>(`/payer-accounts/${id}`, {
-      method: "PATCH",
+  async updatePayerAccount(accountId: string, data: Partial<PayerAccount>): Promise<PayerAccount> {
+    const response = await this.request<{ data: PayerAccount }>(`/payer-accounts/${accountId}`, {
+      method: "PUT",
       body: JSON.stringify(data),
+    })
+    return response.data
+  }
+
+  async archivePayerAccount(accountId: string): Promise<void> {
+    await this.request<void>(`/payer-accounts/${accountId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "Archived" }),
+    })
+  }
+
+  async unarchivePayerAccount(accountId: string): Promise<PayerAccount> {
+    const response = await this.request<{ data: PayerAccount }>(`/payer-accounts/${accountId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "Registered" }),
+    })
+    return response.data
+  }
+
+  async deletePayerAccount(accountId: string): Promise<void> {
+    await this.request<void>(`/payer-accounts/${accountId}`, {
+      method: "DELETE",
     })
   }
 
   // Usage Accounts
   async getUsageAccounts(): Promise<UsageAccount[]> {
-    return this.request<UsageAccount[]>("/usage-accounts")
+    const response = await this.request<{ data: UsageAccount[] }>("/usage-accounts")
+    return response.data
   }
 
   async createUsageAccount(data: Omit<UsageAccount, "id">): Promise<UsageAccount> {
-    return this.request<UsageAccount>("/usage-accounts", {
+    const response = await this.request<{ data: UsageAccount }>("/usage-accounts", {
       method: "POST",
       body: JSON.stringify(data),
     })
+    return response.data
   }
 
-  async updateUsageAccount(id: string, data: Partial<UsageAccount>): Promise<UsageAccount> {
-    return this.request<UsageAccount>(`/usage-accounts/${id}`, {
-      method: "PATCH",
+  async updateUsageAccount(accountId: string, data: Partial<UsageAccount>): Promise<UsageAccount> {
+    const response = await this.request<{ data: UsageAccount }>(`/usage-accounts/${accountId}`, {
+      method: "PUT",
       body: JSON.stringify(data),
+    })
+    return response.data
+  }
+
+  async changeUsageAccountStatus(accountId: string, status: string): Promise<UsageAccount> {
+    const response = await this.request<{ data: UsageAccount }>(`/usage-accounts/${accountId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    })
+    return response.data
+  }
+
+  async deleteUsageAccount(accountId: string): Promise<void> {
+    await this.request<void>(`/usage-accounts/${accountId}`, {
+      method: "DELETE",
     })
   }
 
