@@ -4,8 +4,8 @@ import { apiClient } from "./api-client"
 import type { PayerAccount, UsageAccount, TransactionDetail } from "@/lib/types"
 
 // Create mutable copies for mock data
-let mutablePayerAccounts = [...mockPayerAccounts]
-let mutableUsageAccounts = [...mockUsageAccounts]
+const mutablePayerAccounts = [...mockPayerAccounts]
+const mutableUsageAccounts = [...mockUsageAccounts]
 
 export const dataService = {
   // Payer Accounts
@@ -75,6 +75,7 @@ export const dataService = {
   // Usage Accounts
   async getUsageAccounts(): Promise<UsageAccount[]> {
     if (config.useMockData) {
+      console.log("[v0] Mock: Refreshing usage accounts to check for unregistered accounts")
       return Promise.resolve([...mutableUsageAccounts])
     }
     return apiClient.getUsageAccounts()
@@ -133,9 +134,9 @@ export const dataService = {
     sortOrder?: "asc" | "desc"
     payerAccountId?: string
     usageAccountId?: string
-  }): Promise<{data: Record<string, TransactionDetail[]>}> {
+  }): Promise<{ data: Record<string, TransactionDetail[]> }> {
     if (config.useMockData) {
-      return Promise.resolve({data: mockTransactionsByPeriod})
+      return Promise.resolve({ data: mockTransactionsByPeriod })
     }
     return apiClient.getTransactions(params)
   },

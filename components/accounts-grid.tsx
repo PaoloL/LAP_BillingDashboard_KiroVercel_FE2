@@ -6,7 +6,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Building2, Edit, Plus, Check, X, Archive, ArchiveRestore, Trash2, Eye } from "lucide-react"
+import { Building2, Edit, Plus, Check, X, Archive, ArchiveRestore, Trash2, Eye, RefreshCw } from "lucide-react"
 import { RegisterPayerDialog } from "@/components/register-payer-dialog"
 import { EditPayerDialog } from "@/components/edit-payer-dialog"
 import { RegisterUsageDialog } from "@/components/register-usage-dialog"
@@ -29,6 +29,7 @@ export function AccountsGrid() {
   const [selectedUsageAccount, setSelectedUsageAccount] = useState<UsageAccount | null>(null)
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
   const [selectedAccount, setSelectedAccount] = useState<UsageAccount | null>(null)
+  const [refreshingUsage, setRefreshingUsage] = useState(false)
 
   useEffect(() => {
     loadAccounts()
@@ -37,12 +38,9 @@ export function AccountsGrid() {
   const loadAccounts = async () => {
     try {
       setLoading(true)
-      
-      const [payers, usage] = await Promise.all([
-        dataService.getPayerAccounts(),
-        dataService.getUsageAccounts()
-      ])
-      
+
+      const [payers, usage] = await Promise.all([dataService.getPayerAccounts(), dataService.getUsageAccounts()])
+
       setPayerAccounts(Array.isArray(payers) ? payers : [])
       setUsageAccounts(Array.isArray(usage) ? usage : [])
     } catch (error) {
@@ -137,6 +135,18 @@ export function AccountsGrid() {
       await loadAccounts()
     } catch (error) {
       console.error("Failed to delete usage account:", error)
+    }
+  }
+
+  const handleRefreshUsageAccounts = async () => {
+    try {
+      setRefreshingUsage(true)
+      const usage = await dataService.getUsageAccounts()
+      setUsageAccounts(Array.isArray(usage) ? usage : [])
+    } catch (error) {
+      console.error("Failed to refresh usage accounts:", error)
+    } finally {
+      setRefreshingUsage(false)
     }
   }
 
@@ -251,8 +261,17 @@ export function AccountsGrid() {
 
         {/* Usage Accounts Section */}
         <section>
-          <div className="mb-4">
+          <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-semibold text-[#00243E]">Usage Accounts</h2>
+            <Button
+              onClick={handleRefreshUsageAccounts}
+              disabled={refreshingUsage}
+              size="sm"
+              className="gap-2 bg-[#026172] hover:bg-[#026172]/90"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshingUsage ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -397,11 +416,7 @@ export function AccountsGrid() {
         </section>
       </div>
 
-      <RegisterPayerDialog 
-        open={payerDialogOpen} 
-        onOpenChange={setPayerDialogOpen}
-        onSuccess={loadAccounts}
-      />
+      <RegisterPayerDialog open={payerDialogOpen} onOpenChange={setPayerDialogOpen} onSuccess={loadAccounts} />
       <EditPayerDialog
         open={editPayerDialogOpen}
         onOpenChange={setEditPayerDialogOpen}
