@@ -68,7 +68,9 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
         </td>
         <td className="px-4 py-3 text-right">
           <div className="space-y-0.5">
-            <div className="text-lg font-semibold text-[#00243E]">{formatCurrency(transaction.customerCost?.eur || 0)}</div>
+            <div className="text-lg font-semibold text-[#00243E]">
+              {formatCurrency(transaction.customerCost?.eur || 0)}
+            </div>
             <div className="text-sm text-muted-foreground">
               $
               {(transaction.customerCost?.usd || 0).toLocaleString("en-US", {
@@ -105,44 +107,27 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
               <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
                 <div className="space-y-1">
                   <div className="text-xs font-medium text-muted-foreground">Usage</div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-[#EC9400]" />
-                    <div className="font-semibold text-[#EC9400]">
-                      {formatCurrency(transaction.costBreakdown.usage)}
-                    </div>
-                  </div>
+                  <div className="font-semibold text-[#EC9400]">{formatCurrency(transaction.costBreakdown.usage)}</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-xs font-medium text-muted-foreground">Fee</div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-[#00243E]" />
-                    <div className="font-semibold text-[#00243E]">{formatCurrency(transaction.costBreakdown.fee)}</div>
-                  </div>
+                  <div className="font-semibold text-[#00243E]">{formatCurrency(transaction.costBreakdown.fee)}</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-xs font-medium text-muted-foreground">Discount</div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-[#026172]" />
-                    <div className="font-semibold text-[#026172]">
-                      {formatCurrency(transaction.costBreakdown.discount)}
-                    </div>
+                  <div className="font-semibold text-[#026172]">
+                    {formatCurrency(transaction.costBreakdown.discount)}
                   </div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-xs font-medium text-muted-foreground">Adjustment</div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-[#909090]" />
-                    <div className="font-semibold text-foreground">
-                      {formatCurrency(transaction.costBreakdown.adjustment)}
-                    </div>
+                  <div className="font-semibold text-foreground">
+                    {formatCurrency(transaction.costBreakdown.adjustment)}
                   </div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-xs font-medium text-muted-foreground">Tax</div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-[#909090]" />
-                    <div className="font-semibold text-foreground">{formatCurrency(transaction.costBreakdown.tax)}</div>
-                  </div>
+                  <div className="font-semibold text-foreground">{formatCurrency(transaction.costBreakdown.tax)}</div>
                 </div>
               </div>
             </div>
@@ -161,12 +146,12 @@ interface TransactionsListProps {
   usageAccountId?: string
 }
 
-export function TransactionsList({ 
-  dateRange, 
-  sortBy = "date", 
+export function TransactionsList({
+  dateRange,
+  sortBy = "date",
   sortOrder = "desc",
   payerAccountId,
-  usageAccountId
+  usageAccountId,
 }: TransactionsListProps) {
   const [transactionsByPeriod, setTransactionsByPeriod] = useState<Record<string, TransactionDetail[]>>({})
   const [loading, setLoading] = useState(true)
@@ -183,18 +168,18 @@ export function TransactionsList({
           payerAccountId,
           usageAccountId,
         })
-        
+
         // Convert dateTime strings to Date objects
         const processedData: Record<string, TransactionDetail[]> = {}
         Object.entries(data.data || {}).forEach(([period, transactions]) => {
           if (Array.isArray(transactions)) {
-            processedData[period] = transactions.map(tx => ({
+            processedData[period] = transactions.map((tx) => ({
               ...tx,
-              dateTime: new Date(tx.dateTime)
+              dateTime: new Date(tx.dateTime),
             }))
           }
         })
-        
+
         setTransactionsByPeriod(processedData)
       } catch (error) {
         console.error("[v0] Failed to load transactions:", error)
