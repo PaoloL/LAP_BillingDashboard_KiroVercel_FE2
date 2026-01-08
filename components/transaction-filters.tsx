@@ -33,18 +33,75 @@ export function TransactionFilters({
   const [selectedUsageAccount, setSelectedUsageAccount] = useState<string | undefined>()
   const [payerPopoverOpen, setPayerPopoverOpen] = useState(false)
   const [usagePopoverOpen, setUsagePopoverOpen] = useState(false)
+  const [loadingAccounts, setLoadingAccounts] = useState(true)
 
   useEffect(() => {
     const loadAccounts = async () => {
       try {
-        const [payerData, usageData] = await Promise.all([
+        setLoadingAccounts(true)
+        const [payerData, usageData, transactionsData] = await Promise.all([
           dataService.getPayerAccounts(),
           dataService.getUsageAccounts(),
+          dataService.getTransactions({}) // Get all transactions to extract accounts
         ])
-        setPayerAccounts(payerData.data || [])
-        setUsageAccounts(usageData.data || [])
+        
+        // Set payer accounts from API and merge with transaction data
+        let payerAccountsList = payerData.data || []
+        const payerAccountsMap = new Map()
+        
+        // Add API payer accounts
+        payerAccountsList.forEach(account => {
+          payerAccountsMap.set(account.accountId, {
+            id: account.id,
+            accountId: account.accountId,
+            accountName: account.accountName
+          })
+        })
+        
+        // Extract payer accounts from transactions and merge
+        if (transactionsData.data) {
+          Object.values(transactionsData.data).forEach((transactions) => {
+            if (Array.isArray(transactions)) {
+              transactions.forEach(tx => {
+                if (tx.payerAccount && !payerAccountsMap.has(tx.payerAccount.id)) {
+                  payerAccountsMap.set(tx.payerAccount.id, {
+                    id: tx.payerAccount.id,
+                    accountId: tx.payerAccount.id,
+                    accountName: tx.payerAccount.name
+                  })
+                }
+              })
+            }
+          })
+        }
+        
+        setPayerAccounts(Array.from(payerAccountsMap.values()))
+        
+        // If usage accounts API is empty, extract from transactions
+        let usageAccountsList = usageData.data || []
+        if (usageAccountsList.length === 0 && transactionsData.data) {
+          const uniqueUsageAccounts = new Map()
+          Object.values(transactionsData.data).forEach((transactions) => {
+            if (Array.isArray(transactions)) {
+              transactions.forEach(tx => {
+                if (tx.usageAccount && !uniqueUsageAccounts.has(tx.usageAccount.id)) {
+                  uniqueUsageAccounts.set(tx.usageAccount.id, {
+                    id: tx.usageAccount.id,
+                    accountId: tx.usageAccount.id,
+                    accountName: tx.usageAccount.name
+                  })
+                }
+              })
+            }
+          })
+          usageAccountsList = Array.from(uniqueUsageAccounts.values())
+        }
+        
+        setUsageAccounts(usageAccountsList)
       } catch (error) {
         console.error("Failed to load accounts:", error)
+      } finally {
+        setLoadingAccounts(false)
       }
     }
     loadAccounts()
@@ -89,27 +146,36 @@ export function TransactionFilters({
         </PopoverTrigger>
         <PopoverContent className="w-[280px] p-0" align="start">
           <div className="max-h-[300px] overflow-y-auto">
-            <button
-              onClick={() => handlePayerAccountChange("all")}
-              className={cn(
-                "w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors",
-                !selectedPayerAccount && "bg-accent font-medium",
-              )}
-            >
-              All Payer Accounts
-            </button>
-            {payerAccounts.map((account) => (
-              <button
-                key={account.accountId}
-                onClick={() => handlePayerAccountChange(account.accountId)}
-                className={cn(
-                  "w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors",
-                  selectedPayerAccount === account.accountId && "bg-accent font-medium",
+            {loadingAccounts ? (
+              <div className="px-4 py-2 text-sm text-muted-foreground">Loading accounts...</div>
+            ) : (
+              <>
+                <button
+                  onClick={() => handlePayerAccountChange("all")}
+                  className={cn(
+                    "w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors",
+                    !selectedPayerAccount && "bg-accent font-medium",
+                  )}
+                >
+                  All Payer Accounts
+                </button>
+                {payerAccounts.map((account) => (
+                  <button
+                    key={account.accountId}
+                    onClick={() => handlePayerAccountChange(account.accountId)}
+                    className={cn(
+                      "w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors",
+                      selectedPayerAccount === account.accountId && "bg-accent font-medium",
+                    )}
+                  >
+                    {account.accountName}
+                  </button>
+                ))}
+                {payerAccounts.length === 0 && (
+                  <div className="px-4 py-2 text-sm text-muted-foreground">No payer accounts found</div>
                 )}
-              >
-                {account.accountName}
-              </button>
-            ))}
+              </>
+            )}
           </div>
           {selectedPayerAccount && (
             <div className="border-t p-3">
@@ -135,27 +201,36 @@ export function TransactionFilters({
         </PopoverTrigger>
         <PopoverContent className="w-[280px] p-0" align="start">
           <div className="max-h-[300px] overflow-y-auto">
-            <button
-              onClick={() => handleUsageAccountChange("all")}
-              className={cn(
-                "w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors",
-                !selectedUsageAccount && "bg-accent font-medium",
-              )}
-            >
-              All Usage Accounts
-            </button>
-            {usageAccounts.map((account) => (
-              <button
-                key={account.accountId}
-                onClick={() => handleUsageAccountChange(account.accountId)}
-                className={cn(
-                  "w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors",
-                  selectedUsageAccount === account.accountId && "bg-accent font-medium",
+            {loadingAccounts ? (
+              <div className="px-4 py-2 text-sm text-muted-foreground">Loading accounts...</div>
+            ) : (
+              <>
+                <button
+                  onClick={() => handleUsageAccountChange("all")}
+                  className={cn(
+                    "w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors",
+                    !selectedUsageAccount && "bg-accent font-medium",
+                  )}
+                >
+                  All Usage Accounts
+                </button>
+                {usageAccounts.map((account) => (
+                  <button
+                    key={account.accountId}
+                    onClick={() => handleUsageAccountChange(account.accountId)}
+                    className={cn(
+                      "w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors",
+                      selectedUsageAccount === account.accountId && "bg-accent font-medium",
+                    )}
+                  >
+                    {account.accountName}
+                  </button>
+                ))}
+                {usageAccounts.length === 0 && (
+                  <div className="px-4 py-2 text-sm text-muted-foreground">No usage accounts found</div>
                 )}
-              >
-                {account.accountName}
-              </button>
-            ))}
+              </>
+            )}
           </div>
           {selectedUsageAccount && (
             <div className="border-t p-3">

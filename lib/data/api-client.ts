@@ -78,6 +78,34 @@ class ApiClient {
     return response.data
   }
 
+  async discoverUsageAccounts(startDate?: string, endDate?: string): Promise<{
+    summary: {
+      totalTransactionAccounts: number
+      existingAccounts: number
+      unregisteredFound: number
+      accountsCreated: number
+    }
+    createdAccounts: Array<{
+      UsageAccountId: string
+      Status: string
+      DiscoveredAt: string
+      LastSeenInTransactions: string
+    }>
+    dateRange: {
+      startDate: string
+      endDate: string
+    }
+  }> {
+    const body: any = {}
+    if (startDate) body.start_date = startDate
+    if (endDate) body.end_date = endDate
+    
+    return this.request("/usage-accounts/discover", {
+      method: "POST",
+      body: JSON.stringify(body)
+    })
+  }
+
   async createUsageAccount(data: Omit<UsageAccount, "id">): Promise<UsageAccount> {
     const response = await this.request<{ data: UsageAccount }>("/usage-accounts", {
       method: "POST",

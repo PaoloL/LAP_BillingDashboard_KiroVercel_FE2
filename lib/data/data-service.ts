@@ -81,6 +81,50 @@ export const dataService = {
     return apiClient.getUsageAccounts()
   },
 
+  async discoverUsageAccounts(startDate?: string, endDate?: string): Promise<{
+    summary: {
+      totalTransactionAccounts: number
+      existingAccounts: number
+      unregisteredFound: number
+      accountsCreated: number
+    }
+    createdAccounts: Array<{
+      UsageAccountId: string
+      Status: string
+      DiscoveredAt: string
+      LastSeenInTransactions: string
+    }>
+    dateRange: {
+      startDate: string
+      endDate: string
+    }
+  }> {
+    if (config.useMockData) {
+      console.log("[v0] Mock: Discovering usage accounts from transactions")
+      return Promise.resolve({
+        summary: {
+          totalTransactionAccounts: 5,
+          existingAccounts: 0,
+          unregisteredFound: 5,
+          accountsCreated: 5
+        },
+        createdAccounts: [
+          {
+            UsageAccountId: "961572622422",
+            Status: "Unregistered",
+            DiscoveredAt: new Date().toISOString(),
+            LastSeenInTransactions: new Date().toISOString()
+          }
+        ],
+        dateRange: {
+          startDate: startDate || new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
+          endDate: endDate || new Date().toISOString()
+        }
+      })
+    }
+    return apiClient.discoverUsageAccounts(startDate, endDate)
+  },
+
   async createUsageAccount(data: Omit<UsageAccount, "id">): Promise<UsageAccount> {
     if (config.useMockData) {
       const newAccount = { ...data, id: Math.random().toString(36).substr(2, 9) }

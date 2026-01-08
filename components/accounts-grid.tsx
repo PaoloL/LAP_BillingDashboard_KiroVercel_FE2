@@ -6,7 +6,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Building2, Edit, Plus, Check, X, Archive, ArchiveRestore, Trash2, Eye, RefreshCw } from "lucide-react"
+import { Building2, Edit, Plus, Check, X, Archive, ArchiveRestore, Trash2, Eye, Search } from "lucide-react"
 import { RegisterPayerDialog } from "@/components/register-payer-dialog"
 import { EditPayerDialog } from "@/components/edit-payer-dialog"
 import { RegisterUsageDialog } from "@/components/register-usage-dialog"
@@ -138,13 +138,27 @@ export function AccountsGrid() {
     }
   }
 
-  const handleRefreshUsageAccounts = async () => {
+  const handleDiscoverUsageAccounts = async () => {
     try {
       setRefreshingUsage(true)
-      const usage = await dataService.getUsageAccounts()
-      setUsageAccounts(Array.isArray(usage) ? usage : [])
+      
+      // Call discovery API
+      const result = await dataService.discoverUsageAccounts()
+      
+      console.log('Discovery completed:', result)
+      
+      // Refresh the accounts list to show newly discovered accounts
+      await loadAccounts()
+      
+      // Show success message
+      if (result.summary.accountsCreated > 0) {
+        console.log(`Discovered ${result.summary.accountsCreated} new accounts`)
+      } else {
+        console.log('No new accounts discovered')
+      }
+      
     } catch (error) {
-      console.error("Failed to refresh usage accounts:", error)
+      console.error("Failed to discover usage accounts:", error)
     } finally {
       setRefreshingUsage(false)
     }
@@ -264,13 +278,13 @@ export function AccountsGrid() {
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-semibold text-[#00243E]">Usage Accounts</h2>
             <Button
-              onClick={handleRefreshUsageAccounts}
+              onClick={handleDiscoverUsageAccounts}
               disabled={refreshingUsage}
               size="sm"
               className="gap-2 bg-[#026172] hover:bg-[#026172]/90"
             >
-              <RefreshCw className={`h-4 w-4 ${refreshingUsage ? "animate-spin" : ""}`} />
-              Refresh
+              <Search className={`h-4 w-4 ${refreshingUsage ? "animate-spin" : ""}`} />
+              Discover
             </Button>
           </div>
 
