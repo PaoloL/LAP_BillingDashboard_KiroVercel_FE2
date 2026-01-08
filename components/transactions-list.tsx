@@ -19,14 +19,11 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
             ) : (
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             )}
-            <div className="space-y-0.5">
-              <div className="font-medium text-foreground">{transaction.dateTime.toLocaleDateString("en-GB")}</div>
-              <div className="text-sm text-muted-foreground">
-                {transaction.dateTime.toLocaleTimeString("en-GB", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </div>
+            <div className="font-medium text-foreground">
+              {transaction.billingPeriod ? 
+                new Date(transaction.billingPeriod + '-01').toLocaleDateString("en-GB", { month: "long", year: "numeric" }) :
+                transaction.dateTime.toLocaleDateString("en-GB", { month: "long", year: "numeric" })
+              }
             </div>
           </div>
         </td>
@@ -82,10 +79,7 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
         </td>
         <td className="px-4 py-3">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-sm">
-              <span className="font-mono text-foreground">{transaction.exchangeRate.toFixed(3)}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2">
               <span
                 className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                   transaction.dataType === "Export"
@@ -95,6 +89,12 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
               >
                 {transaction.dataType}
               </span>
+            </div>
+            <div className="text-xs text-muted-foreground" style={{ fontSize: '0.75em' }}>
+              {transaction.dateTime.toLocaleDateString("en-GB")} {transaction.dateTime.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+            </div>
+            <div className="text-xs text-muted-foreground" style={{ fontSize: '0.5em' }}>
+              Rate: {transaction.exchangeRate.toFixed(2)}
             </div>
           </div>
         </td>
@@ -191,47 +191,87 @@ export function TransactionsList({
   }, [dateRange, sortBy, sortOrder, payerAccountId, usageAccountId])
 
   const filteredAndSortedTransactions = useMemo(() => {
-    let allTransactions: TransactionDetail[] = []
-
-    Object.values(transactionsByPeriod).forEach((transactions) => {
-      if (Array.isArray(transactions)) {
-        allTransactions = [...allTransactions, ...transactions]
-      }
-    })
-
-    if (dateRange?.from || dateRange?.to) {
-      allTransactions = allTransactions.filter((transaction) => {
-        const txDate = transaction.dateTime
-        if (dateRange.from && txDate < dateRange.from) return false
-        if (dateRange.to) {
-          const endOfDay = new Date(dateRange.to)
-          endOfDay.setHours(23, 59, 59, 999)
-          if (txDate > endOfDay) return false
-        }
-        return true
+    // If no date filtering is needed, return the original period grouping
+    if (!dateRange?.from && !dateRange?.to) {
+      // Sort periods by date
+      const sortedPeriods = Object.entries(transactionsByPeriod).sort(([periodA], [periodB]) => {
+        const dateA = new Date(periodA + ' 1, 2000') // Convert "January 2026" to date
+        const dateB = new Date(periodB + ' 1, 2000')
+        return sortOrder === "asc" ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime()
       })
+      
+      const result: Record<string, TransactionDetail[]> = {}
+      sortedPeriods.forEach(([period, transactions]) => {
+        if (Array.isArray(transactions)) {
+          // Sort transactions within each period
+          const sortedTransactions = [...transactions].sort((a, b) => {
+            if (sortBy === "date") {
+              const comparison = a.dateTime.getTime() - b.dateTime.getTime()
+              return sortOrder === "asc" ? comparison : -comparison
+            } else {
+              const comparison = a.usageAccount.name.localeCompare(b.usageAccount.name)
+              return sortOrder === "asc" ? comparison : -comparison
+            }
+          })
+          result[period] = sortedTransactions
+        }
+      })
+      return result
     }
 
-    allTransactions.sort((a, b) => {
-      if (sortBy === "date") {
-        const comparison = a.dateTime.getTime() - b.dateTime.getTime()
-        return sortOrder === "asc" ? comparison : -comparison
-      } else {
-        const comparison = a.usageAccount.name.localeCompare(b.usageAccount.name)
-        return sortOrder === "asc" ? comparison : -comparison
+    // Apply date filtering while preserving period grouping
+    const filtered: Record<string, TransactionDetail[]> = {}
+    
+    Object.entries(transactionsByPeriod).forEach(([period, transactions]) => {
+      if (Array.isArray(transactions)) {
+        const filteredTransactions = transactions.filter((transaction) => {
+          // Use billing period for date filtering instead of dateTime
+          if (!transaction.billingPeriod) return true
+          
+          // Convert billing period (YYYY-MM) to date for comparison
+          const billingDate = new Date(transaction.billingPeriod + '-01')
+          
+          if (dateRange.from) {
+            const fromMonth = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), 1)
+            if (billingDate < fromMonth) return false
+          }
+          if (dateRange.to) {
+            const toMonth = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), 1)
+            if (billingDate > toMonth) return false
+          }
+          return true
+        })
+        
+        if (filteredTransactions.length > 0) {
+          // Sort transactions within each period
+          filteredTransactions.sort((a, b) => {
+            if (sortBy === "date") {
+              const comparison = a.dateTime.getTime() - b.dateTime.getTime()
+              return sortOrder === "asc" ? comparison : -comparison
+            } else {
+              const comparison = a.usageAccount.name.localeCompare(b.usageAccount.name)
+              return sortOrder === "asc" ? comparison : -comparison
+            }
+          })
+          
+          filtered[period] = filteredTransactions
+        }
       }
     })
 
-    const grouped: Record<string, TransactionDetail[]> = {}
-    allTransactions.forEach((transaction) => {
-      const period = transaction.dateTime.toLocaleDateString("en-US", { month: "long", year: "numeric" })
-      if (!grouped[period]) {
-        grouped[period] = []
-      }
-      grouped[period].push(transaction)
+    // Sort filtered periods by date
+    const sortedFilteredPeriods = Object.entries(filtered).sort(([periodA], [periodB]) => {
+      const dateA = new Date(periodA + ' 1, 2000')
+      const dateB = new Date(periodB + ' 1, 2000')
+      return sortOrder === "asc" ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime()
     })
-
-    return grouped
+    
+    const result: Record<string, TransactionDetail[]> = {}
+    sortedFilteredPeriods.forEach(([period, transactions]) => {
+      result[period] = transactions
+    })
+    
+    return result
   }, [transactionsByPeriod, dateRange, sortBy, sortOrder])
 
   if (loading) {
@@ -253,7 +293,7 @@ export function TransactionsList({
                 <table className="w-full">
                   <thead className="border-b border-border bg-muted/50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Date and Time</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Period</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Payer Account</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Usage Account</th>
                       <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">

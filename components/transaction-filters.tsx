@@ -265,15 +265,86 @@ export function TransactionFilters({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="end">
-          <Calendar
-            mode="range"
-            selected={{ from: dateRange.from, to: dateRange.to }}
-            onSelect={(range) => handleDateRangeChange({ from: range?.from, to: range?.to })}
-            numberOfMonths={2}
-            initialFocus
-          />
-          {(dateRange.from || dateRange.to) && (
-            <div className="border-t p-3">
+          <div className="p-4 space-y-4">
+            <div className="space-y-3">
+              <div className="text-sm font-medium">From Period</div>
+              <div className="grid grid-cols-2 gap-2">
+                <select 
+                  className="p-2 border rounded text-sm"
+                  value={dateRange.from ? dateRange.from.getMonth() : ''}
+                  onChange={(e) => {
+                    if (e.target.value !== '') {
+                      const month = parseInt(e.target.value)
+                      const year = dateRange.from?.getFullYear() || new Date().getFullYear()
+                      const newFrom = new Date(year, month, 1)
+                      handleDateRangeChange({ from: newFrom, to: dateRange.to })
+                    }
+                  }}
+                >
+                  <option value="">Month</option>
+                  {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month, idx) => (
+                    <option key={idx} value={idx}>{month}</option>
+                  ))}
+                </select>
+                <select 
+                  className="p-2 border rounded text-sm"
+                  value={dateRange.from?.getFullYear() || ''}
+                  onChange={(e) => {
+                    if (e.target.value !== '') {
+                      const year = parseInt(e.target.value)
+                      const month = dateRange.from?.getMonth() || 0
+                      const newFrom = new Date(year, month, 1)
+                      handleDateRangeChange({ from: newFrom, to: dateRange.to })
+                    }
+                  }}
+                >
+                  <option value="">Year</option>
+                  <option value="2025">2025</option>
+                  <option value="2026">2026</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="text-sm font-medium">To Period</div>
+              <div className="grid grid-cols-2 gap-2">
+                <select 
+                  className="p-2 border rounded text-sm"
+                  value={dateRange.to ? dateRange.to.getMonth() : ''}
+                  onChange={(e) => {
+                    if (e.target.value !== '') {
+                      const month = parseInt(e.target.value)
+                      const year = dateRange.to?.getFullYear() || new Date().getFullYear()
+                      const newTo = new Date(year, month, 1)
+                      handleDateRangeChange({ from: dateRange.from, to: newTo })
+                    }
+                  }}
+                >
+                  <option value="">Month</option>
+                  {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month, idx) => (
+                    <option key={idx} value={idx}>{month}</option>
+                  ))}
+                </select>
+                <select 
+                  className="p-2 border rounded text-sm"
+                  value={dateRange.to?.getFullYear() || ''}
+                  onChange={(e) => {
+                    if (e.target.value !== '') {
+                      const year = parseInt(e.target.value)
+                      const month = dateRange.to?.getMonth() || 0
+                      const newTo = new Date(year, month, 1)
+                      handleDateRangeChange({ from: dateRange.from, to: newTo })
+                    }
+                  }}
+                >
+                  <option value="">Year</option>
+                  <option value="2025">2025</option>
+                  <option value="2026">2026</option>
+                </select>
+              </div>
+            </div>
+            
+            {(dateRange.from || dateRange.to) && (
               <Button
                 variant="outline"
                 size="sm"
@@ -282,8 +353,8 @@ export function TransactionFilters({
               >
                 Clear Date Filter
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </PopoverContent>
       </Popover>
 

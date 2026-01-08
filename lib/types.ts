@@ -86,6 +86,7 @@ export interface RecentTransaction {
 export interface TransactionDetail {
   id: string
   dateTime: Date
+  billingPeriod?: string
   payerAccount: {
     name: string
     id: string
