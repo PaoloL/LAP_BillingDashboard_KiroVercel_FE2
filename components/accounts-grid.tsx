@@ -141,22 +141,21 @@ export function AccountsGrid() {
   const handleDiscoverUsageAccounts = async () => {
     try {
       setRefreshingUsage(true)
-      
+
       // Call discovery API
       const result = await dataService.discoverUsageAccounts()
-      
-      console.log('Discovery completed:', result)
-      
+
+      console.log("Discovery completed:", result)
+
       // Refresh the accounts list to show newly discovered accounts
       await loadAccounts()
-      
+
       // Show success message
       if (result.summary.accountsCreated > 0) {
         console.log(`Discovered ${result.summary.accountsCreated} new accounts`)
       } else {
-        console.log('No new accounts discovered')
+        console.log("No new accounts discovered")
       }
-      
     } catch (error) {
       console.error("Failed to discover usage accounts:", error)
     } finally {
@@ -192,20 +191,20 @@ export function AccountsGrid() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {payerAccounts.map((account) => (
               <Card key={account.id} className="border-[#00243E] transition-all hover:shadow-md">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardHeader className="relative flex flex-row items-center justify-between pb-2">
+                  {account.status === "Archived" && (
+                    <Badge className="absolute right-4 top-4 bg-gray-500 text-white hover:bg-gray-500/90">
+                      Archived
+                    </Badge>
+                  )}
                   <div className="flex items-center gap-2">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#00243E]/10">
                       <Building2 className="h-4 w-4 text-[#00243E]" />
                     </div>
                     <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <CardTitle className="text-base font-semibold text-[#00243E]">
-                          {account.accountName} ({account.accountId})
-                        </CardTitle>
-                        {account.status === "Archived" && (
-                          <Badge className="bg-gray-500 text-white hover:bg-gray-500/90">Archived</Badge>
-                        )}
-                      </div>
+                      <CardTitle className="text-base font-semibold text-[#00243E]">
+                        {account.accountName} ({account.accountId})
+                      </CardTitle>
                     </div>
                   </div>
                   <div className="flex gap-1">
@@ -291,24 +290,26 @@ export function AccountsGrid() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {usageAccounts.map((account) => (
               <Card key={account.id} className="transition-all hover:shadow-md">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <CardTitle className="text-base font-semibold leading-tight text-[#00243E]">
-                          {account.customer} ({account.id})
-                        </CardTitle>
-                        {account.status === "Registered" && (
-                          <Badge className="bg-[#026172] text-white hover:bg-[#026172]/90">Registered</Badge>
-                        )}
-                        {account.status === "Unregistered" && (
-                          <Badge className="bg-[#EC9400] text-white hover:bg-[#EC9400]/90">Unregistered</Badge>
-                        )}
-                        {account.status === "Archived" && (
-                          <Badge className="bg-gray-500 text-white hover:bg-gray-500/90">Archived</Badge>
-                        )}
-                      </div>
-                    </div>
+                <CardHeader className="relative pb-3">
+                  {account.status === "Registered" && (
+                    <Badge className="absolute right-4 top-4 bg-[#026172] text-white hover:bg-[#026172]/90">
+                      Registered
+                    </Badge>
+                  )}
+                  {account.status === "Unregistered" && (
+                    <Badge className="absolute right-4 top-4 bg-[#EC9400] text-white hover:bg-[#EC9400]/90">
+                      Unregistered
+                    </Badge>
+                  )}
+                  {account.status === "Archived" && (
+                    <Badge className="absolute right-4 top-4 bg-gray-500 text-white hover:bg-gray-500/90">
+                      Archived
+                    </Badge>
+                  )}
+                  <div className="pr-20">
+                    <CardTitle className="text-base font-semibold leading-tight text-[#00243E]">
+                      {account.customer} ({account.id})
+                    </CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
