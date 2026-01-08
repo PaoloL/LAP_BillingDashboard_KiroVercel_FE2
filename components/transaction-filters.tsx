@@ -2,10 +2,9 @@
 
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
 import { CalendarIcon, ArrowUpDown, Building2, Users } from "lucide-react"
 import { useState, useEffect } from "react"
-import { format } from "date-fns"
+import { format, subMonths, startOfMonth, endOfMonth } from "date-fns"
 import { dataService } from "@/lib/data/data-service"
 import { cn } from "@/lib/utils"
 
@@ -34,6 +33,7 @@ export function TransactionFilters({
   const [payerPopoverOpen, setPayerPopoverOpen] = useState(false)
   const [usagePopoverOpen, setUsagePopoverOpen] = useState(false)
   const [loadingAccounts, setLoadingAccounts] = useState(true)
+  const [selectedPreset, setSelectedPreset] = useState<string | undefined>()
 
   useEffect(() => {
     const loadAccounts = async () => {
@@ -42,53 +42,53 @@ export function TransactionFilters({
         const [payerData, usageData, transactionsData] = await Promise.all([
           dataService.getPayerAccounts(),
           dataService.getUsageAccounts(),
-          dataService.getTransactions({}) // Get all transactions to extract accounts
+          dataService.getTransactions({}), // Get all transactions to extract accounts
         ])
-        
+
         // Set payer accounts from API and merge with transaction data
-        let payerAccountsList = payerData.data || []
+        const payerAccountsList = payerData.data || []
         const payerAccountsMap = new Map()
-        
+
         // Add API payer accounts
-        payerAccountsList.forEach(account => {
+        payerAccountsList.forEach((account) => {
           payerAccountsMap.set(account.accountId, {
             id: account.id,
             accountId: account.accountId,
-            accountName: account.accountName
+            accountName: account.accountName,
           })
         })
-        
+
         // Extract payer accounts from transactions and merge
         if (transactionsData.data) {
           Object.values(transactionsData.data).forEach((transactions) => {
             if (Array.isArray(transactions)) {
-              transactions.forEach(tx => {
+              transactions.forEach((tx) => {
                 if (tx.payerAccount && !payerAccountsMap.has(tx.payerAccount.id)) {
                   payerAccountsMap.set(tx.payerAccount.id, {
                     id: tx.payerAccount.id,
                     accountId: tx.payerAccount.id,
-                    accountName: tx.payerAccount.name
+                    accountName: tx.payerAccount.name,
                   })
                 }
               })
             }
           })
         }
-        
+
         setPayerAccounts(Array.from(payerAccountsMap.values()))
-        
+
         // If usage accounts API is empty, extract from transactions
         let usageAccountsList = usageData.data || []
         if (usageAccountsList.length === 0 && transactionsData.data) {
           const uniqueUsageAccounts = new Map()
           Object.values(transactionsData.data).forEach((transactions) => {
             if (Array.isArray(transactions)) {
-              transactions.forEach(tx => {
+              transactions.forEach((tx) => {
                 if (tx.usageAccount && !uniqueUsageAccounts.has(tx.usageAccount.id)) {
                   uniqueUsageAccounts.set(tx.usageAccount.id, {
                     id: tx.usageAccount.id,
                     accountId: tx.usageAccount.id,
-                    accountName: tx.usageAccount.name
+                    accountName: tx.usageAccount.name,
                   })
                 }
               })
@@ -96,7 +96,7 @@ export function TransactionFilters({
           })
           usageAccountsList = Array.from(uniqueUsageAccounts.values())
         }
-        
+
         setUsageAccounts(usageAccountsList)
       } catch (error) {
         console.error("Failed to load accounts:", error)
@@ -110,6 +110,39 @@ export function TransactionFilters({
   const handleDateRangeChange = (range: { from: Date | undefined; to: Date | undefined }) => {
     setDateRange(range)
     onDateRangeChange?.(range)
+    setSelectedPreset(undefined)
+  }
+
+  const handlePresetChange = (preset: string) => {
+    const today = new Date()
+    const endDate = endOfMonth(today)
+    let startDate: Date
+
+    switch (preset) {
+      case "1M":
+        startDate = startOfMonth(subMonths(today, 1))
+        break
+      case "3M":
+        startDate = startOfMonth(subMonths(today, 3))
+        break
+      case "6M":
+        startDate = startOfMonth(subMonths(today, 6))
+        break
+      case "12M":
+        startDate = startOfMonth(subMonths(today, 12))
+        break
+      case "ALL":
+        setDateRange({ from: undefined, to: undefined })
+        setSelectedPreset("ALL")
+        onDateRangeChange?.({ from: undefined, to: undefined })
+        return
+      default:
+        return
+    }
+
+    setDateRange({ from: startDate, to: endDate })
+    setSelectedPreset(preset)
+    onDateRangeChange?.({ from: startDate, to: endDate })
   }
 
   const handleSortToggle = () => {
@@ -266,90 +299,126 @@ export function TransactionFilters({
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="end">
           <div className="p-4 space-y-4">
-            <div className="space-y-3">
-              <div className="text-sm font-medium">From Period</div>
-              <div className="grid grid-cols-2 gap-2">
-                <select 
-                  className="p-2 border rounded text-sm"
-                  value={dateRange.from ? dateRange.from.getMonth() : ''}
-                  onChange={(e) => {
-                    if (e.target.value !== '') {
-                      const month = parseInt(e.target.value)
-                      const year = dateRange.from?.getFullYear() || new Date().getFullYear()
-                      const newFrom = new Date(year, month, 1)
-                      handleDateRangeChange({ from: newFrom, to: dateRange.to })
-                    }
-                  }}
-                >
-                  <option value="">Month</option>
-                  {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month, idx) => (
-                    <option key={idx} value={idx}>{month}</option>
-                  ))}
-                </select>
-                <select 
-                  className="p-2 border rounded text-sm"
-                  value={dateRange.from?.getFullYear() || ''}
-                  onChange={(e) => {
-                    if (e.target.value !== '') {
-                      const year = parseInt(e.target.value)
-                      const month = dateRange.from?.getMonth() || 0
-                      const newFrom = new Date(year, month, 1)
-                      handleDateRangeChange({ from: newFrom, to: dateRange.to })
-                    }
-                  }}
-                >
-                  <option value="">Year</option>
-                  <option value="2025">2025</option>
-                  <option value="2026">2026</option>
-                </select>
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Quick Select</div>
+              <div className="grid grid-cols-5 gap-2">
+                {["1M", "3M", "6M", "12M", "ALL"].map((preset) => (
+                  <Button
+                    key={preset}
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "bg-transparent",
+                      selectedPreset === preset && "bg-[#026172] text-white hover:bg-[#026172]/90 hover:text-white",
+                    )}
+                    onClick={() => handlePresetChange(preset)}
+                  >
+                    {preset}
+                  </Button>
+                ))}
               </div>
             </div>
-            
-            <div className="space-y-3">
-              <div className="text-sm font-medium">To Period</div>
-              <div className="grid grid-cols-2 gap-2">
-                <select 
-                  className="p-2 border rounded text-sm"
-                  value={dateRange.to ? dateRange.to.getMonth() : ''}
-                  onChange={(e) => {
-                    if (e.target.value !== '') {
-                      const month = parseInt(e.target.value)
-                      const year = dateRange.to?.getFullYear() || new Date().getFullYear()
-                      const newTo = new Date(year, month, 1)
-                      handleDateRangeChange({ from: dateRange.from, to: newTo })
-                    }
-                  }}
-                >
-                  <option value="">Month</option>
-                  {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month, idx) => (
-                    <option key={idx} value={idx}>{month}</option>
-                  ))}
-                </select>
-                <select 
-                  className="p-2 border rounded text-sm"
-                  value={dateRange.to?.getFullYear() || ''}
-                  onChange={(e) => {
-                    if (e.target.value !== '') {
-                      const year = parseInt(e.target.value)
-                      const month = dateRange.to?.getMonth() || 0
-                      const newTo = new Date(year, month, 1)
-                      handleDateRangeChange({ from: dateRange.from, to: newTo })
-                    }
-                  }}
-                >
-                  <option value="">Year</option>
-                  <option value="2025">2025</option>
-                  <option value="2026">2026</option>
-                </select>
+
+            <div className="border-t pt-4 space-y-3">
+              <div className="text-sm font-medium">Custom Range</div>
+              <div className="space-y-3">
+                <div className="text-xs text-muted-foreground">From Period</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    className="p-2 border rounded text-sm"
+                    value={dateRange.from ? dateRange.from.getMonth() : ""}
+                    onChange={(e) => {
+                      if (e.target.value !== "") {
+                        const month = Number.parseInt(e.target.value)
+                        const year = dateRange.from?.getFullYear() || new Date().getFullYear()
+                        const newFrom = new Date(year, month, 1)
+                        handleDateRangeChange({ from: newFrom, to: dateRange.to })
+                      }
+                    }}
+                  >
+                    <option value="">Month</option>
+                    {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map(
+                      (month, idx) => (
+                        <option key={idx} value={idx}>
+                          {month}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                  <select
+                    className="p-2 border rounded text-sm"
+                    value={dateRange.from?.getFullYear() || ""}
+                    onChange={(e) => {
+                      if (e.target.value !== "") {
+                        const year = Number.parseInt(e.target.value)
+                        const month = dateRange.from?.getMonth() || 0
+                        const newFrom = new Date(year, month, 1)
+                        handleDateRangeChange({ from: newFrom, to: dateRange.to })
+                      }
+                    }}
+                  >
+                    <option value="">Year</option>
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="text-xs text-muted-foreground">To Period</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    className="p-2 border rounded text-sm"
+                    value={dateRange.to ? dateRange.to.getMonth() : ""}
+                    onChange={(e) => {
+                      if (e.target.value !== "") {
+                        const month = Number.parseInt(e.target.value)
+                        const year = dateRange.to?.getFullYear() || new Date().getFullYear()
+                        const newTo = new Date(year, month, 1)
+                        handleDateRangeChange({ from: dateRange.from, to: newTo })
+                      }
+                    }}
+                  >
+                    <option value="">Month</option>
+                    {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map(
+                      (month, idx) => (
+                        <option key={idx} value={idx}>
+                          {month}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                  <select
+                    className="p-2 border rounded text-sm"
+                    value={dateRange.to?.getFullYear() || ""}
+                    onChange={(e) => {
+                      if (e.target.value !== "") {
+                        const year = Number.parseInt(e.target.value)
+                        const month = dateRange.to?.getMonth() || 0
+                        const newTo = new Date(year, month, 1)
+                        handleDateRangeChange({ from: dateRange.from, to: newTo })
+                      }
+                    }}
+                  >
+                    <option value="">Year</option>
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                  </select>
+                </div>
               </div>
             </div>
-            
+
             {(dateRange.from || dateRange.to) && (
               <Button
                 variant="outline"
                 size="sm"
                 className="w-full bg-transparent"
-                onClick={() => handleDateRangeChange({ from: undefined, to: undefined })}
+                onClick={() => {
+                  handleDateRangeChange({ from: undefined, to: undefined })
+                  setSelectedPreset(undefined)
+                }}
               >
                 Clear Date Filter
               </Button>
