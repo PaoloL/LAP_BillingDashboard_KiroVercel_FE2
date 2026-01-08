@@ -131,9 +131,11 @@ export const dataService = {
     endDate?: Date
     sortBy?: "name" | "date"
     sortOrder?: "asc" | "desc"
-  }): Promise<Record<string, TransactionDetail[]>> {
+    payerAccountId?: string
+    usageAccountId?: string
+  }): Promise<{data: Record<string, TransactionDetail[]>}> {
     if (config.useMockData) {
-      return Promise.resolve(mockTransactionsByPeriod)
+      return Promise.resolve({data: mockTransactionsByPeriod})
     }
     return apiClient.getTransactions(params)
   },

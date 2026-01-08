@@ -44,10 +44,10 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
         </td>
         <td className="px-4 py-3 text-right">
           <div className="space-y-0.5">
-            <div className="font-semibold text-foreground">{formatCurrency(transaction.distributorCost.eur)}</div>
+            <div className="font-semibold text-foreground">{formatCurrency(transaction.distributorCost?.eur || 0)}</div>
             <div className="text-sm text-muted-foreground">
               $
-              {transaction.distributorCost.usd.toLocaleString("en-US", {
+              {(transaction.distributorCost?.usd || 0).toLocaleString("en-US", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
@@ -56,10 +56,10 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
         </td>
         <td className="px-4 py-3 text-right">
           <div className="space-y-0.5">
-            <div className="font-semibold text-foreground">{formatCurrency(transaction.sellerCost.eur)}</div>
+            <div className="font-semibold text-foreground">{formatCurrency(transaction.sellerCost?.eur || 0)}</div>
             <div className="text-sm text-muted-foreground">
               $
-              {transaction.sellerCost.usd.toLocaleString("en-US", {
+              {(transaction.sellerCost?.usd || 0).toLocaleString("en-US", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
@@ -68,10 +68,10 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
         </td>
         <td className="px-4 py-3 text-right">
           <div className="space-y-0.5">
-            <div className="text-lg font-semibold text-[#00243E]">{formatCurrency(transaction.customerCost.eur)}</div>
+            <div className="text-lg font-semibold text-[#00243E]">{formatCurrency(transaction.customerCost?.eur || 0)}</div>
             <div className="text-sm text-muted-foreground">
               $
-              {transaction.customerCost.usd.toLocaleString("en-US", {
+              {(transaction.customerCost?.usd || 0).toLocaleString("en-US", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
@@ -157,9 +157,17 @@ interface TransactionsListProps {
   dateRange?: { from: Date | undefined; to: Date | undefined }
   sortBy?: "name" | "date"
   sortOrder?: "asc" | "desc"
+  payerAccountId?: string
+  usageAccountId?: string
 }
 
-export function TransactionsList({ dateRange, sortBy = "date", sortOrder = "desc" }: TransactionsListProps) {
+export function TransactionsList({ 
+  dateRange, 
+  sortBy = "date", 
+  sortOrder = "desc",
+  payerAccountId,
+  usageAccountId
+}: TransactionsListProps) {
   const [transactionsByPeriod, setTransactionsByPeriod] = useState<Record<string, TransactionDetail[]>>({})
   const [loading, setLoading] = useState(true)
 
@@ -172,8 +180,22 @@ export function TransactionsList({ dateRange, sortBy = "date", sortOrder = "desc
           endDate: dateRange?.to,
           sortBy,
           sortOrder,
+          payerAccountId,
+          usageAccountId,
         })
-        setTransactionsByPeriod(data)
+        
+        // Convert dateTime strings to Date objects
+        const processedData: Record<string, TransactionDetail[]> = {}
+        Object.entries(data.data || {}).forEach(([period, transactions]) => {
+          if (Array.isArray(transactions)) {
+            processedData[period] = transactions.map(tx => ({
+              ...tx,
+              dateTime: new Date(tx.dateTime)
+            }))
+          }
+        })
+        
+        setTransactionsByPeriod(processedData)
       } catch (error) {
         console.error("[v0] Failed to load transactions:", error)
       } finally {
@@ -181,13 +203,15 @@ export function TransactionsList({ dateRange, sortBy = "date", sortOrder = "desc
       }
     }
     loadData()
-  }, [dateRange, sortBy, sortOrder])
+  }, [dateRange, sortBy, sortOrder, payerAccountId, usageAccountId])
 
   const filteredAndSortedTransactions = useMemo(() => {
     let allTransactions: TransactionDetail[] = []
 
     Object.values(transactionsByPeriod).forEach((transactions) => {
-      allTransactions = [...allTransactions, ...transactions]
+      if (Array.isArray(transactions)) {
+        allTransactions = [...allTransactions, ...transactions]
+      }
     })
 
     if (dateRange?.from || dateRange?.to) {

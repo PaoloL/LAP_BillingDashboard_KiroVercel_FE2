@@ -114,14 +114,18 @@ class ApiClient {
     endDate?: Date
     sortBy?: "name" | "date"
     sortOrder?: "asc" | "desc"
-  }): Promise<Record<string, TransactionDetail[]>> {
+    payerAccountId?: string
+    usageAccountId?: string
+  }): Promise<{data: Record<string, TransactionDetail[]>}> {
     const searchParams = new URLSearchParams()
     if (params?.startDate) searchParams.append("startDate", params.startDate.toISOString())
     if (params?.endDate) searchParams.append("endDate", params.endDate.toISOString())
     if (params?.sortBy) searchParams.append("sortBy", params.sortBy)
     if (params?.sortOrder) searchParams.append("sortOrder", params.sortOrder)
+    if (params?.payerAccountId) searchParams.append("payerAccountId", params.payerAccountId)
+    if (params?.usageAccountId) searchParams.append("usageAccountId", params.usageAccountId)
 
-    return this.request<Record<string, TransactionDetail[]>>(`/transactions?${searchParams.toString()}`)
+    return this.request<{data: Record<string, TransactionDetail[]>}>(`/transactions?${searchParams.toString()}`)
   }
 
   async createTransaction(data: Omit<TransactionDetail, "id">): Promise<TransactionDetail> {

@@ -13,6 +13,8 @@ export default function TransactionsPage() {
   })
   const [sortBy, setSortBy] = useState<"name" | "date">("date")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
+  const [payerAccountId, setPayerAccountId] = useState<string | undefined>()
+  const [usageAccountId, setUsageAccountId] = useState<string | undefined>()
 
   return (
     <div className="min-h-screen bg-background">
@@ -30,12 +32,20 @@ export default function TransactionsPage() {
                 setSortBy(newSortBy)
                 setSortOrder(newSortOrder)
               }}
+              onPayerAccountChange={setPayerAccountId}
+              onUsageAccountChange={setUsageAccountId}
             />
             <RegisterTransactionDialog />
           </div>
         </div>
 
-        <TransactionsList dateRange={dateRange} sortBy={sortBy} sortOrder={sortOrder} />
+        <TransactionsList 
+          dateRange={dateRange} 
+          sortBy={sortBy} 
+          sortOrder={sortOrder}
+          payerAccountId={payerAccountId}
+          usageAccountId={usageAccountId}
+        />
       </main>
     </div>
   )
