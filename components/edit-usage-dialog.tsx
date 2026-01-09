@@ -93,7 +93,7 @@ export function EditUsageDialog({ open, onOpenChange, account }: EditUsageDialog
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="edit-vat">VAT Number</Label>
-                <Input id="edit-vat" placeholder="DE123456789" defaultValue={account.vatNumber} required />
+                <Input id="edit-vat" placeholder="DE123456789" defaultValue={account.vatNumber} />
               </div>
             </div>
 

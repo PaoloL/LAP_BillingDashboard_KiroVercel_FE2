@@ -85,7 +85,7 @@ export function RegisterUsageDialog({ open, onOpenChange, payerAccount }: Regist
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="vat">VAT Number</Label>
-                <Input id="vat" placeholder="DE123456789" required />
+                <Input id="vat" placeholder="DE123456789" />
               </div>
               {payerAccount && (
                 <div className="grid gap-2">
