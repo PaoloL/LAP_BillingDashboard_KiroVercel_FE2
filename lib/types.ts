@@ -153,3 +153,23 @@ export const validateDiscounts = (reseller: number, customer: number): string | 
   }
   return null
 }
+
+export interface ExchangeRateConfig {
+  id: string
+  payerAccountId: string
+  payerAccountName: string
+  billingPeriod: string // Format: YYYY-MM
+  exchangeRate: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateExchangeRateDTO {
+  payerAccountId: string
+  billingPeriod: string
+  exchangeRate: number
+}
+
+export interface UpdateExchangeRateDTO {
+  exchangeRate: number
+}

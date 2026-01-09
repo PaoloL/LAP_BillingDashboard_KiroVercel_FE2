@@ -1,0 +1,295 @@
+openapi: 3.0.3
+info:
+  title: AWS Billing Dashboard - Settings API
+  description: API specification for application settings including exchange rate configuration
+  version: 1.0.0
+  contact:
+    name: API Support
+
+servers:
+  - url: https://api.example.com/v1
+    description: Production server
+  - url: http://localhost:3001/v1
+    description: Development server
+
+paths:
+  /settings/exchange-rates:
+    get:
+      summary: List all exchange rate configurations
+      tags:
+        - Exchange Rates
+      parameters:
+        - name: payerAccountId
+          in: query
+          description: Filter by payer account ID
+          schema:
+            type: string
+        - name: billingPeriod
+          in: query
+          description: Filter by billing period (YYYY-MM)
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}$'
+      responses:
+        '200':
+          description: List of exchange rate configurations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ExchangeRateConfig'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      summary: Create new exchange rate configuration
+      tags:
+        - Exchange Rates
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExchangeRate'
+      responses:
+        '201':
+          description: Exchange rate configuration created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeRateConfig'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Configuration already exists for this period
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /settings/exchange-rates/{id}:
+    get:
+      summary: Get exchange rate configuration by ID
+      tags:
+        - Exchange Rates
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Exchange rate configuration details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeRateConfig'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      summary: Update exchange rate configuration
+      tags:
+        - Exchange Rates
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExchangeRate'
+      responses:
+        '200':
+          description: Exchange rate configuration updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeRateConfig'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      summary: Delete exchange rate configuration
+      tags:
+        - Exchange Rates
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Exchange rate configuration deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /settings/exchange-rates/{id}/apply:
+    post:
+      summary: Apply exchange rate to recalculate transactions
+      description: Recalculates all transactions for the specified billing period using the configured exchange rate
+      tags:
+        - Exchange Rates
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Exchange rate applied and transactions recalculated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Exchange rate applied successfully
+                  affectedTransactions:
+                    type: integer
+                    example: 150
+                  billingPeriod:
+                    type: string
+                    example: '2025-01'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  schemas:
+    ExchangeRateConfig:
+      type: object
+      required:
+        - id
+        - payerAccountId
+        - payerAccountName
+        - billingPeriod
+        - exchangeRate
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          example: 'exr-abc123'
+        payerAccountId:
+          type: string
+          pattern: '^\d{12}$'
+          example: '123456789012'
+        payerAccountName:
+          type: string
+          example: 'AWS Main Account'
+        billingPeriod:
+          type: string
+          pattern: '^\d{4}-\d{2}$'
+          description: Billing period in YYYY-MM format
+          example: '2025-01'
+        exchangeRate:
+          type: number
+          format: double
+          minimum: 0
+          exclusiveMinimum: true
+          example: 1.093
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateExchangeRate:
+      type: object
+      required:
+        - payerAccountId
+        - billingPeriod
+        - exchangeRate
+      properties:
+        payerAccountId:
+          type: string
+          pattern: '^\d{12}$'
+          example: '123456789012'
+        billingPeriod:
+          type: string
+          pattern: '^\d{4}-\d{2}$'
+          example: '2025-01'
+        exchangeRate:
+          type: number
+          format: double
+          minimum: 0
+          exclusiveMinimum: true
+          example: 1.093
+
+    UpdateExchangeRate:
+      type: object
+      required:
+        - exchangeRate
+      properties:
+        exchangeRate:
+          type: number
+          format: double
+          minimum: 0
+          exclusiveMinimum: true
+          example: 1.095
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          example: ValidationError
+        message:
+          type: string
+          example: Invalid exchange rate value
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+tags:
+  - name: Exchange Rates
+    description: Exchange rate configuration management
