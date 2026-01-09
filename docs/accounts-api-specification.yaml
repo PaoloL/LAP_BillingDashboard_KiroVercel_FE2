@@ -23,7 +23,7 @@ info:
     - **Registered/Active**: Edit, Details, Archive
     - **Archived**: Unarchive, Delete
     
-  version: 1.1.0
+  version: 1.2.0
   contact:
     name: API Support
     email: support@example.com
@@ -736,6 +736,9 @@ components:
         - resellerDiscount
         - customerDiscount
         - rebateCredits
+        - rebateFee
+        - rebateDiscount
+        - rebateAdjustment
         - createdAt
         - updatedAt
       properties:
@@ -796,6 +799,27 @@ components:
             If enabled, credit notes will be deducted from the Usage Account's total cost.
           default: false
           example: true
+        rebateFee:
+          type: boolean
+          description: |
+            Whether to apply rebate for fees to the Usage Account.
+            If enabled, fees will be rebated to the Usage Account.
+          default: false
+          example: false
+        rebateDiscount:
+          type: boolean
+          description: |
+            Whether to apply rebate for discounts to the Usage Account.
+            If enabled, discounts will be rebated to the Usage Account.
+          default: false
+          example: true
+        rebateAdjustment:
+          type: boolean
+          description: |
+            Whether to apply rebate for adjustments to the Usage Account.
+            If enabled, adjustments will be rebated to the Usage Account.
+          default: false
+          example: false
         lastTransactionDate:
           type: string
           format: date-time
@@ -881,6 +905,21 @@ components:
           description: Whether to apply rebate credits to total cost
           default: false
           example: true
+        rebateFee:
+          type: boolean
+          description: Whether to apply rebate for fees
+          default: false
+          example: false
+        rebateDiscount:
+          type: boolean
+          description: Whether to apply rebate for discounts
+          default: false
+          example: true
+        rebateAdjustment:
+          type: boolean
+          description: Whether to apply rebate for adjustments
+          default: false
+          example: false
 
     UpdateUsageAccountRequest:
       type: object
@@ -908,6 +947,15 @@ components:
         rebateCredits:
           type: boolean
           description: Whether to apply rebate credits to total cost
+        rebateFee:
+          type: boolean
+          description: Whether to apply rebate for fees
+        rebateDiscount:
+          type: boolean
+          description: Whether to apply rebate for discounts
+        rebateAdjustment:
+          type: boolean
+          description: Whether to apply rebate for adjustments
 
     Pagination:
       type: object
@@ -1001,12 +1049,12 @@ components:
               code: "INTERNAL_ERROR"
               message: "An unexpected error occurred"
 
-  securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: JWT authentication token
+securitySchemes:
+  BearerAuth:
+    type: http
+    scheme: bearer
+    bearerFormat: JWT
+    description: JWT authentication token
 
 security:
   - BearerAuth: []
