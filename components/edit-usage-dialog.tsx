@@ -28,6 +28,9 @@ interface EditUsageDialogProps {
     resellerDiscount: number
     customerDiscount: number
     rebateCredits: boolean
+    rebateFee: boolean
+    rebateDiscount: boolean
+    rebateAdjustment: boolean
   } | null
 }
 
@@ -35,6 +38,9 @@ export function EditUsageDialog({ open, onOpenChange, account }: EditUsageDialog
   const [resellerDiscount, setResellerDiscount] = useState<number>(account?.resellerDiscount || 0)
   const [customerDiscount, setCustomerDiscount] = useState<number>(account?.customerDiscount || 0)
   const [rebateCredits, setRebateCredits] = useState<boolean>(account?.rebateCredits || false)
+  const [rebateFee, setRebateFee] = useState<boolean>(account?.rebateFee || false)
+  const [rebateDiscount, setRebateDiscount] = useState<boolean>(account?.rebateDiscount || false)
+  const [rebateAdjustment, setRebateAdjustment] = useState<boolean>(account?.rebateAdjustment || false)
   const [validationError, setValidationError] = useState<string | null>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -136,6 +142,39 @@ export function EditUsageDialog({ open, onOpenChange, account }: EditUsageDialog
                   </p>
                 </div>
                 <Switch id="edit-rebate" checked={rebateCredits} onCheckedChange={setRebateCredits} />
+              </div>
+              <div className="flex items-center justify-between space-x-4">
+                <div className="flex-1">
+                  <Label htmlFor="edit-rebate-fee" className="cursor-pointer font-medium">
+                    Rebate Fee to Usage Account
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    If enabled, fees will be rebated to the Usage Account.
+                  </p>
+                </div>
+                <Switch id="edit-rebate-fee" checked={rebateFee} onCheckedChange={setRebateFee} />
+              </div>
+              <div className="flex items-center justify-between space-x-4">
+                <div className="flex-1">
+                  <Label htmlFor="edit-rebate-discount" className="cursor-pointer font-medium">
+                    Rebate Discount to Usage Account
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    If enabled, discounts will be rebated to the Usage Account.
+                  </p>
+                </div>
+                <Switch id="edit-rebate-discount" checked={rebateDiscount} onCheckedChange={setRebateDiscount} />
+              </div>
+              <div className="flex items-center justify-between space-x-4">
+                <div className="flex-1">
+                  <Label htmlFor="edit-rebate-adjustment" className="cursor-pointer font-medium">
+                    Rebate Adjustment to Usage Account
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    If enabled, adjustments will be rebated to the Usage Account.
+                  </p>
+                </div>
+                <Switch id="edit-rebate-adjustment" checked={rebateAdjustment} onCheckedChange={setRebateAdjustment} />
               </div>
             </div>
           </div>

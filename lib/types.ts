@@ -41,6 +41,9 @@ export interface UsageAccount extends Account {
   resellerDiscount: number // Percentage
   customerDiscount: number // Percentage
   rebateCredits: boolean
+  rebateFee: boolean
+  rebateDiscount: boolean
+  rebateAdjustment: boolean
   fundsUtilization: number
   totalUsage: number
   totalDeposit: number

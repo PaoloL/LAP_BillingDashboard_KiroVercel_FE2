@@ -202,9 +202,8 @@ export function AccountsGrid() {
                       <Building2 className="h-4 w-4 text-[#00243E]" />
                     </div>
                     <div className="flex flex-col">
-                      <CardTitle className="text-base font-semibold text-[#00243E]">
-                        {account.accountName} ({account.accountId})
-                      </CardTitle>
+                      <CardTitle className="text-base font-semibold text-[#00243E]">{account.accountName}</CardTitle>
+                      <span className="text-xs text-muted-foreground">({account.accountId})</span>
                     </div>
                   </div>
                   <div className="flex gap-1">
