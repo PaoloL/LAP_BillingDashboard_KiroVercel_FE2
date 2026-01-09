@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import React, { useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { validateDiscounts } from "@/lib/types"
+import { dataService } from "@/lib/data/data-service"
 
 interface EditUsageDialogProps {
   open: boolean
@@ -32,18 +33,33 @@ interface EditUsageDialogProps {
     rebateDiscount: boolean
     rebateAdjustment: boolean
   } | null
+  onSuccess?: () => void
 }
 
-export function EditUsageDialog({ open, onOpenChange, account }: EditUsageDialogProps) {
-  const [resellerDiscount, setResellerDiscount] = useState<number>(account?.resellerDiscount || 0)
-  const [customerDiscount, setCustomerDiscount] = useState<number>(account?.customerDiscount || 0)
-  const [rebateCredits, setRebateCredits] = useState<boolean>(account?.rebateCredits || false)
-  const [rebateFee, setRebateFee] = useState<boolean>(account?.rebateFee || false)
-  const [rebateDiscount, setRebateDiscount] = useState<boolean>(account?.rebateDiscount || false)
-  const [rebateAdjustment, setRebateAdjustment] = useState<boolean>(account?.rebateAdjustment || false)
+export function EditUsageDialog({ open, onOpenChange, account, onSuccess }: EditUsageDialogProps) {
+  const [resellerDiscount, setResellerDiscount] = useState<number>(0)
+  const [customerDiscount, setCustomerDiscount] = useState<number>(0)
+  const [rebateCredits, setRebateCredits] = useState<boolean>(false)
+  const [rebateFee, setRebateFee] = useState<boolean>(false)
+  const [rebateDiscount, setRebateDiscount] = useState<boolean>(false)
+  const [rebateAdjustment, setRebateAdjustment] = useState<boolean>(false)
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Reset form when account changes
+  React.useEffect(() => {
+    if (account) {
+      setResellerDiscount(account.resellerDiscount || 0)
+      setCustomerDiscount(account.customerDiscount || 0)
+      setRebateCredits(account.rebateCredits || false)
+      setRebateFee(account.rebateFee || false)
+      setRebateDiscount(account.rebateDiscount || false)
+      setRebateAdjustment(account.rebateAdjustment || false)
+      setValidationError(null)
+    }
+  }, [account])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     const error = validateDiscounts(resellerDiscount, customerDiscount)
@@ -52,8 +68,31 @@ export function EditUsageDialog({ open, onOpenChange, account }: EditUsageDialog
       return
     }
 
-    console.log("Updating usage account:", account?.id)
-    onOpenChange(false)
+    if (!account) return
+
+    setIsSubmitting(true)
+    try {
+      const formData = new FormData(e.target as HTMLFormElement)
+      const vatNumber = formData.get('vat') as string
+
+      await dataService.updateUsageAccount(account.id, {
+        vatNumber: vatNumber || '',
+        resellerDiscount,
+        customerDiscount,
+        rebateCredits,
+        rebateFee,
+        rebateDiscount,
+        rebateAdjustment
+      })
+
+      onOpenChange(false)
+      onSuccess?.()
+    } catch (error) {
+      console.error("Failed to update account:", error)
+      setValidationError("Failed to update account. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleResellerDiscountChange = (value: string) => {
@@ -182,8 +221,12 @@ export function EditUsageDialog({ open, onOpenChange, account }: EditUsageDialog
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-[#00243E] hover:bg-[#00243E]/90">
-              Save Changes
+            <Button 
+              type="submit" 
+              className="bg-[#00243E] hover:bg-[#00243E]/90"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </form>

@@ -17,14 +17,18 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { validateDiscounts } from "@/lib/types"
 import type { PayerAccount } from "@/lib/types"
+import { dataService } from "@/lib/data/data-service"
 
 interface RegisterUsageDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   payerAccount?: PayerAccount | null
+  accountId?: string
+  accountName?: string
+  onSuccess?: () => void
 }
 
-export function RegisterUsageDialog({ open, onOpenChange, payerAccount }: RegisterUsageDialogProps) {
+export function RegisterUsageDialog({ open, onOpenChange, payerAccount, accountId, accountName, onSuccess }: RegisterUsageDialogProps) {
   const [resellerDiscount, setResellerDiscount] = useState<number>(0)
   const [customerDiscount, setCustomerDiscount] = useState<number>(0)
   const [rebateCredits, setRebateCredits] = useState<boolean>(false)
@@ -32,8 +36,9 @@ export function RegisterUsageDialog({ open, onOpenChange, payerAccount }: Regist
   const [rebateDiscount, setRebateDiscount] = useState<boolean>(false)
   const [rebateAdjustment, setRebateAdjustment] = useState<boolean>(false)
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     const error = validateDiscounts(resellerDiscount, customerDiscount)
@@ -42,8 +47,40 @@ export function RegisterUsageDialog({ open, onOpenChange, payerAccount }: Regist
       return
     }
 
-    // Handle form submission
-    onOpenChange(false)
+    if (!accountId) {
+      setValidationError("Account ID is required")
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const formData = new FormData(e.target as HTMLFormElement)
+      const customerName = formData.get('customer') as string
+      const vatNumber = formData.get('vat') as string
+
+      // First update the account with all configuration
+      await dataService.updateUsageAccount(accountId, {
+        customer: customerName,
+        vatNumber: vatNumber || '',
+        resellerDiscount,
+        customerDiscount,
+        rebateCredits,
+        rebateFee,
+        rebateDiscount,
+        rebateAdjustment
+      })
+
+      // Then change status to Registered
+      await dataService.changeUsageAccountStatus(accountId, "Registered")
+      
+      onOpenChange(false)
+      onSuccess?.()
+    } catch (error) {
+      console.error("Failed to register account:", error)
+      setValidationError("Failed to register account. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleResellerDiscountChange = (value: string) => {
@@ -77,15 +114,33 @@ export function RegisterUsageDialog({ open, onOpenChange, payerAccount }: Regist
               <h3 className="text-sm font-semibold text-[#00243E]">Account Information</h3>
               <div className="grid gap-2">
                 <Label htmlFor="usage-id">Account ID</Label>
-                <Input id="usage-id" placeholder="345678901234" required />
+                <Input 
+                  id="usage-id" 
+                  placeholder="345678901234" 
+                  defaultValue={accountId || ''} 
+                  disabled
+                  className="bg-muted"
+                  required 
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="account-name">Account Name</Label>
+                <Input 
+                  id="account-name" 
+                  placeholder="Account Name" 
+                  defaultValue={accountName || ''} 
+                  disabled
+                  className="bg-muted"
+                  required 
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="customer">Customer Name</Label>
-                <Input id="customer" placeholder="Acme Corporation" required />
+                <Input id="customer" name="customer" placeholder="Acme Corporation" required />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="vat">VAT Number</Label>
-                <Input id="vat" placeholder="DE123456789" />
+                <Input id="vat" name="vat" placeholder="DE123456789" />
               </div>
               {payerAccount && (
                 <div className="grid gap-2">

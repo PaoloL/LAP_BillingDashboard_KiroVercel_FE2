@@ -98,6 +98,7 @@ export function AccountsGrid() {
     // Find the payer account for this usage account
     const payerAccount = payerAccounts.find((p) => p.id === account.id.split("-")[0])
     setSelectedPayerForUsage(payerAccount || null)
+    setSelectedUsageAccount(account) // Store the account to get its ID and name
     setUsageDialogOpen(true)
   }
 
@@ -498,6 +499,8 @@ export function AccountsGrid() {
         open={usageDialogOpen}
         onOpenChange={setUsageDialogOpen}
         payerAccount={selectedPayerForUsage}
+        accountId={selectedUsageAccount?.accountId}
+        accountName={selectedUsageAccount?.customer}
         onSuccess={loadAccounts}
       />
       <EditUsageDialog
