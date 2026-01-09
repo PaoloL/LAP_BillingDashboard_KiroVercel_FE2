@@ -138,7 +138,7 @@ export function EditUsageDialog({ open, onOpenChange, account }: EditUsageDialog
                     Rebate Credits to Usage Account
                   </Label>
                   <p className="text-xs text-muted-foreground mt-1">
-                    If enabled, credit notes will be deducted from the Usage Account's total cost.
+                    If enabled, credit will be rebated to the Usage Account.
                   </p>
                 </div>
                 <Switch id="edit-rebate" checked={rebateCredits} onCheckedChange={setRebateCredits} />

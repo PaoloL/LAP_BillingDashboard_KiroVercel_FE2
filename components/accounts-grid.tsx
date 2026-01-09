@@ -306,9 +306,8 @@ export function AccountsGrid() {
                     </Badge>
                   )}
                   <div className="pr-20">
-                    <CardTitle className="text-base font-semibold leading-tight text-[#00243E]">
-                      {account.customer} ({account.id})
-                    </CardTitle>
+                    <div className="text-lg font-semibold leading-tight text-[#00243E]">{account.customer}</div>
+                    <div className="text-sm text-muted-foreground">({account.id})</div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
