@@ -346,6 +346,21 @@ export function AccountsGrid() {
                       </div>
                     )}
                   </div>
+
+                  <div className="space-y-2 border-b border-border pb-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Customer Discount</p>
+                        <p className="text-sm font-semibold text-[#026172]">{account.customerDiscount}%</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Reseller Discount</p>
+                        <p className="text-sm font-semibold text-[#026172]">{account.resellerDiscount}%</p>
+                      </div>
+                    </div>
+                  </div>
+                  {/* </CHANGE> */}
+
                   <div>
                     <div className="mb-2 flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Funds Utilization</span>
@@ -361,24 +376,46 @@ export function AccountsGrid() {
                       €{(account.totalUsage / 1000).toFixed(1)}k of €{(account.totalDeposit / 1000).toFixed(1)}k used
                     </p>
                   </div>
-                  <div className="flex items-center justify-between border-t border-border pt-3">
-                    <div className="space-y-0.5">
-                      <p className="text-xs text-muted-foreground">Customer Discount</p>
-                      <p className="text-xs font-medium text-[#026172]">{account.customerDiscount}%</p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {account.rebateCredits ? (
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#026172]/10">
-                          <Check className="h-4 w-4 text-[#026172]" />
-                        </div>
-                      ) : (
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-500/10">
-                          <X className="h-4 w-4 text-gray-600" />
-                        </div>
-                      )}
-                      <span className="text-xs text-muted-foreground">Rebate</span>
+
+                  <div className="border-t border-border pt-3">
+                    <p className="mb-2 text-xs font-medium text-muted-foreground">Rebate Configuration</p>
+                    <div className="flex flex-wrap gap-2">
+                      <div className="flex items-center gap-1">
+                        {account.rebateCredits ? (
+                          <Check className="h-3 w-3 text-[#026172]" />
+                        ) : (
+                          <X className="h-3 w-3 text-gray-400" />
+                        )}
+                        <span className="text-xs text-muted-foreground">Credit</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {account.rebateFee ? (
+                          <Check className="h-3 w-3 text-[#026172]" />
+                        ) : (
+                          <X className="h-3 w-3 text-gray-400" />
+                        )}
+                        <span className="text-xs text-muted-foreground">Fee</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {account.rebateDiscount ? (
+                          <Check className="h-3 w-3 text-[#026172]" />
+                        ) : (
+                          <X className="h-3 w-3 text-gray-400" />
+                        )}
+                        <span className="text-xs text-muted-foreground">Discount</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {account.rebateAdjustment ? (
+                          <Check className="h-3 w-3 text-[#026172]" />
+                        ) : (
+                          <X className="h-3 w-3 text-gray-400" />
+                        )}
+                        <span className="text-xs text-muted-foreground">Adjustment</span>
+                      </div>
                     </div>
                   </div>
+                  {/* </CHANGE> */}
+
                   <div className="flex gap-1 border-t border-border pt-3">
                     {account.status === "Unregistered" ? (
                       <Button
