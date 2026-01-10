@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Save, RefreshCw, Trash2, Plus, Building2 } from "lucide-react"
+import { Save, RefreshCw, Trash2, Plus, Building2, ChevronLeft, ChevronRight } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { dataService } from "@/lib/data/data-service"
 import type { PayerAccount, ExchangeRateConfig, CreateExchangeRateDTO, UpdateExchangeRateDTO } from "@/lib/types"
@@ -21,14 +21,18 @@ export function ExchangeRateSettings() {
 
   const [showForm, setShowForm] = useState(false)
   const [editingConfig, setEditingConfig] = useState<ExchangeRateConfig | null>(null)
-  const [billingPeriod, setBillingPeriod] = useState("")
+  const [billingPeriod, setBillingPeriod] = useState(() => {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, "0")
+    return `${year}-${month}`
+  })
   const [exchangeRate, setExchangeRate] = useState("")
 
   const { toast } = useToast()
 
   useEffect(() => {
     loadPayerAccounts()
-    // Don't load configurations on initial mount - wait for payer selection
   }, [])
 
   useEffect(() => {
@@ -67,6 +71,25 @@ export function ExchangeRateSettings() {
     }
   }
 
+  const navigateMonth = (direction: "prev" | "next") => {
+    const [year, month] = billingPeriod.split("-").map(Number)
+    const date = new Date(year, month - 1)
+
+    if (direction === "prev") {
+      date.setMonth(date.getMonth() - 1)
+    } else {
+      date.setMonth(date.getMonth() + 1)
+    }
+
+    const currentYear = new Date().getFullYear()
+    const newYear = date.getFullYear()
+
+    if (newYear >= currentYear - 10 && newYear <= currentYear + 10) {
+      const newMonth = String(date.getMonth() + 1).padStart(2, "0")
+      setBillingPeriod(`${newYear}-${newMonth}`)
+    }
+  }
+
   const handleSave = async () => {
     if (!selectedPayerId || !billingPeriod || !exchangeRate) {
       toast({
@@ -91,23 +114,20 @@ export function ExchangeRateSettings() {
       setLoading(true)
 
       if (editingConfig) {
-        // Update existing configuration
         const updateData: UpdateExchangeRateDTO = {
           billingPeriod,
           exchangeRate: rate,
         }
-        
+
         const updated = await dataService.updateExchangeRate(selectedPayerId, updateData)
-        
-        // Update local state
-        setConfigurations(prev => prev.map(c => c.id === editingConfig.id ? updated : c))
-        
+
+        setConfigurations((prev) => prev.map((c) => (c.id === editingConfig.id ? updated : c)))
+
         toast({
           title: "Exchange Rate Updated",
           description: `Exchange rate for ${billingPeriod} has been updated to ${rate.toFixed(3)}`,
         })
       } else {
-        // Check for existing configuration
         const existing = configurations.find(
           (c) => c.payerAccountId === selectedPayerId && c.billingPeriod === billingPeriod,
         )
@@ -121,37 +141,37 @@ export function ExchangeRateSettings() {
           return
         }
 
-        // Create new configuration
         const createData: CreateExchangeRateDTO = {
           payerAccountId: selectedPayerId,
           billingPeriod,
           exchangeRate: rate,
         }
-        
+
         const newConfig = await dataService.createExchangeRate(createData)
-        setConfigurations(prev => [...prev, newConfig])
-        
+        setConfigurations((prev) => [...prev, newConfig])
+
         toast({
           title: "Exchange Rate Added",
           description: `Exchange rate for ${billingPeriod} has been set to ${rate.toFixed(3)}`,
         })
       }
 
-      // Reset form
       setShowForm(false)
       setEditingConfig(null)
-      setBillingPeriod("")
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, "0")
+      setBillingPeriod(`${year}-${month}`)
       setExchangeRate("")
     } catch (error: any) {
       let errorMessage = "Failed to save exchange rate configuration"
-      
-      // Handle specific API errors
+
       if (error.message?.includes("already exists")) {
         errorMessage = "An exchange rate for this billing period already exists. Please edit it instead."
       } else if (error.message?.includes("ValidationError")) {
         errorMessage = "Invalid exchange rate value. Please check your input."
       }
-      
+
       toast({
         title: "Error",
         description: errorMessage,
@@ -198,11 +218,11 @@ export function ExchangeRateSettings() {
 
   const handleDelete = async (configId: string) => {
     try {
-      const config = configurations.find(c => c.id === configId)
+      const config = configurations.find((c) => c.id === configId)
       if (!config) return
-      
+
       await dataService.deleteExchangeRate(config.payerAccountId, config.billingPeriod)
-      setConfigurations(prev => prev.filter(c => c.id !== configId))
+      setConfigurations((prev) => prev.filter((c) => c.id !== configId))
       toast({
         title: "Exchange Rate Deleted",
         description: "Exchange rate configuration has been deleted",
@@ -218,7 +238,10 @@ export function ExchangeRateSettings() {
 
   const handleAddNew = () => {
     setEditingConfig(null)
-    setBillingPeriod("")
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, "0")
+    setBillingPeriod(`${year}-${month}`)
     setExchangeRate("")
     setShowForm(true)
   }
@@ -226,9 +249,19 @@ export function ExchangeRateSettings() {
   const handleCancelForm = () => {
     setShowForm(false)
     setEditingConfig(null)
-    setBillingPeriod("")
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, "0")
+    setBillingPeriod(`${year}-${month}`)
     setExchangeRate("")
   }
+
+  const currentYear = new Date().getFullYear()
+  const minDate = `${currentYear - 10}-01`
+  const maxDate = `${currentYear + 10}-12`
+  const [selectedYear, selectedMonth] = billingPeriod.split("-").map(Number)
+  const isPrevDisabled = selectedYear === currentYear - 10 && selectedMonth === 1
+  const isNextDisabled = selectedYear === currentYear + 10 && selectedMonth === 12
 
   const selectedPayer = payerAccounts.find((p) => p.accountId === selectedPayerId)
 
@@ -305,14 +338,41 @@ export function ExchangeRateSettings() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="billingPeriod">Billing Period</Label>
-                    <Input
-                      id="billingPeriod"
-                      type="month"
-                      value={billingPeriod}
-                      onChange={(e) => setBillingPeriod(e.target.value)}
-                      disabled={loading}
-                      placeholder="YYYY-MM"
-                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => navigateMonth("prev")}
+                        disabled={loading || isPrevDisabled}
+                        className="h-9 w-9"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Input
+                        id="billingPeriod"
+                        type="month"
+                        value={billingPeriod}
+                        onChange={(e) => setBillingPeriod(e.target.value)}
+                        disabled={loading}
+                        min={minDate}
+                        max={maxDate}
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => navigateMonth("next")}
+                        disabled={loading || isNextDisabled}
+                        className="h-9 w-9"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Navigate between {currentYear - 10} and {currentYear + 10}
+                    </p>
                   </div>
 
                   <div className="space-y-2">
