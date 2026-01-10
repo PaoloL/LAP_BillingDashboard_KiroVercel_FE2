@@ -148,7 +148,9 @@ export function ExchangeRateSettings() {
         }
 
         const newConfig = await dataService.createExchangeRate(createData)
-        setConfigurations((prev) => [...prev, newConfig])
+        
+        // Reload configurations for current payer to get fresh data
+        await loadConfigurationsForPayer(selectedPayerId)
 
         toast({
           title: "Exchange Rate Added",
