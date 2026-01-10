@@ -6,5 +6,5 @@ export const config = {
   apiBaseUrl:
     process.env.NEXT_PUBLIC_API_GATEWAY_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api",
   exchangeRatesApiBaseUrl:
-    process.env.NEXT_PUBLIC_EXCHANGE_RATES_API_BASE_URL || "https://bbixz4t12k.execute-api.eu-west-1.amazonaws.com/dev",
+    process.env.NEXT_PUBLIC_API_GATEWAY_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api",
 } as const
