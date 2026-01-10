@@ -236,26 +236,29 @@ export function ExchangeRateSettings() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="payerAccount" className="text-base font-semibold text-[#00243E]">
-            Select Payer Account
+        <div className="flex items-center gap-4">
+          <Label htmlFor="payerAccount" className="text-sm font-medium text-[#00243E] whitespace-nowrap">
+            Payer Account:
           </Label>
           <Popover open={isPayerOpen} onOpenChange={setIsPayerOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="w-full justify-start text-left font-normal bg-transparent h-12">
+              <Button
+                variant="outline"
+                className="justify-start text-left font-normal bg-transparent h-9 min-w-[280px]"
+              >
                 <Building2 className="mr-2 h-4 w-4 text-[#00243E]" />
                 {selectedPayer ? (
                   <span className="truncate">
-                    <span className="font-semibold">{selectedPayer.accountName}</span>
-                    <span className="ml-2 text-sm text-muted-foreground">({selectedPayer.accountId})</span>
+                    <span className="font-medium text-sm">{selectedPayer.accountName}</span>
+                    <span className="ml-2 text-xs text-muted-foreground">({selectedPayer.accountId})</span>
                   </span>
                 ) : (
-                  <span className="text-muted-foreground">Select payer account...</span>
+                  <span className="text-muted-foreground text-sm">Select payer account...</span>
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[400px] p-0" align="start">
-              <div className="max-h-[300px] overflow-auto p-2">
+            <PopoverContent className="w-[380px] p-0" align="start">
+              <div className="max-h-[280px] overflow-auto p-1">
                 {payerAccounts.map((account) => (
                   <button
                     key={account.accountId}
@@ -267,7 +270,7 @@ export function ExchangeRateSettings() {
                       setEditingConfig(null)
                     }}
                   >
-                    <div className="font-medium">{account.accountName}</div>
+                    <div className="font-medium text-sm">{account.accountName}</div>
                     <div className="text-xs text-muted-foreground">{account.accountId}</div>
                   </button>
                 ))}
