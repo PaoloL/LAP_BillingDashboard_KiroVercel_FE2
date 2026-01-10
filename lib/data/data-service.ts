@@ -1,7 +1,7 @@
 import { config } from "@/lib/config"
 import { mockPayerAccounts, mockUsageAccounts, mockTransactionsByPeriod } from "./mock-data"
 import { apiClient } from "./api-client"
-import type { PayerAccount, UsageAccount, TransactionDetail } from "@/lib/types"
+import type { PayerAccount, UsageAccount, TransactionDetail, ExchangeRateConfig, CreateExchangeRateDTO, UpdateExchangeRateDTO } from "@/lib/types"
 
 // Create mutable copies for mock data
 const mutablePayerAccounts = [...mockPayerAccounts]
@@ -192,5 +192,118 @@ export const dataService = {
       return Promise.resolve(newTransaction as TransactionDetail)
     }
     return apiClient.createTransaction(data)
+  },
+
+  // Exchange Rates
+  async getExchangeRates(params?: {
+    payerAccountId?: string
+    billingPeriod?: string
+  }): Promise<ExchangeRateConfig[]> {
+    if (config.useMockData) {
+      const mockRates: ExchangeRateConfig[] = [
+        {
+          id: "rate-123456789012-2025-01",
+          payerAccountId: "123456789012",
+          payerAccountName: "AWS Main Account",
+          billingPeriod: "2025-01",
+          exchangeRate: 1.093,
+          createdAt: "2025-01-10T10:00:00Z",
+          updatedAt: "2025-01-15T14:30:00Z",
+        },
+        {
+          id: "rate-123456789012-2024-12",
+          payerAccountId: "123456789012",
+          payerAccountName: "AWS Main Account",
+          billingPeriod: "2024-12",
+          exchangeRate: 1.085,
+          createdAt: "2024-12-01T10:00:00Z",
+          updatedAt: "2024-12-01T10:00:00Z",
+        },
+        {
+          id: "rate-987654321098-2025-01",
+          payerAccountId: "987654321098",
+          payerAccountName: "AWS Development",
+          billingPeriod: "2025-01",
+          exchangeRate: 1.09,
+          createdAt: "2025-01-01T10:00:00Z",
+          updatedAt: "2025-01-01T10:00:00Z",
+        },
+      ]
+      
+      let filtered = mockRates
+      if (params?.payerAccountId) {
+        filtered = filtered.filter(r => r.payerAccountId === params.payerAccountId)
+      }
+      if (params?.billingPeriod) {
+        filtered = filtered.filter(r => r.billingPeriod === params.billingPeriod)
+      }
+      
+      return Promise.resolve(filtered)
+    }
+    return apiClient.getExchangeRates(params)
+  },
+
+  async createExchangeRate(data: CreateExchangeRateDTO): Promise<ExchangeRateConfig> {
+    if (config.useMockData) {
+      const payer = mutablePayerAccounts.find(p => p.accountId === data.payerAccountId)
+      const newRate: ExchangeRateConfig = {
+        id: `rate-${data.payerAccountId}-${data.billingPeriod}`,
+        payerAccountId: data.payerAccountId,
+        payerAccountName: payer?.accountName || "Unknown Account",
+        billingPeriod: data.billingPeriod,
+        exchangeRate: data.exchangeRate,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      console.log("[v0] Mock: Created exchange rate", newRate)
+      return Promise.resolve(newRate)
+    }
+    return apiClient.createExchangeRate(data)
+  },
+
+  async updateExchangeRate(payerAccountId: string, data: UpdateExchangeRateDTO): Promise<ExchangeRateConfig> {
+    if (config.useMockData) {
+      const updatedRate: ExchangeRateConfig = {
+        id: `rate-${payerAccountId}-${data.billingPeriod}`,
+        payerAccountId,
+        payerAccountName: "Mock Account",
+        billingPeriod: data.billingPeriod,
+        exchangeRate: data.exchangeRate,
+        createdAt: "2025-01-01T10:00:00Z",
+        updatedAt: new Date().toISOString(),
+      }
+      console.log("[v0] Mock: Updated exchange rate", updatedRate)
+      return Promise.resolve(updatedRate)
+    }
+    return apiClient.updateExchangeRate(payerAccountId, data)
+  },
+
+  async deleteExchangeRate(payerAccountId: string, billingPeriod: string): Promise<void> {
+    if (config.useMockData) {
+      console.log("[v0] Mock: Deleted exchange rate", { payerAccountId, billingPeriod })
+      return Promise.resolve()
+    }
+    return apiClient.deleteExchangeRate(payerAccountId, billingPeriod)
+  },
+
+  async applyExchangeRate(id: string): Promise<{
+    message: string
+    affectedTransactions: number
+    billingPeriod: string
+    payerAccountId: string
+    exchangeRate: number
+  }> {
+    if (config.useMockData) {
+      const result = {
+        message: "All transactions have been recalculated successfully",
+        affectedTransactions: 150,
+        billingPeriod: id.split('-')[2],
+        payerAccountId: id.split('-')[1],
+        exchangeRate: 1.093,
+      }
+      console.log("[v0] Mock: Applied exchange rate", result)
+      return Promise.resolve(result)
+    }
+    return apiClient.applyExchangeRate(id)
   },
 }

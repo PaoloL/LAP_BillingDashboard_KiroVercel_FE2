@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Save, RefreshCw, Trash2, Plus, Building2 } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { dataService } from "@/lib/data/data-service"
-import type { PayerAccount, ExchangeRateConfig } from "@/lib/types"
+import type { PayerAccount, ExchangeRateConfig, CreateExchangeRateDTO, UpdateExchangeRateDTO } from "@/lib/types"
 import { useToast } from "@/hooks/use-toast"
 
 export function ExchangeRateSettings() {
@@ -28,17 +28,17 @@ export function ExchangeRateSettings() {
 
   useEffect(() => {
     loadPayerAccounts()
-    loadConfigurations()
+    // Don't load configurations on initial mount - wait for payer selection
   }, [])
 
   useEffect(() => {
     if (selectedPayerId) {
-      const filtered = configurations.filter((c) => c.payerAccountId === selectedPayerId)
-      setFilteredConfigurations(filtered)
+      loadConfigurationsForPayer(selectedPayerId)
     } else {
+      setConfigurations([])
       setFilteredConfigurations([])
     }
-  }, [selectedPayerId, configurations])
+  }, [selectedPayerId])
 
   const loadPayerAccounts = async () => {
     try {
@@ -49,36 +49,22 @@ export function ExchangeRateSettings() {
     }
   }
 
-  const loadConfigurations = async () => {
-    setConfigurations([
-      {
-        id: "1",
-        payerAccountId: "123456789012",
-        payerAccountName: "AWS Main Account",
-        billingPeriod: "2025-01",
-        exchangeRate: 1.093,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: "2",
-        payerAccountId: "123456789012",
-        payerAccountName: "AWS Main Account",
-        billingPeriod: "2024-12",
-        exchangeRate: 1.085,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: "3",
-        payerAccountId: "987654321098",
-        payerAccountName: "AWS Development",
-        billingPeriod: "2025-01",
-        exchangeRate: 1.09,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ])
+  const loadConfigurationsForPayer = async (payerAccountId: string) => {
+    try {
+      setLoading(true)
+      const configs = await dataService.getExchangeRates({ payerAccountId })
+      setConfigurations(configs)
+      setFilteredConfigurations(configs)
+    } catch (error) {
+      console.error("Failed to load exchange rate configurations:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load exchange rate configurations",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSave = async () => {
@@ -103,30 +89,30 @@ export function ExchangeRateSettings() {
 
     try {
       setLoading(true)
-      const selectedPayer = payerAccounts.find((p) => p.accountId === selectedPayerId)
 
       if (editingConfig) {
-        const updated = configurations.map((c) =>
-          c.id === editingConfig.id
-            ? {
-                ...c,
-                billingPeriod,
-                exchangeRate: rate,
-                updatedAt: new Date().toISOString(),
-              }
-            : c,
-        )
-        setConfigurations(updated)
+        // Update existing configuration
+        const updateData: UpdateExchangeRateDTO = {
+          billingPeriod,
+          exchangeRate: rate,
+        }
+        
+        const updated = await dataService.updateExchangeRate(selectedPayerId, updateData)
+        
+        // Update local state
+        setConfigurations(prev => prev.map(c => c.id === editingConfig.id ? updated : c))
+        
         toast({
           title: "Exchange Rate Updated",
           description: `Exchange rate for ${billingPeriod} has been updated to ${rate.toFixed(3)}`,
         })
       } else {
-        const exists = configurations.some(
+        // Check for existing configuration
+        const existing = configurations.find(
           (c) => c.payerAccountId === selectedPayerId && c.billingPeriod === billingPeriod,
         )
 
-        if (exists) {
+        if (existing) {
           toast({
             title: "Configuration Exists",
             description: "An exchange rate for this billing period already exists. Please edit it instead.",
@@ -136,16 +122,15 @@ export function ExchangeRateSettings() {
         }
 
         // Create new configuration
-        const newConfig: ExchangeRateConfig = {
-          id: Math.random().toString(36).substr(2, 9),
+        const createData: CreateExchangeRateDTO = {
           payerAccountId: selectedPayerId,
-          payerAccountName: selectedPayer?.accountName || "",
           billingPeriod,
           exchangeRate: rate,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
         }
-        setConfigurations([...configurations, newConfig])
+        
+        const newConfig = await dataService.createExchangeRate(createData)
+        setConfigurations(prev => [...prev, newConfig])
+        
         toast({
           title: "Exchange Rate Added",
           description: `Exchange rate for ${billingPeriod} has been set to ${rate.toFixed(3)}`,
@@ -157,10 +142,19 @@ export function ExchangeRateSettings() {
       setEditingConfig(null)
       setBillingPeriod("")
       setExchangeRate("")
-    } catch (error) {
+    } catch (error: any) {
+      let errorMessage = "Failed to save exchange rate configuration"
+      
+      // Handle specific API errors
+      if (error.message?.includes("already exists")) {
+        errorMessage = "An exchange rate for this billing period already exists. Please edit it instead."
+      } else if (error.message?.includes("ValidationError")) {
+        errorMessage = "Invalid exchange rate value. Please check your input."
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to save exchange rate configuration",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -168,27 +162,26 @@ export function ExchangeRateSettings() {
     }
   }
 
-  const handleUpdate = async (configId: string) => {
+  const handleApply = async (configId: string) => {
     try {
       setLoading(true)
       const config = configurations.find((c) => c.id === configId)
 
       toast({
-        title: "Updating Exchange Rates",
+        title: "Applying Exchange Rate",
         description: `Recalculating transactions for ${config?.billingPeriod}...`,
       })
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      const result = await dataService.applyExchangeRate(configId)
 
       toast({
-        title: "Exchange Rates Updated",
-        description: "All transactions have been recalculated successfully",
+        title: "Exchange Rate Applied",
+        description: `${result.message}. ${result.affectedTransactions} transactions recalculated.`,
       })
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to update exchange rates",
+        description: error.message || "Failed to apply exchange rate",
         variant: "destructive",
       })
     } finally {
@@ -203,12 +196,24 @@ export function ExchangeRateSettings() {
     setShowForm(true)
   }
 
-  const handleDelete = (configId: string) => {
-    setConfigurations(configurations.filter((c) => c.id !== configId))
-    toast({
-      title: "Exchange Rate Deleted",
-      description: "Exchange rate configuration has been deleted",
-    })
+  const handleDelete = async (configId: string) => {
+    try {
+      const config = configurations.find(c => c.id === configId)
+      if (!config) return
+      
+      await dataService.deleteExchangeRate(config.payerAccountId, config.billingPeriod)
+      setConfigurations(prev => prev.filter(c => c.id !== configId))
+      toast({
+        title: "Exchange Rate Deleted",
+        description: "Exchange rate configuration has been deleted",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete exchange rate configuration",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleAddNew = () => {
@@ -365,12 +370,12 @@ export function ExchangeRateSettings() {
                       <div className="flex items-center gap-2">
                         <Button
                           size="sm"
-                          onClick={() => handleUpdate(config.id)}
+                          onClick={() => handleApply(config.id)}
                           disabled={loading}
                           className="bg-[#026172] hover:bg-[#026172]/90"
                         >
                           <RefreshCw className={`mr-2 h-3 w-3 ${loading ? "animate-spin" : ""}`} />
-                          Update
+                          Apply
                         </Button>
                         <Button
                           size="sm"

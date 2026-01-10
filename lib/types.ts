@@ -171,5 +171,6 @@ export interface CreateExchangeRateDTO {
 }
 
 export interface UpdateExchangeRateDTO {
+  billingPeriod: string
   exchangeRate: number
 }
