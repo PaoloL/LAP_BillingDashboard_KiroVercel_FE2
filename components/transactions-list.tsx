@@ -29,8 +29,20 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                   : transaction.dateTime.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}
               </div>
               <div className="text-xs text-muted-foreground">
-                Updated: {transaction.dateTime.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}{" "}
-                {transaction.dateTime.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+                Updated:{" "}
+                {transaction.dateTime
+                  .toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "2-digit",
+                  })
+                  .replace(/\//g, "/")}{" "}
+                -{" "}
+                {transaction.dateTime.toLocaleTimeString("en-GB", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: false,
+                })}
               </div>
             </div>
           </div>
