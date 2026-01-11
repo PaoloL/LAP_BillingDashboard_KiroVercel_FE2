@@ -1,0 +1,64 @@
+openapi: 3.0.3
+info:
+  title: AWS Billing Dashboard - Settings API
+  description: API specification for application settings
+  version: 1.0.0
+  contact:
+    name: API Support
+
+servers:
+  - url: https://api.example.com/v1
+    description: Production server
+  - url: http://localhost:3001/v1
+    description: Development server
+
+paths:
+  /settings:
+    get:
+      summary: Get application settings
+      tags:
+        - Settings
+      responses:
+        '200':
+          description: Application settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    description: Placeholder for future settings
+
+components:
+  schemas:
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+tags:
+  - name: Settings
+    description: General application settings management
