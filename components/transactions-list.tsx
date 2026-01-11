@@ -29,7 +29,6 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                   : transaction.dateTime.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}
               </div>
               <div className="text-xs text-muted-foreground">
-                Updated:{" "}
                 {transaction.dateTime
                   .toLocaleDateString("en-GB", {
                     day: "2-digit",
