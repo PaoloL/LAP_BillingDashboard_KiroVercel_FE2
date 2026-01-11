@@ -9,6 +9,8 @@ import { dataService } from "@/lib/data/data-service"
 function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
   const [isExpanded, setIsExpanded] = useState(false)
 
+  const detailedBreakdown = transaction.details?.customer?.entity?.aws || {}
+
   return (
     <>
       <tr className="cursor-pointer hover:bg-muted/50" onClick={() => setIsExpanded(!isExpanded)}>
@@ -116,38 +118,155 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
       {isExpanded && (
         <tr className="bg-muted/30">
           <td colSpan={7} className="px-4 py-4">
-            <div className="ml-10 space-y-3">
+            <div className="ml-10 space-y-4">
               <h4 className="text-sm font-semibold text-[#00243E]">Cost Breakdown</h4>
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-6">
-                <div className="space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground">Usage</div>
-                  <div className="font-semibold text-[#EC9400]">{formatCurrencyUSD(transaction.costBreakdown.usage)}</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground">Fee</div>
-                  <div className="font-semibold text-[#00243E]">{formatCurrencyUSD(transaction.costBreakdown.fee)}</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground">Discount</div>
-                  <div className="font-semibold text-[#026172]">
-                    {formatCurrencyUSD(transaction.costBreakdown.discount)}
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {/* Usage Section */}
+                <div className="space-y-2 rounded-lg border border-border bg-background p-3">
+                  <div className="flex items-center justify-between border-b border-border pb-2">
+                    <div className="text-sm font-semibold text-[#EC9400]">Usage</div>
+                    <div className="text-sm font-bold text-[#EC9400]">
+                      {formatCurrencyUSD(detailedBreakdown.usage?.totals?.usd || 0)}
+                    </div>
+                  </div>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Usage</span>
+                      <span className="font-medium">{formatCurrencyUSD(detailedBreakdown.usage?.usage?.usd || 0)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Discounted Usage</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(detailedBreakdown.usage?.discountedUsage?.usd || 0)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">SP Covered Usage</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(detailedBreakdown.usage?.savingsPlanCoveredUsage?.usd || 0)}
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground">Credits</div>
-                  <div className="font-semibold text-green-600">
-                    {formatCurrencyUSD(transaction.costBreakdown.credits || 0)}
+
+                {/* Fee Section */}
+                <div className="space-y-2 rounded-lg border border-border bg-background p-3">
+                  <div className="flex items-center justify-between border-b border-border pb-2">
+                    <div className="text-sm font-semibold text-[#00243E]">Fee</div>
+                    <div className="text-sm font-bold text-[#00243E]">
+                      {formatCurrencyUSD(detailedBreakdown.fee?.totals?.usd || 0)}
+                    </div>
+                  </div>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Fee</span>
+                      <span className="font-medium">{formatCurrencyUSD(detailedBreakdown.fee?.fee?.usd || 0)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">RI Fee</span>
+                      <span className="font-medium">{formatCurrencyUSD(detailedBreakdown.fee?.riFee?.usd || 0)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">SP Recurring Fee</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(detailedBreakdown.fee?.savingsPlanRecurringFee?.usd || 0)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">SP Upfront Fee</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(detailedBreakdown.fee?.savingsPlanUpfrontFee?.usd || 0)}
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground">Adjustment</div>
-                  <div className="font-semibold text-foreground">
-                    {formatCurrencyUSD(transaction.costBreakdown.adjustment)}
+
+                {/* Discount Section */}
+                <div className="space-y-2 rounded-lg border border-border bg-background p-3">
+                  <div className="flex items-center justify-between border-b border-border pb-2">
+                    <div className="text-sm font-semibold text-[#026172]">Discount</div>
+                    <div className="text-sm font-bold text-[#026172]">
+                      {formatCurrencyUSD(Math.abs(detailedBreakdown.discount?.totals?.usd || 0))}
+                    </div>
+                  </div>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Bundled Discount</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(Math.abs(detailedBreakdown.discount?.bundledDiscount?.usd || 0))}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Discount</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(Math.abs(detailedBreakdown.discount?.discount?.usd || 0))}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Credit</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(Math.abs(detailedBreakdown.discount?.credit?.usd || 0))}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Private Rate Discount</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(Math.abs(detailedBreakdown.discount?.privateRateDiscount?.usd || 0))}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Distributor Discount</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(Math.abs(detailedBreakdown.discount?.distributorDiscount?.usd || 0))}
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground">Tax</div>
-                  <div className="font-semibold text-foreground">{formatCurrencyUSD(transaction.costBreakdown.tax)}</div>
+
+                {/* Adjustment Section */}
+                <div className="space-y-2 rounded-lg border border-border bg-background p-3">
+                  <div className="flex items-center justify-between border-b border-border pb-2">
+                    <div className="text-sm font-semibold text-green-600">Adjustment</div>
+                    <div className="text-sm font-bold text-green-600">
+                      {formatCurrencyUSD(Math.abs(detailedBreakdown.adjustment?.totals?.usd || 0))}
+                    </div>
+                  </div>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Credit</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(Math.abs(detailedBreakdown.adjustment?.credit?.usd || 0))}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Refund</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(Math.abs(detailedBreakdown.adjustment?.refund?.usd || 0))}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">SP Negation</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(Math.abs(detailedBreakdown.adjustment?.savingsPlanNegation?.usd || 0))}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tax Section */}
+                <div className="space-y-2 rounded-lg border border-border bg-background p-3">
+                  <div className="flex items-center justify-between border-b border-border pb-2">
+                    <div className="text-sm font-semibold text-foreground">Tax</div>
+                    <div className="text-sm font-bold text-foreground">
+                      {formatCurrencyUSD(detailedBreakdown.tax?.totals?.usd || 0)}
+                    </div>
+                  </div>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Tax</span>
+                      <span className="font-medium">{formatCurrencyUSD(detailedBreakdown.tax?.tax?.usd || 0)}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -184,13 +303,15 @@ export function TransactionsList({
         setLoading(true)
         const data = await dataService.getTransactions({
           // Use billing periods if available, otherwise fall back to dates
-          ...(billingPeriodRange ? {
-            startPeriod: billingPeriodRange.startPeriod,
-            endPeriod: billingPeriodRange.endPeriod,
-          } : {
-            startDate: dateRange?.from,
-            endDate: dateRange?.to,
-          }),
+          ...(billingPeriodRange
+            ? {
+                startPeriod: billingPeriodRange.startPeriod,
+                endPeriod: billingPeriodRange.endPeriod,
+              }
+            : {
+                startDate: dateRange?.from,
+                endDate: dateRange?.to,
+              }),
           sortBy,
           sortOrder,
           payerAccountId,
@@ -199,20 +320,22 @@ export function TransactionsList({
 
         // Handle new API response format (flat array) and group by period
         const processedData: Record<string, TransactionDetail[]> = {}
-        
+
         if (Array.isArray(data.data)) {
           // New format: data is a flat array
           data.data.forEach((tx) => {
-            const billingPeriod = tx.billingPeriod || ''
-            const periodKey = billingPeriod ? new Date(billingPeriod + '-01').toLocaleDateString('en-GB', {
-              month: 'long',
-              year: 'numeric'
-            }) : 'Unknown Period'
-            
+            const billingPeriod = tx.billingPeriod || ""
+            const periodKey = billingPeriod
+              ? new Date(billingPeriod + "-01").toLocaleDateString("en-GB", {
+                  month: "long",
+                  year: "numeric",
+                })
+              : "Unknown Period"
+
             if (!processedData[periodKey]) {
               processedData[periodKey] = []
             }
-            
+
             processedData[periodKey].push({
               ...tx,
               dateTime: new Date(tx.updatedAt || tx.dateTime),
@@ -223,13 +346,13 @@ export function TransactionsList({
                 discount: Math.abs(tx.details?.customer?.entity?.aws?.discount?.totals?.usd || 0),
                 credits: Math.abs(tx.details?.customer?.entity?.aws?.adjustment?.totals?.usd || 0),
                 adjustment: 0,
-                tax: tx.details?.customer?.entity?.aws?.tax?.totals?.usd || 0
+                tax: tx.details?.customer?.entity?.aws?.tax?.totals?.usd || 0,
               },
               distributorCost: tx.summary?.distributor || {},
               sellerCost: tx.summary?.seller || {},
               customerCost: tx.summary?.customer || {},
               payerAccount: tx.accounts?.payer || {},
-              usageAccount: tx.accounts?.usage || {}
+              usageAccount: tx.accounts?.usage || {},
             })
           })
         } else {
