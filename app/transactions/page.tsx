@@ -11,6 +11,7 @@ export default function TransactionsPage() {
     from: undefined,
     to: undefined,
   })
+  const [billingPeriodRange, setBillingPeriodRange] = useState<{ startPeriod: string; endPeriod: string } | undefined>()
   const [sortBy, setSortBy] = useState<"name" | "date">("date")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
   const [payerAccountId, setPayerAccountId] = useState<string | undefined>()
@@ -28,6 +29,7 @@ export default function TransactionsPage() {
           <div className="flex items-center gap-3">
             <TransactionFilters
               onDateRangeChange={setDateRange}
+              onBillingPeriodRangeChange={setBillingPeriodRange}
               onSortChange={(newSortBy, newSortOrder) => {
                 setSortBy(newSortBy)
                 setSortOrder(newSortOrder)
@@ -40,7 +42,8 @@ export default function TransactionsPage() {
         </div>
 
         <TransactionsList 
-          dateRange={dateRange} 
+          dateRange={dateRange}
+          billingPeriodRange={billingPeriodRange}
           sortBy={sortBy} 
           sortOrder={sortOrder}
           payerAccountId={payerAccountId}

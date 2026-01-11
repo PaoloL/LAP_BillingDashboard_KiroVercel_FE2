@@ -143,14 +143,21 @@ class ApiClient {
   async getTransactions(params?: {
     startDate?: Date
     endDate?: Date
+    startPeriod?: string  // YYYY-MM format
+    endPeriod?: string    // YYYY-MM format
     sortBy?: "name" | "date"
     sortOrder?: "asc" | "desc"
     payerAccountId?: string
     usageAccountId?: string
   }): Promise<{data: Record<string, TransactionDetail[]>}> {
     const searchParams = new URLSearchParams()
-    if (params?.startDate) searchParams.append("startDate", params.startDate.toISOString())
-    if (params?.endDate) searchParams.append("endDate", params.endDate.toISOString())
+    
+    // Use billing periods if provided, otherwise fall back to dates
+    if (params?.startPeriod) searchParams.append("startPeriod", params.startPeriod)
+    if (params?.endPeriod) searchParams.append("endPeriod", params.endPeriod)
+    if (params?.startDate && !params?.startPeriod) searchParams.append("startDate", params.startDate.toISOString())
+    if (params?.endDate && !params?.endPeriod) searchParams.append("endDate", params.endDate.toISOString())
+    
     if (params?.sortBy) searchParams.append("sortBy", params.sortBy)
     if (params?.sortOrder) searchParams.append("sortOrder", params.sortOrder)
     if (params?.payerAccountId) searchParams.append("payerAccountId", params.payerAccountId)

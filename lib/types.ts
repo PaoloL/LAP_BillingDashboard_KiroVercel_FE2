@@ -102,6 +102,7 @@ export interface TransactionDetail {
     usage: number
     fee: number
     discount: number
+    credits?: number
     adjustment: number
     tax: number
   }

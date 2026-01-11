@@ -174,6 +174,8 @@ export const dataService = {
   async getTransactions(params?: {
     startDate?: Date
     endDate?: Date
+    startPeriod?: string  // YYYY-MM format
+    endPeriod?: string    // YYYY-MM format
     sortBy?: "name" | "date"
     sortOrder?: "asc" | "desc"
     payerAccountId?: string

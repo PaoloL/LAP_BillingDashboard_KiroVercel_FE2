@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils"
 
 interface TransactionFiltersProps {
   onDateRangeChange?: (dateRange: { from: Date | undefined; to: Date | undefined }) => void
+  onBillingPeriodRangeChange?: (billingPeriodRange: { startPeriod: string; endPeriod: string }) => void
   onSortChange?: (sortBy: "name" | "date", sortOrder: "asc" | "desc") => void
   onPayerAccountChange?: (payerAccountId: string | undefined) => void
   onUsageAccountChange?: (usageAccountId: string | undefined) => void
@@ -17,6 +18,7 @@ interface TransactionFiltersProps {
 
 export function TransactionFilters({
   onDateRangeChange,
+  onBillingPeriodRangeChange,
   onSortChange,
   onPayerAccountChange,
   onUsageAccountChange,
@@ -35,6 +37,13 @@ export function TransactionFilters({
   const [loadingAccounts, setLoadingAccounts] = useState(true)
   const [startPeriod, setStartPeriod] = useState<Date>(startOfMonth(new Date()))
   const [endPeriod, setEndPeriod] = useState<Date>(endOfMonth(new Date()))
+
+  // Initialize billing period range on mount
+  useEffect(() => {
+    const today = new Date()
+    const currentPeriod = format(today, "yyyy-MM")
+    onBillingPeriodRangeChange?.({ startPeriod: currentPeriod, endPeriod: currentPeriod })
+  }, [onBillingPeriodRangeChange])
 
   useEffect(() => {
     const loadAccounts = async () => {
@@ -117,22 +126,32 @@ export function TransactionFilters({
     const newStartPeriod = direction === "prev" ? subMonths(startPeriod, 1) : addMonths(startPeriod, 1)
     setStartPeriod(newStartPeriod)
 
-    // Update date range
+    // Update date range for backward compatibility
     const newFrom = startOfMonth(newStartPeriod)
     const newTo = endOfMonth(endPeriod)
     setDateRange({ from: newFrom, to: newTo })
     onDateRangeChange?.({ from: newFrom, to: newTo })
+
+    // Pass billing period range in YYYY-MM format
+    const startPeriodStr = format(newStartPeriod, "yyyy-MM")
+    const endPeriodStr = format(endPeriod, "yyyy-MM")
+    onBillingPeriodRangeChange?.({ startPeriod: startPeriodStr, endPeriod: endPeriodStr })
   }
 
   const handleEndPeriodChange = (direction: "prev" | "next") => {
     const newEndPeriod = direction === "prev" ? subMonths(endPeriod, 1) : addMonths(endPeriod, 1)
     setEndPeriod(newEndPeriod)
 
-    // Update date range
+    // Update date range for backward compatibility
     const newFrom = startOfMonth(startPeriod)
     const newTo = endOfMonth(newEndPeriod)
     setDateRange({ from: newFrom, to: newTo })
     onDateRangeChange?.({ from: newFrom, to: newTo })
+
+    // Pass billing period range in YYYY-MM format
+    const startPeriodStr = format(startPeriod, "yyyy-MM")
+    const endPeriodStr = format(newEndPeriod, "yyyy-MM")
+    onBillingPeriodRangeChange?.({ startPeriod: startPeriodStr, endPeriod: endPeriodStr })
   }
 
   const handleSortToggle = () => {
@@ -342,6 +361,10 @@ export function TransactionFilters({
                 setStartPeriod(startOfMonth(today))
                 setEndPeriod(endOfMonth(today))
                 handleDateRangeChange({ from: startOfMonth(today), to: endOfMonth(today) })
+                
+                // Pass current month billing period
+                const currentPeriod = format(today, "yyyy-MM")
+                onBillingPeriodRangeChange?.({ startPeriod: currentPeriod, endPeriod: currentPeriod })
               }}
             >
               Reset to Current Month

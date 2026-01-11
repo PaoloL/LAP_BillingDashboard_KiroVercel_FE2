@@ -1,6 +1,6 @@
 "use client"
 import { Card, CardContent } from "@/components/ui/card"
-import { formatCurrency } from "@/lib/format"
+import { formatCurrency, formatCurrencyUSD } from "@/lib/format"
 import { ChevronDown, ChevronRight } from "lucide-react"
 import { useState, useMemo, useEffect } from "react"
 import type { TransactionDetail } from "@/lib/types"
@@ -118,30 +118,36 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
           <td colSpan={7} className="px-4 py-4">
             <div className="ml-10 space-y-3">
               <h4 className="text-sm font-semibold text-[#00243E]">Cost Breakdown</h4>
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-6">
                 <div className="space-y-1">
                   <div className="text-xs font-medium text-muted-foreground">Usage</div>
-                  <div className="font-semibold text-[#EC9400]">{formatCurrency(transaction.costBreakdown.usage)}</div>
+                  <div className="font-semibold text-[#EC9400]">{formatCurrencyUSD(transaction.costBreakdown.usage)}</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-xs font-medium text-muted-foreground">Fee</div>
-                  <div className="font-semibold text-[#00243E]">{formatCurrency(transaction.costBreakdown.fee)}</div>
+                  <div className="font-semibold text-[#00243E]">{formatCurrencyUSD(transaction.costBreakdown.fee)}</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-xs font-medium text-muted-foreground">Discount</div>
                   <div className="font-semibold text-[#026172]">
-                    {formatCurrency(transaction.costBreakdown.discount)}
+                    {formatCurrencyUSD(transaction.costBreakdown.discount)}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs font-medium text-muted-foreground">Credits</div>
+                  <div className="font-semibold text-green-600">
+                    {formatCurrencyUSD(transaction.costBreakdown.credits || 0)}
                   </div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-xs font-medium text-muted-foreground">Adjustment</div>
                   <div className="font-semibold text-foreground">
-                    {formatCurrency(transaction.costBreakdown.adjustment)}
+                    {formatCurrencyUSD(transaction.costBreakdown.adjustment)}
                   </div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-xs font-medium text-muted-foreground">Tax</div>
-                  <div className="font-semibold text-foreground">{formatCurrency(transaction.costBreakdown.tax)}</div>
+                  <div className="font-semibold text-foreground">{formatCurrencyUSD(transaction.costBreakdown.tax)}</div>
                 </div>
               </div>
             </div>
@@ -154,6 +160,7 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
 
 interface TransactionsListProps {
   dateRange?: { from: Date | undefined; to: Date | undefined }
+  billingPeriodRange?: { startPeriod: string; endPeriod: string } // YYYY-MM format
   sortBy?: "name" | "date"
   sortOrder?: "asc" | "desc"
   payerAccountId?: string
@@ -162,6 +169,7 @@ interface TransactionsListProps {
 
 export function TransactionsList({
   dateRange,
+  billingPeriodRange,
   sortBy = "date",
   sortOrder = "desc",
   payerAccountId,
@@ -175,24 +183,66 @@ export function TransactionsList({
       try {
         setLoading(true)
         const data = await dataService.getTransactions({
-          startDate: dateRange?.from,
-          endDate: dateRange?.to,
+          // Use billing periods if available, otherwise fall back to dates
+          ...(billingPeriodRange ? {
+            startPeriod: billingPeriodRange.startPeriod,
+            endPeriod: billingPeriodRange.endPeriod,
+          } : {
+            startDate: dateRange?.from,
+            endDate: dateRange?.to,
+          }),
           sortBy,
           sortOrder,
           payerAccountId,
           usageAccountId,
         })
 
-        // Convert dateTime strings to Date objects
+        // Handle new API response format (flat array) and group by period
         const processedData: Record<string, TransactionDetail[]> = {}
-        Object.entries(data.data || {}).forEach(([period, transactions]) => {
-          if (Array.isArray(transactions)) {
-            processedData[period] = transactions.map((tx) => ({
+        
+        if (Array.isArray(data.data)) {
+          // New format: data is a flat array
+          data.data.forEach((tx) => {
+            const billingPeriod = tx.billingPeriod || ''
+            const periodKey = billingPeriod ? new Date(billingPeriod + '-01').toLocaleDateString('en-GB', {
+              month: 'long',
+              year: 'numeric'
+            }) : 'Unknown Period'
+            
+            if (!processedData[periodKey]) {
+              processedData[periodKey] = []
+            }
+            
+            processedData[periodKey].push({
               ...tx,
-              dateTime: new Date(tx.dateTime),
-            }))
-          }
-        })
+              dateTime: new Date(tx.updatedAt || tx.dateTime),
+              // Map new structure to old costBreakdown format for compatibility
+              costBreakdown: {
+                usage: tx.details?.customer?.entity?.aws?.usage?.totals?.usd || 0,
+                fee: tx.details?.customer?.entity?.aws?.fee?.totals?.usd || 0,
+                discount: Math.abs(tx.details?.customer?.entity?.aws?.discount?.totals?.usd || 0),
+                credits: Math.abs(tx.details?.customer?.entity?.aws?.adjustment?.totals?.usd || 0),
+                adjustment: 0,
+                tax: tx.details?.customer?.entity?.aws?.tax?.totals?.usd || 0
+              },
+              distributorCost: tx.summary?.distributor || {},
+              sellerCost: tx.summary?.seller || {},
+              customerCost: tx.summary?.customer || {},
+              payerAccount: tx.accounts?.payer || {},
+              usageAccount: tx.accounts?.usage || {}
+            })
+          })
+        } else {
+          // Old format: data is grouped by period (backward compatibility)
+          Object.entries(data.data || {}).forEach(([period, transactions]) => {
+            if (Array.isArray(transactions)) {
+              processedData[period] = transactions.map((tx) => ({
+                ...tx,
+                dateTime: new Date(tx.dateTime),
+              }))
+            }
+          })
+        }
 
         setTransactionsByPeriod(processedData)
       } catch (error) {

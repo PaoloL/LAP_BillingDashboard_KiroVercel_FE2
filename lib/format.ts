@@ -10,3 +10,16 @@ export function formatCurrency(value: number): string {
     maximumFractionDigits: 2,
   }).format(value)
 }
+
+/**
+ * Formats a number as USD currency
+ * Example: 1234.56 -> $1,234.56
+ */
+export function formatCurrencyUSD(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value)
+}
