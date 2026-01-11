@@ -7,10 +7,10 @@ info:
     This API handles transaction operations including:
     - Recording usage, credits, deposits, and fees
     - Retrieving transaction history with filtering and sorting
-    - Viewing detailed cost breakdowns
+    - Viewing detailed cost breakdowns with sub-component details
     - Managing exchange rates and data types (Export/Manual)
     
-  version: 1.0.0
+  version: 1.1.0
   contact:
     name: API Support
     email: support@billing.example.com
@@ -145,9 +145,28 @@ paths:
                         id: "UA001"
                       costBreakdown:
                         usage: 1500.00
+                        usageBreakdown:
+                          usage: 1200.00
+                          discountedUsage: 200.00
+                          savingsPlanCoveredUsage: 100.00
                         fee: 50.00
+                        feeBreakdown:
+                          fee: 30.00
+                          riFee: 10.00
+                          savingsPlanRecurringFee: 5.00
+                          savingsPlanUpfrontFee: 5.00
                         discount: -150.00
+                        discountBreakdown:
+                          bundledDiscount: -50.00
+                          discount: -40.00
+                          credit: -30.00
+                          privateRateDiscount: -20.00
+                          distributorDiscount: -10.00
                         adjustment: 0.00
+                        adjustmentBreakdown:
+                          credit: 0.00
+                          refund: 0.00
+                          savingsPlanNegation: 0.00
                         tax: 84.00
                       distributorCost:
                         usd: 1300.00
@@ -218,9 +237,28 @@ paths:
                     id: "UA001"
                   costBreakdown:
                     usage: 1500.00
+                    usageBreakdown:
+                      usage: 1200.00
+                      discountedUsage: 200.00
+                      savingsPlanCoveredUsage: 100.00
                     fee: 50.00
+                    feeBreakdown:
+                      fee: 30.00
+                      riFee: 10.00
+                      savingsPlanRecurringFee: 5.00
+                      savingsPlanUpfrontFee: 5.00
                     discount: -150.00
+                    discountBreakdown:
+                      bundledDiscount: -50.00
+                      discount: -40.00
+                      credit: -30.00
+                      privateRateDiscount: -20.00
+                      distributorDiscount: -10.00
                     adjustment: 0.00
+                    adjustmentBreakdown:
+                      credit: 0.00
+                      refund: 0.00
+                      savingsPlanNegation: 0.00
                     tax: 84.00
                   distributorCost:
                     usd: 1300.00
@@ -301,9 +339,28 @@ paths:
                     id: "UA001"
                   costBreakdown:
                     usage: 1500.00
+                    usageBreakdown:
+                      usage: 1200.00
+                      discountedUsage: 200.00
+                      savingsPlanCoveredUsage: 100.00
                     fee: 50.00
+                    feeBreakdown:
+                      fee: 30.00
+                      riFee: 10.00
+                      savingsPlanRecurringFee: 5.00
+                      savingsPlanUpfrontFee: 5.00
                     discount: -150.00
+                    discountBreakdown:
+                      bundledDiscount: -50.00
+                      discount: -40.00
+                      credit: -30.00
+                      privateRateDiscount: -20.00
+                      distributorDiscount: -10.00
                     adjustment: 0.00
+                    adjustmentBreakdown:
+                      credit: 0.00
+                      refund: 0.00
+                      savingsPlanNegation: 0.00
                     tax: 84.00
                   distributorCost:
                     usd: 1300.00
@@ -575,27 +632,118 @@ components:
             usage:
               type: number
               format: double
-              description: Base usage cost in EUR
+              description: Total usage cost in USD
               example: 1500.00
+            usageBreakdown:
+              type: object
+              description: Detailed breakdown of usage costs
+              properties:
+                usage:
+                  type: number
+                  format: double
+                  description: Base usage cost
+                  example: 1200.00
+                discountedUsage:
+                  type: number
+                  format: double
+                  description: Usage with discounts applied
+                  example: 200.00
+                savingsPlanCoveredUsage:
+                  type: number
+                  format: double
+                  description: Usage covered by Savings Plans
+                  example: 100.00
             fee:
               type: number
               format: double
-              description: Additional fees in EUR
+              description: Total fees in USD
               example: 50.00
+            feeBreakdown:
+              type: object
+              description: Detailed breakdown of fees
+              properties:
+                fee:
+                  type: number
+                  format: double
+                  description: Standard fees
+                  example: 30.00
+                riFee:
+                  type: number
+                  format: double
+                  description: Reserved Instance fees
+                  example: 10.00
+                savingsPlanRecurringFee:
+                  type: number
+                  format: double
+                  description: Savings Plan recurring fees
+                  example: 5.00
+                savingsPlanUpfrontFee:
+                  type: number
+                  format: double
+                  description: Savings Plan upfront fees
+                  example: 5.00
             discount:
               type: number
               format: double
-              description: Applied discounts in EUR (negative value)
+              description: Total applied discounts in USD (negative value)
               example: -150.00
+            discountBreakdown:
+              type: object
+              description: Detailed breakdown of discounts
+              properties:
+                bundledDiscount:
+                  type: number
+                  format: double
+                  description: Bundled service discounts
+                  example: -50.00
+                discount:
+                  type: number
+                  format: double
+                  description: Standard discounts
+                  example: -40.00
+                credit:
+                  type: number
+                  format: double
+                  description: Applied credits
+                  example: -30.00
+                privateRateDiscount:
+                  type: number
+                  format: double
+                  description: Private rate discounts
+                  example: -20.00
+                distributorDiscount:
+                  type: number
+                  format: double
+                  description: Distributor-level discounts
+                  example: -10.00
             adjustment:
               type: number
               format: double
-              description: Manual adjustments in EUR
+              description: Total manual adjustments in USD
               example: 0.00
+            adjustmentBreakdown:
+              type: object
+              description: Detailed breakdown of adjustments
+              properties:
+                credit:
+                  type: number
+                  format: double
+                  description: Credit adjustments
+                  example: 0.00
+                refund:
+                  type: number
+                  format: double
+                  description: Refund adjustments
+                  example: 0.00
+                savingsPlanNegation:
+                  type: number
+                  format: double
+                  description: Savings Plan negation adjustments
+                  example: 0.00
             tax:
               type: number
               format: double
-              description: VAT/tax amount in EUR
+              description: VAT/tax amount in USD
               example: 84.00
         distributorCost:
           type: object
