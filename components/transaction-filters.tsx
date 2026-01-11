@@ -2,9 +2,9 @@
 
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon, ArrowUpDown, Building2, Users } from "lucide-react"
+import { CalendarIcon, ArrowUpDown, Building2, Users, ChevronLeft, ChevronRight } from "lucide-react"
 import { useState, useEffect } from "react"
-import { format, subMonths, startOfMonth, endOfMonth } from "date-fns"
+import { format, subMonths, startOfMonth, endOfMonth, addMonths } from "date-fns"
 import { dataService } from "@/lib/data/data-service"
 import { cn } from "@/lib/utils"
 
@@ -33,7 +33,8 @@ export function TransactionFilters({
   const [payerPopoverOpen, setPayerPopoverOpen] = useState(false)
   const [usagePopoverOpen, setUsagePopoverOpen] = useState(false)
   const [loadingAccounts, setLoadingAccounts] = useState(true)
-  const [selectedPreset, setSelectedPreset] = useState<string | undefined>()
+  const [startPeriod, setStartPeriod] = useState<Date>(startOfMonth(new Date()))
+  const [endPeriod, setEndPeriod] = useState<Date>(endOfMonth(new Date()))
 
   useEffect(() => {
     const loadAccounts = async () => {
@@ -110,45 +111,28 @@ export function TransactionFilters({
   const handleDateRangeChange = (range: { from: Date | undefined; to: Date | undefined }) => {
     setDateRange(range)
     onDateRangeChange?.(range)
-    setSelectedPreset(undefined)
   }
 
-  const handlePresetChange = (preset: string) => {
-    const today = new Date()
-    const endDate = endOfMonth(today)
-    let startDate: Date
+  const handleStartPeriodChange = (direction: "prev" | "next") => {
+    const newStartPeriod = direction === "prev" ? subMonths(startPeriod, 1) : addMonths(startPeriod, 1)
+    setStartPeriod(newStartPeriod)
 
-    switch (preset) {
-      case "MTD":
-        startDate = startOfMonth(today)
-        setDateRange({ from: startDate, to: today })
-        setSelectedPreset("MTD")
-        onDateRangeChange?.({ from: startDate, to: today })
-        return
-      case "1M":
-        startDate = startOfMonth(subMonths(today, 1))
-        break
-      case "3M":
-        startDate = startOfMonth(subMonths(today, 3))
-        break
-      case "6M":
-        startDate = startOfMonth(subMonths(today, 6))
-        break
-      case "12M":
-        startDate = startOfMonth(subMonths(today, 12))
-        break
-      case "ALL":
-        setDateRange({ from: undefined, to: undefined })
-        setSelectedPreset("ALL")
-        onDateRangeChange?.({ from: undefined, to: undefined })
-        return
-      default:
-        return
-    }
+    // Update date range
+    const newFrom = startOfMonth(newStartPeriod)
+    const newTo = endOfMonth(endPeriod)
+    setDateRange({ from: newFrom, to: newTo })
+    onDateRangeChange?.({ from: newFrom, to: newTo })
+  }
 
-    setDateRange({ from: startDate, to: endDate })
-    setSelectedPreset(preset)
-    onDateRangeChange?.({ from: startDate, to: endDate })
+  const handleEndPeriodChange = (direction: "prev" | "next") => {
+    const newEndPeriod = direction === "prev" ? subMonths(endPeriod, 1) : addMonths(endPeriod, 1)
+    setEndPeriod(newEndPeriod)
+
+    // Update date range
+    const newFrom = startOfMonth(startPeriod)
+    const newTo = endOfMonth(newEndPeriod)
+    setDateRange({ from: newFrom, to: newTo })
+    onDateRangeChange?.({ from: newFrom, to: newTo })
   }
 
   const handleSortToggle = () => {
@@ -290,14 +274,10 @@ export function TransactionFilters({
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className="gap-2 bg-transparent">
             <CalendarIcon className="h-4 w-4" />
-            {dateRange.from ? (
-              dateRange.to ? (
-                <>
-                  {format(dateRange.from, "MMM dd, yyyy")} - {format(dateRange.to, "MMM dd, yyyy")}
-                </>
-              ) : (
-                format(dateRange.from, "MMM dd, yyyy")
-              )
+            {dateRange.from && dateRange.to ? (
+              <>
+                {format(dateRange.from, "MMM yyyy")} - {format(dateRange.to, "MMM yyyy")}
+              </>
             ) : (
               "Date Range"
             )}
@@ -305,39 +285,67 @@ export function TransactionFilters({
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="end">
           <div className="p-4 space-y-4">
+            {/* Start Billing Period */}
             <div className="space-y-2">
-              <div className="text-sm font-medium">Quick Select</div>
-              <div className="grid grid-cols-6 gap-2">
-                {["MTD", "1M", "3M", "6M", "12M", "ALL"].map((preset) => (
-                  <Button
-                    key={preset}
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      "bg-transparent",
-                      selectedPreset === preset && "bg-[#026172] text-white hover:bg-[#026172]/90 hover:text-white",
-                    )}
-                    onClick={() => handlePresetChange(preset)}
-                  >
-                    {preset}
-                  </Button>
-                ))}
+              <div className="text-xs font-medium text-muted-foreground">Start Billing Period</div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 bg-transparent"
+                  onClick={() => handleStartPeriodChange("prev")}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div className="flex-1 text-center text-sm font-medium">{format(startPeriod, "MMMM yyyy")}</div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 bg-transparent"
+                  onClick={() => handleStartPeriodChange("next")}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
               </div>
             </div>
 
-            {(dateRange.from || dateRange.to) && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full bg-transparent"
-                onClick={() => {
-                  handleDateRangeChange({ from: undefined, to: undefined })
-                  setSelectedPreset(undefined)
-                }}
-              >
-                Clear Date Filter
-              </Button>
-            )}
+            {/* End Billing Period */}
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-muted-foreground">End Billing Period</div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 bg-transparent"
+                  onClick={() => handleEndPeriodChange("prev")}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div className="flex-1 text-center text-sm font-medium">{format(endPeriod, "MMMM yyyy")}</div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 bg-transparent"
+                  onClick={() => handleEndPeriodChange("next")}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full bg-transparent"
+              onClick={() => {
+                const today = new Date()
+                setStartPeriod(startOfMonth(today))
+                setEndPeriod(endOfMonth(today))
+                handleDateRangeChange({ from: startOfMonth(today), to: endOfMonth(today) })
+              }}
+            >
+              Reset to Current Month
+            </Button>
           </div>
         </PopoverContent>
       </Popover>
