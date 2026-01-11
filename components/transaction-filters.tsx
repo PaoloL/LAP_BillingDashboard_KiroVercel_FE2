@@ -119,6 +119,12 @@ export function TransactionFilters({
     let startDate: Date
 
     switch (preset) {
+      case "MTD":
+        startDate = startOfMonth(today)
+        setDateRange({ from: startDate, to: today })
+        setSelectedPreset("MTD")
+        onDateRangeChange?.({ from: startDate, to: today })
+        return
       case "1M":
         startDate = startOfMonth(subMonths(today, 1))
         break
@@ -301,8 +307,8 @@ export function TransactionFilters({
           <div className="p-4 space-y-4">
             <div className="space-y-2">
               <div className="text-sm font-medium">Quick Select</div>
-              <div className="grid grid-cols-5 gap-2">
-                {["1M", "3M", "6M", "12M", "ALL"].map((preset) => (
+              <div className="grid grid-cols-6 gap-2">
+                {["MTD", "1M", "3M", "6M", "12M", "ALL"].map((preset) => (
                   <Button
                     key={preset}
                     variant="outline"
