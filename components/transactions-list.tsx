@@ -19,11 +19,19 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
             ) : (
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             )}
-            <div className="font-medium text-foreground">
-              {transaction.billingPeriod ? 
-                new Date(transaction.billingPeriod + '-01').toLocaleDateString("en-GB", { month: "long", year: "numeric" }) :
-                transaction.dateTime.toLocaleDateString("en-GB", { month: "long", year: "numeric" })
-              }
+            <div className="space-y-0.5">
+              <div className="font-medium text-foreground whitespace-nowrap">
+                {transaction.billingPeriod
+                  ? new Date(transaction.billingPeriod + "-01").toLocaleDateString("en-GB", {
+                      month: "short",
+                      year: "numeric",
+                    })
+                  : transaction.dateTime.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Updated: {transaction.dateTime.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}{" "}
+                {transaction.dateTime.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+              </div>
             </div>
           </div>
         </td>
@@ -90,12 +98,7 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                 {transaction.dataType}
               </span>
             </div>
-            <div className="text-xs text-muted-foreground" style={{ fontSize: '0.75em' }}>
-              {transaction.dateTime.toLocaleDateString("en-GB")} {transaction.dateTime.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
-            </div>
-            <div className="text-xs text-muted-foreground" style={{ fontSize: '0.5em' }}>
-              Rate: {transaction.exchangeRate.toFixed(2)}
-            </div>
+            <div className="text-xs text-muted-foreground">Rate: {transaction.exchangeRate.toFixed(3)}</div>
           </div>
         </td>
       </tr>
@@ -195,11 +198,11 @@ export function TransactionsList({
     if (!dateRange?.from && !dateRange?.to) {
       // Sort periods by date
       const sortedPeriods = Object.entries(transactionsByPeriod).sort(([periodA], [periodB]) => {
-        const dateA = new Date(periodA + ' 1, 2000') // Convert "January 2026" to date
-        const dateB = new Date(periodB + ' 1, 2000')
+        const dateA = new Date(periodA + " 1, 2000") // Convert "January 2026" to date
+        const dateB = new Date(periodB + " 1, 2000")
         return sortOrder === "asc" ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime()
       })
-      
+
       const result: Record<string, TransactionDetail[]> = {}
       sortedPeriods.forEach(([period, transactions]) => {
         if (Array.isArray(transactions)) {
@@ -221,16 +224,16 @@ export function TransactionsList({
 
     // Apply date filtering while preserving period grouping
     const filtered: Record<string, TransactionDetail[]> = {}
-    
+
     Object.entries(transactionsByPeriod).forEach(([period, transactions]) => {
       if (Array.isArray(transactions)) {
         const filteredTransactions = transactions.filter((transaction) => {
           // Use billing period for date filtering instead of dateTime
           if (!transaction.billingPeriod) return true
-          
+
           // Convert billing period (YYYY-MM) to date for comparison
-          const billingDate = new Date(transaction.billingPeriod + '-01')
-          
+          const billingDate = new Date(transaction.billingPeriod + "-01")
+
           if (dateRange.from) {
             const fromMonth = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), 1)
             if (billingDate < fromMonth) return false
@@ -241,7 +244,7 @@ export function TransactionsList({
           }
           return true
         })
-        
+
         if (filteredTransactions.length > 0) {
           // Sort transactions within each period
           filteredTransactions.sort((a, b) => {
@@ -253,7 +256,7 @@ export function TransactionsList({
               return sortOrder === "asc" ? comparison : -comparison
             }
           })
-          
+
           filtered[period] = filteredTransactions
         }
       }
@@ -261,16 +264,16 @@ export function TransactionsList({
 
     // Sort filtered periods by date
     const sortedFilteredPeriods = Object.entries(filtered).sort(([periodA], [periodB]) => {
-      const dateA = new Date(periodA + ' 1, 2000')
-      const dateB = new Date(periodB + ' 1, 2000')
+      const dateA = new Date(periodA + " 1, 2000")
+      const dateB = new Date(periodB + " 1, 2000")
       return sortOrder === "asc" ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime()
     })
-    
+
     const result: Record<string, TransactionDetail[]> = {}
     sortedFilteredPeriods.forEach(([period, transactions]) => {
       result[period] = transactions
     })
-    
+
     return result
   }, [transactionsByPeriod, dateRange, sortBy, sortOrder])
 
