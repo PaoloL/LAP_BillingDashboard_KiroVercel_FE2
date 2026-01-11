@@ -264,7 +264,7 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Tax</span>
-                      <span className="font-medium">{formatCurrencyUSD(detailedBreakdown.tax?.tax?.usd || 0)}</span>
+                      <span className="font-medium">{formatCurrencyUSD(detailedBreakdown.tax?.breakdown?.Tax?.usd || 0)}</span>
                     </div>
                   </div>
                 </div>
