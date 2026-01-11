@@ -320,7 +320,6 @@ export function TransactionFilters({
             </div>
 
             <div className="border-t pt-4 space-y-3">
-              <div className="text-sm font-medium">Custom Range</div>
               <div className="space-y-3">
                 <div className="text-xs text-muted-foreground">From Period</div>
                 <div className="grid grid-cols-2 gap-2">
