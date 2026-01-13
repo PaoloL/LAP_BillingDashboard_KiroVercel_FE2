@@ -806,13 +806,13 @@ components:
               description: Rebate Saving Plans or RI benefits
               required:
                 - discountedUsage
-                - savingsPlanNegation
+                - spNegation
               properties:
                 discountedUsage:
                   type: boolean
                   default: false
                   description: Rebate discounted usage costs from Savings Plans/RI
-                savingsPlanNegation:
+                spNegation:
                   type: boolean
                   default: false
                   description: Rebate Savings Plan negations
@@ -820,15 +820,10 @@ components:
               type: object
               description: Rebate any discounts that AWS applied to your usage
               required:
-                - discount
                 - bundledDiscount
                 - credit
                 - privateRateDiscount
               properties:
-                discount:
-                  type: boolean
-                  default: false
-                  description: Rebate standard discounts
                 bundledDiscount:
                   type: boolean
                   default: false
@@ -952,25 +947,21 @@ components:
               type: object
               required:
                 - discountedUsage
-                - savingsPlanNegation
+                - spNegation
               properties:
                 discountedUsage:
                   type: boolean
                   default: false
-                savingsPlanNegation:
+                spNegation:
                   type: boolean
                   default: false
             discount:
               type: object
               required:
-                - discount
                 - bundledDiscount
                 - credit
                 - privateRateDiscount
               properties:
-                discount:
-                  type: boolean
-                  default: false
                 bundledDiscount:
                   type: boolean
                   default: false
@@ -1033,25 +1024,21 @@ components:
               type: object
               required:
                 - discountedUsage
-                - savingsPlanNegation
+                - spNegation
               properties:
                 discountedUsage:
                   type: boolean
                   default: false
-                savingsPlanNegation:
+                spNegation:
                   type: boolean
                   default: false
             discount:
               type: object
               required:
-                - discount
                 - bundledDiscount
                 - credit
                 - privateRateDiscount
               properties:
-                discount:
-                  type: boolean
-                  default: false
                 bundledDiscount:
                   type: boolean
                   default: false
