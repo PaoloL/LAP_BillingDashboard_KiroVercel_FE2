@@ -1,8 +1,33 @@
+"use client"
+
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth/auth-context"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, BarChart3, CreditCard, Shield } from "lucide-react"
 import Link from "next/link"
 
 export default function LandingPage() {
+  const router = useRouter()
+  const { user, loading } = useAuth()
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.push("/dashboard")
+    }
+  }, [user, loading, router])
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -10,17 +35,17 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <BarChart3 className="h-5 w-5 text-primary-foreground" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#00243E]">
+                <BarChart3 className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-semibold text-foreground">AWS Billing</span>
+              <span className="text-xl font-semibold text-[#00243E]">AWS Billing</span>
             </div>
             <div className="flex items-center gap-4">
-              <Link href="/dashboard">
+              <Link href="/auth/login">
                 <Button variant="ghost">Sign In</Button>
               </Link>
-              <Link href="/dashboard">
-                <Button>Sign Up</Button>
+              <Link href="/auth/register">
+                <Button className="bg-[#026172] hover:bg-[#026172]/90">Sign Up</Button>
               </Link>
             </div>
           </div>
@@ -31,7 +56,7 @@ export default function LandingPage() {
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="py-24 sm:py-32">
           <div className="text-center">
-            <h1 className="text-balance text-5xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl">
+            <h1 className="text-balance text-5xl font-bold tracking-tight text-[#00243E] sm:text-6xl lg:text-7xl">
               AWS Billing Management
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground sm:text-xl">
@@ -39,15 +64,15 @@ export default function LandingPage() {
               accounts, and optimize spending with precision.
             </p>
             <div className="mt-10 flex items-center justify-center gap-4">
-              <Link href="/dashboard">
-                <Button size="lg" className="gap-2">
+              <Link href="/auth/register">
+                <Button size="lg" className="gap-2 bg-[#026172] hover:bg-[#026172]/90">
                   Get Started
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <Link href="/dashboard">
+              <Link href="/auth/login">
                 <Button size="lg" variant="outline">
-                  View Demo
+                  Sign In
                 </Button>
               </Link>
             </div>
