@@ -23,7 +23,7 @@ info:
     - **Registered/Active**: Edit, Details, Archive
     - **Archived**: Unarchive, Delete
     
-  version: 1.3.0
+  version: 1.4.0
   contact:
     name: API Support
     email: support@example.com
@@ -735,8 +735,7 @@ components:
         - vatNumber
         - resellerDiscount
         - customerDiscount
-        - rebateToSeller
-        - rebateToCustomer
+        - rebateConfig
         - createdAt
         - updatedAt
       properties:
@@ -774,7 +773,7 @@ components:
           type: string
           minLength: 1
           maxLength: 50
-          description: VAT identification number
+          description: VAT identification number (optional)
           example: "DE123456789"
         resellerDiscount:
           type: number
@@ -790,130 +789,73 @@ components:
           maximum: 100
           description: Customer discount percentage (0-100, must be ≤ resellerDiscount)
           example: 10.0
-        rebateToSeller:
+        rebateConfig:
           type: object
-          description: Detailed rebate configuration for seller rebates
+          description: |
+            Simplified rebate configuration with three main categories:
+            - Savings Plans/RI: Rebate Saving Plans or RI benefits
+            - Discount: Rebate any discounts that AWS applied to your usage
+            - Adjustment: Rebate any adjustment that AWS applied to your usage
           required:
-            - usage
-            - fee
+            - savingsPlansRI
             - discount
             - adjustment
           properties:
-            usage:
+            savingsPlansRI:
               type: object
-              description: Usage-related rebates to seller
+              description: Rebate Saving Plans or RI benefits
+              required:
+                - discountedUsage
+                - savingsPlanNegation
               properties:
                 discountedUsage:
                   type: boolean
                   default: false
-                  description: Rebate discounted usage costs to seller
-                savingsPlanCoveredUsage:
-                  type: boolean
-                  default: false
-                  description: Rebate Savings Plan covered usage costs to seller
-            fee:
-              type: object
-              description: Fee-related rebates to seller
-              properties:
-                fee:
-                  type: boolean
-                  default: false
-                  description: Rebate standard fees to seller
-                riFee:
-                  type: boolean
-                  default: false
-                  description: Rebate Reserved Instance fees to seller
-                savingsPlanRecurringFee:
-                  type: boolean
-                  default: false
-                  description: Rebate Savings Plan recurring fees to seller
-                savingsPlanUpfrontFee:
-                  type: boolean
-                  default: false
-                  description: Rebate Savings Plan upfront fees to seller
-            discount:
-              type: object
-              description: Discount-related rebates to seller
-              properties:
-                bundledDiscount:
-                  type: boolean
-                  default: false
-                  description: Rebate bundled discounts to seller
-                discount:
-                  type: boolean
-                  default: false
-                  description: Rebate standard discounts to seller
-                credit:
-                  type: boolean
-                  default: false
-                  description: Rebate credits to seller
-                privateRateDiscount:
-                  type: boolean
-                  default: false
-                  description: Rebate private rate discounts to seller
-                distributorDiscount:
-                  type: boolean
-                  default: false
-                  description: Rebate distributor discounts to seller
-            adjustment:
-              type: object
-              description: Adjustment-related rebates to seller
-              properties:
-                credit:
-                  type: boolean
-                  default: false
-                  description: Rebate credit adjustments to seller
-                refund:
-                  type: boolean
-                  default: false
-                  description: Rebate refunds to seller
+                  description: Rebate discounted usage costs from Savings Plans/RI
                 savingsPlanNegation:
                   type: boolean
                   default: false
-                  description: Rebate Savings Plan negations to seller
-        rebateToCustomer:
-          type: object
-          description: Detailed rebate configuration for customer rebates
-          required:
-            - discount
-            - adjustment
-          properties:
+                  description: Rebate Savings Plan negations
             discount:
               type: object
-              description: Discount-related rebates to customer
+              description: Rebate any discounts that AWS applied to your usage
+              required:
+                - discount
+                - bundledDiscount
+                - credit
+                - privateRateDiscount
               properties:
-                bundledDiscount:
-                  type: boolean
-                  default: false
-                  description: Rebate bundled discounts to customer
                 discount:
                   type: boolean
                   default: false
-                  description: Rebate standard discounts to customer
+                  description: Rebate standard discounts
+                bundledDiscount:
+                  type: boolean
+                  default: false
+                  description: Rebate bundled discounts
                 credit:
                   type: boolean
                   default: false
-                  description: Rebate credits to customer
+                  description: Rebate credits
                 privateRateDiscount:
                   type: boolean
                   default: false
-                  description: Rebate private rate discounts to customer
+                  description: Rebate private rate discounts
             adjustment:
               type: object
-              description: Adjustment-related rebates to customer
+              description: Rebate any adjustment that AWS applied to your usage
+              required:
+                - credit
+                - refund
               properties:
                 credit:
                   type: boolean
                   default: false
-                  description: Rebate credit adjustments to customer
+                  description: Rebate credit adjustments
                 refund:
                   type: boolean
                   default: false
-                  description: Rebate refunds to customer
-                savingsPlanNegation:
-                  type: boolean
-                  default: false
-                  description: Rebate Savings Plan negations to customer
+                  description: Rebate refund adjustments
         lastTransactionDate:
           type: string
           format: date-time
@@ -950,119 +892,86 @@ components:
 
     CreateUsageAccountRequest:
       type: object
+      description: |
+        Create a new usage account with financial configuration.
+        Customer discount must not exceed reseller discount.
+        VAT number is optional.
       required:
         - accountId
         - customer
         - payerAccountId
-        - vatNumber
         - resellerDiscount
         - customerDiscount
+        - rebateConfig
       properties:
         accountId:
           type: string
           pattern: '^\d{12}$'
-          description: 12-digit AWS usage account ID (must be unique)
+          description: 12-digit AWS usage account ID
           example: "987654321098"
         customer:
           type: string
           minLength: 1
           maxLength: 255
-          description: Customer name for this usage account
+          description: Customer name
           example: "Acme Corporation"
         payerAccountId:
           type: string
           pattern: '^\d{12}$'
-          description: Parent AWS payer account ID (must exist)
+          description: Parent payer account ID
           example: "123456789012"
         vatNumber:
           type: string
           minLength: 1
           maxLength: 50
-          description: VAT identification number
+          description: VAT identification number (optional)
           example: "DE123456789"
         resellerDiscount:
           type: number
           format: double
           minimum: 0
           maximum: 100
-          description: Reseller discount percentage (0-100)
+          description: Reseller discount percentage
           example: 15.5
         customerDiscount:
           type: number
           format: double
           minimum: 0
           maximum: 100
-          description: Customer discount percentage (0-100, must be ≤ resellerDiscount)
+          description: Customer discount percentage (must be ≤ resellerDiscount)
           example: 10.0
-        rebateToSeller:
+        rebateConfig:
           type: object
-          description: Rebate configuration for seller (optional, defaults to all false)
+          description: Rebate configuration with three main categories
+          required:
+            - savingsPlansRI
+            - discount
+            - adjustment
           properties:
-            usage:
+            savingsPlansRI:
               type: object
+              required:
+                - discountedUsage
+                - savingsPlanNegation
               properties:
                 discountedUsage:
                   type: boolean
                   default: false
-                savingsPlanCoveredUsage:
-                  type: boolean
-                  default: false
-            fee:
-              type: object
-              properties:
-                fee:
-                  type: boolean
-                  default: false
-                riFee:
-                  type: boolean
-                  default: false
-                savingsPlanRecurringFee:
-                  type: boolean
-                  default: false
-                savingsPlanUpfrontFee:
-                  type: boolean
-                  default: false
-            discount:
-              type: object
-              properties:
-                bundledDiscount:
-                  type: boolean
-                  default: false
-                discount:
-                  type: boolean
-                  default: false
-                credit:
-                  type: boolean
-                  default: false
-                privateRateDiscount:
-                  type: boolean
-                  default: false
-                distributorDiscount:
-                  type: boolean
-                  default: false
-            adjustment:
-              type: object
-              properties:
-                credit:
-                  type: boolean
-                  default: false
-                refund:
-                  type: boolean
-                  default: false
                 savingsPlanNegation:
                   type: boolean
                   default: false
-        rebateToCustomer:
-          type: object
-          description: Rebate configuration for customer (optional, defaults to all false)
-          properties:
             discount:
               type: object
+              required:
+                - discount
+                - bundledDiscount
+                - credit
+                - privateRateDiscount
               properties:
-                bundledDiscount:
+                discount:
                   type: boolean
                   default: false
-                discount:
+                bundledDiscount:
                   type: boolean
                   default: false
                 credit:
@@ -1073,14 +982,14 @@ components:
                   default: false
             adjustment:
               type: object
+              required:
+                - credit
+                - refund
               properties:
                 credit:
                   type: boolean
                   default: false
                 refund:
-                  type: boolean
-                  default: false
-                savingsPlanNegation:
                   type: boolean
                   default: false
 
@@ -1088,93 +997,82 @@ components:
       type: object
       description: |
         Update usage account configuration.
-        Note: accountId and customer cannot be modified.
+        Note: accountId and customer name cannot be modified.
+        Customer discount must not exceed reseller discount.
+        VAT number is optional.
       properties:
         vatNumber:
           type: string
           minLength: 1
           maxLength: 50
-          description: VAT identification number
+          description: VAT identification number (optional)
+          example: "DE123456789"
         resellerDiscount:
           type: number
           format: double
           minimum: 0
           maximum: 100
           description: Reseller discount percentage
+          example: 15.5
         customerDiscount:
           type: number
           format: double
           minimum: 0
           maximum: 100
           description: Customer discount percentage (must be ≤ resellerDiscount)
-        rebateToSeller:
+          example: 10.0
+        rebateConfig:
           type: object
-          description: Rebate configuration for seller
+          description: Rebate configuration with three main categories
+          required:
+            - savingsPlansRI
+            - discount
+            - adjustment
           properties:
-            usage:
+            savingsPlansRI:
               type: object
+              required:
+                - discountedUsage
+                - savingsPlanNegation
               properties:
                 discountedUsage:
                   type: boolean
-                savingsPlanCoveredUsage:
-                  type: boolean
-            fee:
-              type: object
-              properties:
-                fee:
-                  type: boolean
-                riFee:
-                  type: boolean
-                savingsPlanRecurringFee:
-                  type: boolean
-                savingsPlanUpfrontFee:
-                  type: boolean
-            discount:
-              type: object
-              properties:
-                bundledDiscount:
-                  type: boolean
-                discount:
-                  type: boolean
-                credit:
-                  type: boolean
-                privateRateDiscount:
-                  type: boolean
-                distributorDiscount:
-                  type: boolean
-            adjustment:
-              type: object
-              properties:
-                credit:
-                  type: boolean
-                refund:
-                  type: boolean
+                  default: false
                 savingsPlanNegation:
                   type: boolean
-        rebateToCustomer:
-          type: object
-          description: Rebate configuration for customer
-          properties:
+                  default: false
             discount:
               type: object
+              required:
+                - discount
+                - bundledDiscount
+                - credit
+                - privateRateDiscount
               properties:
-                bundledDiscount:
-                  type: boolean
                 discount:
                   type: boolean
+                  default: false
+                bundledDiscount:
+                  type: boolean
+                  default: false
                 credit:
                   type: boolean
+                  default: false
                 privateRateDiscount:
                   type: boolean
+                  default: false
             adjustment:
               type: object
+              required:
+                - credit
+                - refund
               properties:
                 credit:
                   type: boolean
+                  default: false
                 refund:
                   type: boolean
-                savingsPlanNegation:
-                  type: boolean
+                  default: false
 
     Pagination:
       type: object
