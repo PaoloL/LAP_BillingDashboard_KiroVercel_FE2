@@ -15,9 +15,9 @@
 **Problem**: `amazon-cognito-identity-js` module not found.
 
 **Solution**: Installed the missing dependency:
-```bash
+\`\`\`bash
 npm install amazon-cognito-identity-js
-```
+\`\`\`
 
 ### 3. Broken Import References
 **Problem**: Protected pages were importing from deleted directories.
@@ -25,7 +25,7 @@ npm install amazon-cognito-identity-js
 **Solution**: Updated protected page components to be self-contained:
 
 **Dashboard** (`/app/(protected)/dashboard/page.tsx`):
-```tsx
+\`\`\`tsx
 export default function Dashboard() {
   return (
     <div className="space-y-6">
@@ -34,10 +34,10 @@ export default function Dashboard() {
     </div>
   )
 }
-```
+\`\`\`
 
 **Settings** (`/app/(protected)/settings/page.tsx`):
-```tsx
+\`\`\`tsx
 export default function Settings() {
   return (
     <div className="space-y-6">
@@ -46,10 +46,10 @@ export default function Settings() {
     </div>
   )
 }
-```
+\`\`\`
 
 **Transactions** (`/app/(protected)/transactions/page.tsx`):
-```tsx
+\`\`\`tsx
 export default function Transactions() {
   return (
     <div className="space-y-6">
@@ -58,11 +58,11 @@ export default function Transactions() {
     </div>
   )
 }
-```
+\`\`\`
 
 ## Final App Structure
 
-```
+\`\`\`
 app/
 ├── (protected)/
 │   ├── accounts/page.tsx     ✅ Complete implementation
@@ -78,7 +78,7 @@ app/
 ├── layout.tsx
 ├── page.tsx
 └── globals.css
-```
+\`\`\`
 
 ## Build Status
 

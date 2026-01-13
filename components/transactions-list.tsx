@@ -11,6 +11,10 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
 
   const detailedBreakdown = transaction.details?.customer?.entity?.aws || {}
 
+  const marginEur = (transaction.sellerCost?.eur || 0) - (transaction.customerCost?.eur || 0)
+  const marginUsd = (transaction.sellerCost?.usd || 0) - (transaction.customerCost?.usd || 0)
+  const marginColor = marginEur < 0 ? "text-[#F26522]" : "text-green-600"
+
   return (
     <>
       <tr className="cursor-pointer hover:bg-muted/50" onClick={() => setIsExpanded(!isExpanded)}>
@@ -86,12 +90,22 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
         </td>
         <td className="px-4 py-3 text-right">
           <div className="space-y-0.5">
-            <div className="text-lg font-semibold text-[#00243E]">
-              {formatCurrency(transaction.customerCost?.eur || 0)}
-            </div>
+            <div className="font-semibold text-foreground">{formatCurrency(transaction.customerCost?.eur || 0)}</div>
             <div className="text-sm text-muted-foreground">
               $
               {(transaction.customerCost?.usd || 0).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </div>
+          </div>
+        </td>
+        <td className="px-4 py-3 text-right">
+          <div className="space-y-0.5">
+            <div className={`font-semibold ${marginColor}`}>{formatCurrency(marginEur)}</div>
+            <div className={`text-sm ${marginColor === "text-[#F26522]" ? "text-[#F26522]/70" : "text-green-600/70"}`}>
+              $
+              {marginUsd.toLocaleString("en-US", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
@@ -117,7 +131,7 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
       </tr>
       {isExpanded && (
         <tr className="bg-muted/30">
-          <td colSpan={7} className="px-4 py-4">
+          <td colSpan={8} className="px-4 py-4">
             <div className="ml-10 space-y-4">
               <h4 className="text-sm font-semibold text-[#00243E]">Cost Breakdown</h4>
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -132,7 +146,9 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Usage</span>
-                      <span className="font-medium">{formatCurrencyUSD(detailedBreakdown.usage?.breakdown?.Usage?.usd || 0)}</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(detailedBreakdown.usage?.breakdown?.Usage?.usd || 0)}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Discounted Usage</span>
@@ -160,11 +176,15 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Fee</span>
-                      <span className="font-medium">{formatCurrencyUSD(detailedBreakdown.fee?.breakdown?.Fee?.usd || 0)}</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(detailedBreakdown.fee?.breakdown?.Fee?.usd || 0)}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">RI Fee</span>
-                      <span className="font-medium">{formatCurrencyUSD(detailedBreakdown.fee?.breakdown?.RIFee?.usd || 0)}</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(detailedBreakdown.fee?.breakdown?.RIFee?.usd || 0)}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">SP Recurring Fee</span>
@@ -211,13 +231,17 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Private Rate Discount</span>
                       <span className="font-medium">
-                        {formatCurrencyUSD(Math.abs(detailedBreakdown.discount?.breakdown?.PrivateRateDiscount?.usd || 0))}
+                        {formatCurrencyUSD(
+                          Math.abs(detailedBreakdown.discount?.breakdown?.PrivateRateDiscount?.usd || 0),
+                        )}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Distributor Discount</span>
                       <span className="font-medium">
-                        {formatCurrencyUSD(Math.abs(detailedBreakdown.discount?.breakdown?.DistributorDiscount?.usd || 0))}
+                        {formatCurrencyUSD(
+                          Math.abs(detailedBreakdown.discount?.breakdown?.DistributorDiscount?.usd || 0),
+                        )}
                       </span>
                     </div>
                   </div>
@@ -247,7 +271,9 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">SP Negation</span>
                       <span className="font-medium">
-                        {formatCurrencyUSD(Math.abs(detailedBreakdown.adjustment?.breakdown?.SavingsPlanNegation?.usd || 0))}
+                        {formatCurrencyUSD(
+                          Math.abs(detailedBreakdown.adjustment?.breakdown?.SavingsPlanNegation?.usd || 0),
+                        )}
                       </span>
                     </div>
                   </div>
@@ -264,7 +290,9 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Tax</span>
-                      <span className="font-medium">{formatCurrencyUSD(detailedBreakdown.tax?.breakdown?.Tax?.usd || 0)}</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(detailedBreakdown.tax?.breakdown?.Tax?.usd || 0)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -490,6 +518,7 @@ export function TransactionsList({
                       </th>
                       <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Seller Cost</th>
                       <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Customer Cost</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Margin</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Info</th>
                     </tr>
                   </thead>

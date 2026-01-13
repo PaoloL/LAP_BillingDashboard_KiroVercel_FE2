@@ -14,12 +14,12 @@ Add the following environment variables to your project:
 
 ### Required Variables
 
-```bash
+\`\`\`bash
 # AWS Cognito Configuration
 NEXT_PUBLIC_COGNITO_USER_POOL_ID=your-user-pool-id
 NEXT_PUBLIC_COGNITO_CLIENT_ID=your-app-client-id
 NEXT_PUBLIC_COGNITO_REGION=us-east-1  # or your AWS region
-```
+\`\`\`
 
 ### Where to Find These Values
 
@@ -81,16 +81,16 @@ If you don't have a User Pool yet, follow these steps:
 ### Local Development
 
 1. Create `.env.local` file in project root:
-```bash
+\`\`\`bash
 NEXT_PUBLIC_COGNITO_USER_POOL_ID=us-east-1_XXXXXXXXX
 NEXT_PUBLIC_COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxx
 NEXT_PUBLIC_COGNITO_REGION=us-east-1
-```
+\`\`\`
 
 2. Restart your development server:
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 ### Vercel Deployment
 

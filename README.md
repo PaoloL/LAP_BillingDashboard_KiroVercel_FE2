@@ -25,11 +25,11 @@ Any changes you make to your deployed app will be automatically pushed to this r
 
 This application uses AWS Cognito for authentication. You need to configure the following environment variables:
 
-```bash
+\`\`\`bash
 NEXT_PUBLIC_COGNITO_USER_POOL_ID=your-user-pool-id
 NEXT_PUBLIC_COGNITO_CLIENT_ID=your-app-client-id
 NEXT_PUBLIC_COGNITO_REGION=us-east-1
-```
+\`\`\`
 
 For detailed setup instructions, see [docs/authentication-setup.md](docs/authentication-setup.md).
 
@@ -44,7 +44,7 @@ For detailed setup instructions, see [docs/authentication-setup.md](docs/authent
 
 Required environment variables:
 
-```bash
+\`\`\`bash
 # Authentication
 NEXT_PUBLIC_COGNITO_USER_POOL_ID=your-user-pool-id
 NEXT_PUBLIC_COGNITO_CLIENT_ID=your-app-client-id
@@ -53,7 +53,7 @@ NEXT_PUBLIC_COGNITO_REGION=us-east-1
 # API Configuration
 NEXT_PUBLIC_API_GATEWAY_BASE_URL=https://your-api-gateway.amazonaws.com/dev
 NEXT_PUBLIC_USE_MOCK_DATA=false
-```
+\`\`\`
 
 ## Deployment
 
@@ -76,7 +76,7 @@ Continue building your app on:
 
 ## Local Development
 
-```bash
+\`\`\`bash
 # Install dependencies
 npm install
 
@@ -88,7 +88,7 @@ npm run build
 
 # Start production server
 npm start
-```
+\`\`\`
 
 ## Documentation
 

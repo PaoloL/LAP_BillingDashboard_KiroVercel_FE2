@@ -99,7 +99,7 @@ importers:
         specifier: latest
         version: 1.6.1(next@16.0.7(@babel/core@7.28.5)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0)
       amazon-cognito-identity-js:
-        specifier: 6.3.16
+        specifier: ^6.3.16
         version: 6.3.16
       autoprefixer:
         specifier: ^10.4.20
