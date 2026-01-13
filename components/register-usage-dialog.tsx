@@ -250,9 +250,9 @@ export function RegisterUsageDialog({
                 </Card>
 
                 {/* Discount */}
-                <Card className="border-[#026172] border-l-4">
+                <Card className="border-[#00243E] border-l-4">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-[#026172]">Discount</CardTitle>
+                    <CardTitle className="text-sm font-medium text-[#00243E]">Discount</CardTitle>
                     <p className="text-xs text-muted-foreground">Rebate any discounts that AWS applied to your usage</p>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -320,9 +320,9 @@ export function RegisterUsageDialog({
                 </Card>
 
                 {/* Adjustment */}
-                <Card className="border-[#026172] border-l-4">
+                <Card className="border-[#F26522] border-l-4">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-[#026172]">Adjustment</CardTitle>
+                    <CardTitle className="text-sm font-medium text-[#F26522]">Adjustment</CardTitle>
                     <p className="text-xs text-muted-foreground">
                       Rebate any adjustment that AWS applied to your usage
                     </p>

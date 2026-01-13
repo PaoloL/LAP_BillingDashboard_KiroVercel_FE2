@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Building2, Edit, Plus, Check, X, Archive, ArchiveRestore, Trash2, Eye, Search } from "lucide-react"
+import { Building2, Edit, Plus, Archive, ArchiveRestore, Trash2, Eye, Search } from "lucide-react"
 import { RegisterPayerDialog } from "@/components/register-payer-dialog"
 import { EditPayerDialog } from "@/components/edit-payer-dialog"
 import { RegisterUsageDialog } from "@/components/register-usage-dialog"
@@ -379,43 +379,68 @@ export function AccountsGrid() {
                   </div>
 
                   <div className="border-t border-border pt-3">
-                    <p className="mb-2 text-xs font-medium text-muted-foreground">Rebate Configuration</p>
-                    <div className="flex flex-wrap gap-2">
-                      <div className="flex items-center gap-1">
-                        {account.rebateCredits ? (
-                          <Check className="h-3 w-3 text-[#026172]" />
-                        ) : (
-                          <X className="h-3 w-3 text-gray-400" />
-                        )}
-                        <span className="text-xs text-muted-foreground">Credit</span>
+                    {account.status === "Registered" && (
+                      <div className="space-y-1.5">
+                        {/* Savings Plans / RI */}
+                        <div>
+                          <p className="text-[10px] font-medium text-[#026172]">Savings Plans / RI</p>
+                          <div className="ml-2 flex flex-wrap gap-x-3 gap-y-0.5">
+                            {account.rebateConfig.savingsPlansRI.discountedUsage && (
+                              <span className="text-[10px] text-[#026172]">• Discounted Usage</span>
+                            )}
+                            {account.rebateConfig.savingsPlansRI.savingsPlanNegation && (
+                              <span className="text-[10px] text-[#026172]">• SP Negation</span>
+                            )}
+                            {!account.rebateConfig.savingsPlansRI.discountedUsage &&
+                              !account.rebateConfig.savingsPlansRI.savingsPlanNegation && (
+                                <span className="text-[10px] text-gray-400">None</span>
+                              )}
+                          </div>
+                        </div>
+
+                        {/* Discount */}
+                        <div>
+                          <p className="text-[10px] font-medium text-[#026172]">Discount</p>
+                          <div className="ml-2 flex flex-wrap gap-x-3 gap-y-0.5">
+                            {account.rebateConfig.discount.discount && (
+                              <span className="text-[10px] text-[#026172]">• Discount</span>
+                            )}
+                            {account.rebateConfig.discount.bundledDiscount && (
+                              <span className="text-[10px] text-[#026172]">• Bundled</span>
+                            )}
+                            {account.rebateConfig.discount.credit && (
+                              <span className="text-[10px] text-[#026172]">• Credit</span>
+                            )}
+                            {account.rebateConfig.discount.privateRateDiscount && (
+                              <span className="text-[10px] text-[#026172]">• Private Rate</span>
+                            )}
+                            {!account.rebateConfig.discount.discount &&
+                              !account.rebateConfig.discount.bundledDiscount &&
+                              !account.rebateConfig.discount.credit &&
+                              !account.rebateConfig.discount.privateRateDiscount && (
+                                <span className="text-[10px] text-gray-400">None</span>
+                              )}
+                          </div>
+                        </div>
+
+                        {/* Adjustment */}
+                        <div>
+                          <p className="text-[10px] font-medium text-[#026172]">Adjustment</p>
+                          <div className="ml-2 flex flex-wrap gap-x-3 gap-y-0.5">
+                            {account.rebateConfig.adjustment.credit && (
+                              <span className="text-[10px] text-[#026172]">• Credit</span>
+                            )}
+                            {account.rebateConfig.adjustment.refund && (
+                              <span className="text-[10px] text-[#026172]">• Refund</span>
+                            )}
+                            {!account.rebateConfig.adjustment.credit && !account.rebateConfig.adjustment.refund && (
+                              <span className="text-[10px] text-gray-400">None</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        {account.rebateFee ? (
-                          <Check className="h-3 w-3 text-[#026172]" />
-                        ) : (
-                          <X className="h-3 w-3 text-gray-400" />
-                        )}
-                        <span className="text-xs text-muted-foreground">Fee</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {account.rebateDiscount ? (
-                          <Check className="h-3 w-3 text-[#026172]" />
-                        ) : (
-                          <X className="h-3 w-3 text-gray-400" />
-                        )}
-                        <span className="text-xs text-muted-foreground">Discount</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {account.rebateAdjustment ? (
-                          <Check className="h-3 w-3 text-[#026172]" />
-                        ) : (
-                          <X className="h-3 w-3 text-gray-400" />
-                        )}
-                        <span className="text-xs text-muted-foreground">Adjustment</span>
-                      </div>
-                    </div>
+                    )}
                   </div>
-                  {/* </CHANGE> */}
 
                   <div className="flex gap-1 border-t border-border pt-3">
                     {account.status === "Unregistered" ? (
