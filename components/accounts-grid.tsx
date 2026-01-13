@@ -385,14 +385,14 @@ export function AccountsGrid() {
                         <div>
                           <p className="text-[10px] font-medium text-[#026172]">Savings Plans / RI</p>
                           <div className="ml-2 flex flex-wrap gap-x-3 gap-y-0.5">
-                            {account.rebateConfig.savingsPlansRI.discountedUsage && (
+                            {account.rebateConfig?.savingsPlansRI?.discountedUsage && (
                               <span className="text-[10px] text-[#026172]">• Discounted Usage</span>
                             )}
-                            {account.rebateConfig.savingsPlansRI.savingsPlanNegation && (
+                            {account.rebateConfig?.savingsPlansRI?.savingsPlanNegation && (
                               <span className="text-[10px] text-[#026172]">• SP Negation</span>
                             )}
-                            {!account.rebateConfig.savingsPlansRI.discountedUsage &&
-                              !account.rebateConfig.savingsPlansRI.savingsPlanNegation && (
+                            {!account.rebateConfig?.savingsPlansRI?.discountedUsage &&
+                              !account.rebateConfig?.savingsPlansRI?.savingsPlanNegation && (
                                 <span className="text-[10px] text-gray-400">None</span>
                               )}
                           </div>
@@ -402,22 +402,22 @@ export function AccountsGrid() {
                         <div>
                           <p className="text-[10px] font-medium text-[#026172]">Discount</p>
                           <div className="ml-2 flex flex-wrap gap-x-3 gap-y-0.5">
-                            {account.rebateConfig.discount.discount && (
+                            {account.rebateConfig?.discount?.discount && (
                               <span className="text-[10px] text-[#026172]">• Discount</span>
                             )}
-                            {account.rebateConfig.discount.bundledDiscount && (
+                            {account.rebateConfig?.discount?.bundledDiscount && (
                               <span className="text-[10px] text-[#026172]">• Bundled</span>
                             )}
-                            {account.rebateConfig.discount.credit && (
+                            {account.rebateConfig?.discount?.credit && (
                               <span className="text-[10px] text-[#026172]">• Credit</span>
                             )}
-                            {account.rebateConfig.discount.privateRateDiscount && (
+                            {account.rebateConfig?.discount?.privateRateDiscount && (
                               <span className="text-[10px] text-[#026172]">• Private Rate</span>
                             )}
-                            {!account.rebateConfig.discount.discount &&
-                              !account.rebateConfig.discount.bundledDiscount &&
-                              !account.rebateConfig.discount.credit &&
-                              !account.rebateConfig.discount.privateRateDiscount && (
+                            {!account.rebateConfig?.discount?.discount &&
+                              !account.rebateConfig?.discount?.bundledDiscount &&
+                              !account.rebateConfig?.discount?.credit &&
+                              !account.rebateConfig?.discount?.privateRateDiscount && (
                                 <span className="text-[10px] text-gray-400">None</span>
                               )}
                           </div>
@@ -427,13 +427,13 @@ export function AccountsGrid() {
                         <div>
                           <p className="text-[10px] font-medium text-[#026172]">Adjustment</p>
                           <div className="ml-2 flex flex-wrap gap-x-3 gap-y-0.5">
-                            {account.rebateConfig.adjustment.credit && (
+                            {account.rebateConfig?.adjustment?.credit && (
                               <span className="text-[10px] text-[#026172]">• Credit</span>
                             )}
-                            {account.rebateConfig.adjustment.refund && (
+                            {account.rebateConfig?.adjustment?.refund && (
                               <span className="text-[10px] text-[#026172]">• Refund</span>
                             )}
-                            {!account.rebateConfig.adjustment.credit && !account.rebateConfig.adjustment.refund && (
+                            {!account.rebateConfig?.adjustment?.credit && !account.rebateConfig?.adjustment?.refund && (
                               <span className="text-[10px] text-gray-400">None</span>
                             )}
                           </div>
