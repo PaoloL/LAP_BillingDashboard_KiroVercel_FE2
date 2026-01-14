@@ -11,8 +11,8 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
 
   const detailedBreakdown = transaction.details?.customer?.entity?.aws || {}
 
-  const marginEur = (transaction.sellerCost?.eur || 0) - (transaction.customerCost?.eur || 0)
-  const marginUsd = (transaction.sellerCost?.usd || 0) - (transaction.customerCost?.usd || 0)
+  const marginEur = (transaction.customerCost?.eur || 0) - (transaction.sellerCost?.eur || 0)
+  const marginUsd = (transaction.customerCost?.usd || 0) - (transaction.sellerCost?.usd || 0)
   const marginColor = marginEur < 0 ? "text-[#F26522]" : "text-green-600"
 
   return (
