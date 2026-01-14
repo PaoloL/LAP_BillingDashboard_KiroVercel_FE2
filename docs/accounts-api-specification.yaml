@@ -23,7 +23,7 @@ info:
     - **Registered/Active**: Edit, Details, Archive
     - **Archived**: Unarchive, Delete
     
-  version: 1.2.0
+  version: 1.4.0
   contact:
     name: API Support
     email: support@example.com
@@ -735,10 +735,7 @@ components:
         - vatNumber
         - resellerDiscount
         - customerDiscount
-        - rebateCredits
-        - rebateFee
-        - rebateDiscount
-        - rebateAdjustment
+        - rebateConfig
         - createdAt
         - updatedAt
       properties:
@@ -776,7 +773,7 @@ components:
           type: string
           minLength: 1
           maxLength: 50
-          description: VAT identification number
+          description: VAT identification number (optional)
           example: "DE123456789"
         resellerDiscount:
           type: number
@@ -792,34 +789,68 @@ components:
           maximum: 100
           description: Customer discount percentage (0-100, must be ≤ resellerDiscount)
           example: 10.0
-        rebateCredits:
-          type: boolean
+        rebateConfig:
+          type: object
           description: |
-            Whether to apply rebate credits to total cost.
-            If enabled, credit notes will be deducted from the Usage Account's total cost.
-          default: false
-          example: true
-        rebateFee:
-          type: boolean
-          description: |
-            Whether to apply rebate for fees to the Usage Account.
-            If enabled, fees will be rebated to the Usage Account.
-          default: false
-          example: false
-        rebateDiscount:
-          type: boolean
-          description: |
-            Whether to apply rebate for discounts to the Usage Account.
-            If enabled, discounts will be rebated to the Usage Account.
-          default: false
-          example: true
-        rebateAdjustment:
-          type: boolean
-          description: |
-            Whether to apply rebate for adjustments to the Usage Account.
-            If enabled, adjustments will be rebated to the Usage Account.
-          default: false
-          example: false
+            Simplified rebate configuration with three main categories:
+            - Savings Plans/RI: Rebate Saving Plans or RI benefits
+            - Discount: Rebate any discounts that AWS applied to your usage
+            - Adjustment: Rebate any adjustment that AWS applied to your usage
+          required:
+            - savingsPlansRI
+            - discount
+            - adjustment
+          properties:
+            savingsPlansRI:
+              type: object
+              description: Rebate Saving Plans or RI benefits
+              required:
+                - discountedUsage
+                - spNegation
+              properties:
+                discountedUsage:
+                  type: boolean
+                  default: false
+                  description: Rebate discounted usage costs from Savings Plans/RI
+                spNegation:
+                  type: boolean
+                  default: false
+                  description: Rebate Savings Plan negations
+            discount:
+              type: object
+              description: Rebate any discounts that AWS applied to your usage
+              required:
+                - bundledDiscount
+                - credit
+                - privateRateDiscount
+              properties:
+                bundledDiscount:
+                  type: boolean
+                  default: false
+                  description: Rebate bundled discounts
+                credit:
+                  type: boolean
+                  default: false
+                  description: Rebate credits
+                privateRateDiscount:
+                  type: boolean
+                  default: false
+                  description: Rebate private rate discounts
+            adjustment:
+              type: object
+              description: Rebate any adjustment that AWS applied to your usage
+              required:
+                - credit
+                - refund
+              properties:
+                credit:
+                  type: boolean
+                  default: false
+                  description: Rebate credit adjustments
+                refund:
+                  type: boolean
+                  default: false
+                  description: Rebate refund adjustments
         lastTransactionDate:
           type: string
           format: date-time
@@ -856,106 +887,179 @@ components:
 
     CreateUsageAccountRequest:
       type: object
+      description: |
+        Create a new usage account with financial configuration.
+        Customer discount must not exceed reseller discount.
+        VAT number is optional.
       required:
         - accountId
         - customer
         - payerAccountId
-        - vatNumber
         - resellerDiscount
         - customerDiscount
+        - rebateConfig
       properties:
         accountId:
           type: string
           pattern: '^\d{12}$'
-          description: 12-digit AWS usage account ID (must be unique)
+          description: 12-digit AWS usage account ID
           example: "987654321098"
         customer:
           type: string
           minLength: 1
           maxLength: 255
-          description: Customer name for this usage account
+          description: Customer name
           example: "Acme Corporation"
         payerAccountId:
           type: string
           pattern: '^\d{12}$'
-          description: Parent AWS payer account ID (must exist)
+          description: Parent payer account ID
           example: "123456789012"
         vatNumber:
           type: string
           minLength: 1
           maxLength: 50
-          description: VAT identification number
+          description: VAT identification number (optional)
           example: "DE123456789"
         resellerDiscount:
           type: number
           format: double
           minimum: 0
           maximum: 100
-          description: Reseller discount percentage (0-100)
+          description: Reseller discount percentage
           example: 15.5
         customerDiscount:
           type: number
           format: double
           minimum: 0
           maximum: 100
-          description: Customer discount percentage (0-100, must be ≤ resellerDiscount)
+          description: Customer discount percentage (must be ≤ resellerDiscount)
           example: 10.0
-        rebateCredits:
-          type: boolean
-          description: Whether to apply rebate credits to total cost
-          default: false
-          example: true
-        rebateFee:
-          type: boolean
-          description: Whether to apply rebate for fees
-          default: false
-          example: false
-        rebateDiscount:
-          type: boolean
-          description: Whether to apply rebate for discounts
-          default: false
-          example: true
-        rebateAdjustment:
-          type: boolean
-          description: Whether to apply rebate for adjustments
-          default: false
-          example: false
+        rebateConfig:
+          type: object
+          description: Rebate configuration with three main categories
+          required:
+            - savingsPlansRI
+            - discount
+            - adjustment
+          properties:
+            savingsPlansRI:
+              type: object
+              required:
+                - discountedUsage
+                - spNegation
+              properties:
+                discountedUsage:
+                  type: boolean
+                  default: false
+                spNegation:
+                  type: boolean
+                  default: false
+            discount:
+              type: object
+              required:
+                - bundledDiscount
+                - credit
+                - privateRateDiscount
+              properties:
+                bundledDiscount:
+                  type: boolean
+                  default: false
+                credit:
+                  type: boolean
+                  default: false
+                privateRateDiscount:
+                  type: boolean
+                  default: false
+            adjustment:
+              type: object
+              required:
+                - credit
+                - refund
+              properties:
+                credit:
+                  type: boolean
+                  default: false
+                refund:
+                  type: boolean
+                  default: false
 
     UpdateUsageAccountRequest:
       type: object
       description: |
         Update usage account configuration.
-        Note: accountId and customer cannot be modified.
+        Note: accountId and customer name cannot be modified.
+        Customer discount must not exceed reseller discount.
+        VAT number is optional.
       properties:
         vatNumber:
           type: string
           minLength: 1
           maxLength: 50
-          description: VAT identification number
+          description: VAT identification number (optional)
+          example: "DE123456789"
         resellerDiscount:
           type: number
           format: double
           minimum: 0
           maximum: 100
           description: Reseller discount percentage
+          example: 15.5
         customerDiscount:
           type: number
           format: double
           minimum: 0
           maximum: 100
           description: Customer discount percentage (must be ≤ resellerDiscount)
-        rebateCredits:
-          type: boolean
-          description: Whether to apply rebate credits to total cost
-        rebateFee:
-          type: boolean
-          description: Whether to apply rebate for fees
-        rebateDiscount:
-          type: boolean
-          description: Whether to apply rebate for discounts
-        rebateAdjustment:
-          type: boolean
-          description: Whether to apply rebate for adjustments
+          example: 10.0
+        rebateConfig:
+          type: object
+          description: Rebate configuration with three main categories
+          required:
+            - savingsPlansRI
+            - discount
+            - adjustment
+          properties:
+            savingsPlansRI:
+              type: object
+              required:
+                - discountedUsage
+                - spNegation
+              properties:
+                discountedUsage:
+                  type: boolean
+                  default: false
+                spNegation:
+                  type: boolean
+                  default: false
+            discount:
+              type: object
+              required:
+                - bundledDiscount
+                - credit
+                - privateRateDiscount
+              properties:
+                bundledDiscount:
+                  type: boolean
+                  default: false
+                credit:
+                  type: boolean
+                  default: false
+                privateRateDiscount:
+                  type: boolean
+                  default: false
+            adjustment:
+              type: object
+              required:
+                - credit
+                - refund
+              properties:
+                credit:
+                  type: boolean
+                  default: false
+                refund:
+                  type: boolean
+                  default: false
 
     Pagination:
       type: object

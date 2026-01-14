@@ -13,7 +13,52 @@ export const dataService = {
     if (config.useMockData) {
       return Promise.resolve([...mutablePayerAccounts])
     }
-    return apiClient.getPayerAccounts()
+    
+    const accounts = await apiClient.getPayerAccounts()
+    
+    // Enrich each payer account with last transaction date
+    const enrichedAccounts = await Promise.all(
+      accounts.map(async (account) => {
+        try {
+          // Get the most recent transaction for this payer account
+          const transactions = await apiClient.getTransactions({
+            payerAccountId: account.accountId,
+            sortBy: "date",
+            sortOrder: "desc",
+            limit: 1
+          })
+          
+          if (transactions.data && Array.isArray(transactions.data) && transactions.data.length > 0) {
+            const lastTransaction = transactions.data[0]
+            const lastTransactionDate = new Date(lastTransaction.updatedAt || lastTransaction.dateTime)
+            
+            // Format as "dd/mm/yy - hh:mm:ss"
+            const formattedDate = lastTransactionDate.toLocaleDateString('en-GB', {
+              day: '2-digit',
+              month: '2-digit',
+              year: '2-digit'
+            }) + ' - ' + lastTransactionDate.toLocaleTimeString('en-GB', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false
+            })
+            
+            return {
+              ...account,
+              lastTransactionDate: formattedDate
+            }
+          }
+          
+          return account
+        } catch (error) {
+          console.error(`Failed to get last transaction for payer ${account.accountId}:`, error)
+          return account
+        }
+      })
+    )
+    
+    return enrichedAccounts
   },
 
   async createPayerAccount(data: Omit<PayerAccount, "id">): Promise<PayerAccount> {
@@ -180,7 +225,8 @@ export const dataService = {
     sortOrder?: "asc" | "desc"
     payerAccountId?: string
     usageAccountId?: string
-  }): Promise<{ data: Record<string, TransactionDetail[]> }> {
+    limit?: number
+  }): Promise<{ data: any }> {
     if (config.useMockData) {
       return Promise.resolve({ data: mockTransactionsByPeriod })
     }

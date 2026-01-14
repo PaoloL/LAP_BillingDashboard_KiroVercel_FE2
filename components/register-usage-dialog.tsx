@@ -2,7 +2,8 @@
 
 import type React from "react"
 import { useState } from "react"
-
+import { Switch } from "@/components/ui/switch"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -14,7 +15,6 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { validateDiscounts } from "@/lib/types"
 import type { PayerAccount } from "@/lib/types"
 import { dataService } from "@/lib/data/data-service"
@@ -28,13 +28,32 @@ interface RegisterUsageDialogProps {
   onSuccess?: () => void
 }
 
-export function RegisterUsageDialog({ open, onOpenChange, payerAccount, accountId, accountName, onSuccess }: RegisterUsageDialogProps) {
+export function RegisterUsageDialog({
+  open,
+  onOpenChange,
+  payerAccount,
+  accountId,
+  accountName,
+  onSuccess,
+}: RegisterUsageDialogProps) {
   const [resellerDiscount, setResellerDiscount] = useState<number>(0)
   const [customerDiscount, setCustomerDiscount] = useState<number>(0)
-  const [rebateCredits, setRebateCredits] = useState<boolean>(false)
-  const [rebateFee, setRebateFee] = useState<boolean>(false)
-  const [rebateDiscount, setRebateDiscount] = useState<boolean>(false)
-  const [rebateAdjustment, setRebateAdjustment] = useState<boolean>(false)
+  const [rebateConfig, setRebateConfig] = useState({
+    savingsPlansRI: {
+      discountedUsage: false,
+      savingsPlanNegation: false,
+    },
+    discount: {
+      discount: false,
+      bundledDiscount: false,
+      credit: false,
+      privateRateDiscount: false,
+    },
+    adjustment: {
+      credit: false,
+      refund: false,
+    },
+  })
   const [validationError, setValidationError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
 
@@ -55,24 +74,21 @@ export function RegisterUsageDialog({ open, onOpenChange, payerAccount, accountI
     setIsSubmitting(true)
     try {
       const formData = new FormData(e.target as HTMLFormElement)
-      const customerName = formData.get('customer') as string
-      const vatNumber = formData.get('vat') as string
+      const customerName = formData.get("customer") as string
+      const vatNumber = formData.get("vat") as string
 
       // First update the account with all configuration
       await dataService.updateUsageAccount(accountId, {
         customer: customerName,
-        vatNumber: vatNumber || '',
+        vatNumber: vatNumber || "",
         resellerDiscount,
         customerDiscount,
-        rebateCredits,
-        rebateFee,
-        rebateDiscount,
-        rebateAdjustment
+        rebateConfig,
       })
 
       // Then change status to Registered
       await dataService.changeUsageAccountStatus(accountId, "Registered")
-      
+
       onOpenChange(false)
       onSuccess?.()
     } catch (error) {
@@ -99,7 +115,7 @@ export function RegisterUsageDialog({ open, onOpenChange, payerAccount, accountI
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-[#00243E]">Register Usage Account</DialogTitle>
           <DialogDescription>
@@ -114,24 +130,24 @@ export function RegisterUsageDialog({ open, onOpenChange, payerAccount, accountI
               <h3 className="text-sm font-semibold text-[#00243E]">Account Information</h3>
               <div className="grid gap-2">
                 <Label htmlFor="usage-id">Account ID</Label>
-                <Input 
-                  id="usage-id" 
-                  placeholder="345678901234" 
-                  defaultValue={accountId || ''} 
+                <Input
+                  id="usage-id"
+                  placeholder="345678901234"
+                  defaultValue={accountId || ""}
                   disabled
                   className="bg-muted"
-                  required 
+                  required
                 />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="account-name">Account Name</Label>
-                <Input 
-                  id="account-name" 
-                  placeholder="Account Name" 
-                  defaultValue={accountName || ''} 
+                <Input
+                  id="account-name"
+                  placeholder="Account Name"
+                  defaultValue={accountName || ""}
                   disabled
                   className="bg-muted"
-                  required 
+                  required
                 />
               </div>
               <div className="grid gap-2">
@@ -189,59 +205,174 @@ export function RegisterUsageDialog({ open, onOpenChange, payerAccount, accountI
             </div>
 
             <div className="grid gap-4">
-              <h3 className="text-sm font-semibold text-[#00243E]">Credit Handling</h3>
-              <div className="flex items-center justify-between space-x-4">
-                <div className="flex-1">
-                  <Label htmlFor="rebate" className="cursor-pointer font-medium">
-                    Rebate Credits to Usage Account
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    If enabled, credit will be rebated to the Usage Account.
-                  </p>
-                </div>
-                <Switch id="rebate" checked={rebateCredits} onCheckedChange={setRebateCredits} />
-              </div>
-              <div className="flex items-center justify-between space-x-4">
-                <div className="flex-1">
-                  <Label htmlFor="rebate-fee" className="cursor-pointer font-medium">
-                    Rebate Fee to Usage Account
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    If enabled, fees will be rebated to the Usage Account.
-                  </p>
-                </div>
-                <Switch id="rebate-fee" checked={rebateFee} onCheckedChange={setRebateFee} />
-              </div>
-              <div className="flex items-center justify-between space-x-4">
-                <div className="flex-1">
-                  <Label htmlFor="rebate-discount" className="cursor-pointer font-medium">
-                    Rebate Discount to Usage Account
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    If enabled, discounts will be rebated to the Usage Account.
-                  </p>
-                </div>
-                <Switch id="rebate-discount" checked={rebateDiscount} onCheckedChange={setRebateDiscount} />
-              </div>
-              <div className="flex items-center justify-between space-x-4">
-                <div className="flex-1">
-                  <Label htmlFor="rebate-adjustment" className="cursor-pointer font-medium">
-                    Rebate Adjustment to Usage Account
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    If enabled, adjustments will be rebated to the Usage Account.
-                  </p>
-                </div>
-                <Switch id="rebate-adjustment" checked={rebateAdjustment} onCheckedChange={setRebateAdjustment} />
+              <h3 className="text-sm font-semibold text-[#00243E]">Rebate Configuration</h3>
+              <p className="text-xs text-muted-foreground">Configure which AWS cost components should be rebated</p>
+
+              <div className="space-y-4">
+                {/* Savings Plans / RI */}
+                <Card className="border-[#026172] border-l-4">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-[#026172]">Savings Plans / RI</CardTitle>
+                    <p className="text-xs text-muted-foreground">Rebate Saving Plans or RI benefits</p>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="reg-sp-discounted" className="text-sm font-normal cursor-pointer">
+                        Discounted Usage
+                      </Label>
+                      <Switch
+                        id="reg-sp-discounted"
+                        checked={rebateConfig.savingsPlansRI.discountedUsage}
+                        onCheckedChange={(checked) =>
+                          setRebateConfig((prev) => ({
+                            ...prev,
+                            savingsPlansRI: { ...prev.savingsPlansRI, discountedUsage: checked },
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="reg-sp-negation" className="text-sm font-normal cursor-pointer">
+                        SP Negation
+                      </Label>
+                      <Switch
+                        id="reg-sp-negation"
+                        checked={rebateConfig.savingsPlansRI.savingsPlanNegation}
+                        onCheckedChange={(checked) =>
+                          setRebateConfig((prev) => ({
+                            ...prev,
+                            savingsPlansRI: { ...prev.savingsPlansRI, savingsPlanNegation: checked },
+                          }))
+                        }
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Discount */}
+                <Card className="border-[#00243E] border-l-4">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-[#00243E]">Discount</CardTitle>
+                    <p className="text-xs text-muted-foreground">Rebate any discounts that AWS applied to your usage</p>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="reg-discount" className="text-sm font-normal cursor-pointer">
+                        Discount
+                      </Label>
+                      <Switch
+                        id="reg-discount"
+                        checked={rebateConfig.discount.discount}
+                        onCheckedChange={(checked) =>
+                          setRebateConfig((prev) => ({
+                            ...prev,
+                            discount: { ...prev.discount, discount: checked },
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="reg-bundled" className="text-sm font-normal cursor-pointer">
+                        Bundled Discount
+                      </Label>
+                      <Switch
+                        id="reg-bundled"
+                        checked={rebateConfig.discount.bundledDiscount}
+                        onCheckedChange={(checked) =>
+                          setRebateConfig((prev) => ({
+                            ...prev,
+                            discount: { ...prev.discount, bundledDiscount: checked },
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="reg-discount-credit" className="text-sm font-normal cursor-pointer">
+                        Credit
+                      </Label>
+                      <Switch
+                        id="reg-discount-credit"
+                        checked={rebateConfig.discount.credit}
+                        onCheckedChange={(checked) =>
+                          setRebateConfig((prev) => ({
+                            ...prev,
+                            discount: { ...prev.discount, credit: checked },
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="reg-private-rate" className="text-sm font-normal cursor-pointer">
+                        Private Rate Discount
+                      </Label>
+                      <Switch
+                        id="reg-private-rate"
+                        checked={rebateConfig.discount.privateRateDiscount}
+                        onCheckedChange={(checked) =>
+                          setRebateConfig((prev) => ({
+                            ...prev,
+                            discount: { ...prev.discount, privateRateDiscount: checked },
+                          }))
+                        }
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Adjustment */}
+                <Card className="border-[#F26522] border-l-4">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-[#F26522]">Adjustment</CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      Rebate any adjustment that AWS applied to your usage
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="reg-adj-credit" className="text-sm font-normal cursor-pointer">
+                        Credit
+                      </Label>
+                      <Switch
+                        id="reg-adj-credit"
+                        checked={rebateConfig.adjustment.credit}
+                        onCheckedChange={(checked) =>
+                          setRebateConfig((prev) => ({
+                            ...prev,
+                            adjustment: { ...prev.adjustment, credit: checked },
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="reg-adj-refund" className="text-sm font-normal cursor-pointer">
+                        Refund
+                      </Label>
+                      <Switch
+                        id="reg-adj-refund"
+                        checked={rebateConfig.adjustment.refund}
+                        onCheckedChange={(checked) =>
+                          setRebateConfig((prev) => ({
+                            ...prev,
+                            adjustment: { ...prev.adjustment, refund: checked },
+                          }))
+                        }
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-[#00243E] hover:bg-[#00243E]/90">
-              Register Account
+            <Button
+              type="submit"
+              disabled={isSubmitting || !!validationError}
+              className="bg-[#00243E] hover:bg-[#00243E]/90"
+            >
+              {isSubmitting ? "Registering..." : "Register Account"}
             </Button>
           </DialogFooter>
         </form>

@@ -5,7 +5,20 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Building2, Edit, Plus, Check, X, Archive, ArchiveRestore, Trash2, Eye, Search } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import {
+  Building2,
+  Edit,
+  Plus,
+  Archive,
+  ArchiveRestore,
+  Trash2,
+  Eye,
+  Search,
+  PiggyBank,
+  Tag,
+  FileEdit,
+} from "lucide-react"
 import { RegisterPayerDialog } from "@/components/register-payer-dialog"
 import { EditPayerDialog } from "@/components/edit-payer-dialog"
 import { RegisterUsageDialog } from "@/components/register-usage-dialog"
@@ -379,43 +392,110 @@ export function AccountsGrid() {
                   </div>
 
                   <div className="border-t border-border pt-3">
-                    <p className="mb-2 text-xs font-medium text-muted-foreground">Rebate Configuration</p>
-                    <div className="flex flex-wrap gap-2">
-                      <div className="flex items-center gap-1">
-                        {account.rebateCredits ? (
-                          <Check className="h-3 w-3 text-[#026172]" />
-                        ) : (
-                          <X className="h-3 w-3 text-gray-400" />
-                        )}
-                        <span className="text-xs text-muted-foreground">Credit</span>
+                    {account.status === "Registered" && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-[#00243E]">Rebate Configuration</p>
+
+                        <div className="space-y-1.5">
+                          {/* Savings Plans / RI */}
+                          <div className="flex flex-wrap items-center gap-1">
+                            <PiggyBank className="h-3 w-3 text-[#026172]" />
+                            <span className="text-[10px] font-medium text-muted-foreground">SP/RI:</span>
+                            {account.rebateConfig?.savingsPlansRI?.discountedUsage && (
+                              <Badge
+                                variant="outline"
+                                className="h-4 border-[#026172] bg-[#026172]/10 text-[9px] text-[#026172] px-1.5 py-0"
+                              >
+                                Discounted Usage
+                              </Badge>
+                            )}
+                            {account.rebateConfig?.savingsPlansRI?.savingsPlanNegation && (
+                              <Badge
+                                variant="outline"
+                                className="h-4 border-[#026172] bg-[#026172]/10 text-[9px] text-[#026172] px-1.5 py-0"
+                              >
+                                SP Negation
+                              </Badge>
+                            )}
+                            {!account.rebateConfig?.savingsPlansRI?.discountedUsage &&
+                              !account.rebateConfig?.savingsPlansRI?.savingsPlanNegation && (
+                                <span className="text-[10px] text-gray-400">None</span>
+                              )}
+                          </div>
+
+                          {/* Discount */}
+                          <div className="flex flex-wrap items-center gap-1">
+                            <Tag className="h-3 w-3 text-[#00243E]" />
+                            <span className="text-[10px] font-medium text-muted-foreground">Discount:</span>
+                            {account.rebateConfig?.discount?.discount && (
+                              <Badge
+                                variant="outline"
+                                className="h-4 border-[#00243E] bg-[#00243E]/10 text-[9px] text-[#00243E] px-1.5 py-0"
+                              >
+                                Discount
+                              </Badge>
+                            )}
+                            {account.rebateConfig?.discount?.bundledDiscount && (
+                              <Badge
+                                variant="outline"
+                                className="h-4 border-[#00243E] bg-[#00243E]/10 text-[9px] text-[#00243E] px-1.5 py-0"
+                              >
+                                Bundled
+                              </Badge>
+                            )}
+                            {account.rebateConfig?.discount?.credit && (
+                              <Badge
+                                variant="outline"
+                                className="h-4 border-[#00243E] bg-[#00243E]/10 text-[9px] text-[#00243E] px-1.5 py-0"
+                              >
+                                Credit
+                              </Badge>
+                            )}
+                            {account.rebateConfig?.discount?.privateRateDiscount && (
+                              <Badge
+                                variant="outline"
+                                className="h-4 border-[#00243E] bg-[#00243E]/10 text-[9px] text-[#00243E] px-1.5 py-0"
+                              >
+                                Private Rate
+                              </Badge>
+                            )}
+                            {!account.rebateConfig?.discount?.discount &&
+                              !account.rebateConfig?.discount?.bundledDiscount &&
+                              !account.rebateConfig?.discount?.credit &&
+                              !account.rebateConfig?.discount?.privateRateDiscount && (
+                                <span className="text-[10px] text-gray-400">None</span>
+                              )}
+                          </div>
+
+                          {/* Adjustment */}
+                          <div className="flex flex-wrap items-center gap-1">
+                            <FileEdit className="h-3 w-3 text-[#F26522]" />
+                            <span className="text-[10px] font-medium text-muted-foreground">Adjustment:</span>
+                            {account.rebateConfig?.adjustment?.credit && (
+                              <Badge
+                                variant="outline"
+                                className="h-4 border-[#F26522] bg-[#F26522]/10 text-[9px] text-[#F26522] px-1.5 py-0"
+                              >
+                                Credit
+                              </Badge>
+                            )}
+                            {account.rebateConfig?.adjustment?.refund && (
+                              <Badge
+                                variant="outline"
+                                className="h-4 border-[#F26522] bg-[#F26522]/10 text-[9px] text-[#F26522] px-1.5 py-0"
+                              >
+                                Refund
+                              </Badge>
+                            )}
+                            {!account.rebateConfig?.adjustment?.credit && !account.rebateConfig?.adjustment?.refund && (
+                              <span className="text-[10px] text-gray-400">None</span>
+                            )}
+                          </div>
+                        </div>
+                        {/* </CHANGE> */}
                       </div>
-                      <div className="flex items-center gap-1">
-                        {account.rebateFee ? (
-                          <Check className="h-3 w-3 text-[#026172]" />
-                        ) : (
-                          <X className="h-3 w-3 text-gray-400" />
-                        )}
-                        <span className="text-xs text-muted-foreground">Fee</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {account.rebateDiscount ? (
-                          <Check className="h-3 w-3 text-[#026172]" />
-                        ) : (
-                          <X className="h-3 w-3 text-gray-400" />
-                        )}
-                        <span className="text-xs text-muted-foreground">Discount</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {account.rebateAdjustment ? (
-                          <Check className="h-3 w-3 text-[#026172]" />
-                        ) : (
-                          <X className="h-3 w-3 text-gray-400" />
-                        )}
-                        <span className="text-xs text-muted-foreground">Adjustment</span>
-                      </div>
-                    </div>
+                    )}
                   </div>
-                  {/* </CHANGE> */}
 
                   <div className="flex gap-1 border-t border-border pt-3">
                     {account.status === "Unregistered" ? (

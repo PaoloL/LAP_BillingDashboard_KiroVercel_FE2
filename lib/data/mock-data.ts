@@ -52,7 +52,22 @@ export const mockUsageAccounts: UsageAccount[] = [
     vatNumber: "DE123456789",
     resellerDiscount: 15,
     customerDiscount: 10,
-    rebateCredits: true,
+    rebateConfig: {
+      savingsPlansRI: {
+        discountedUsage: true,
+        savingsPlanNegation: true,
+      },
+      discount: {
+        discount: true,
+        bundledDiscount: true,
+        credit: true,
+        privateRateDiscount: false,
+      },
+      adjustment: {
+        credit: true,
+        refund: true,
+      },
+    },
     fundsUtilization: 65,
     totalUsage: 32500.0,
     totalDeposit: 50000.0,
@@ -68,7 +83,22 @@ export const mockUsageAccounts: UsageAccount[] = [
     vatNumber: "DE987654321",
     resellerDiscount: 20,
     customerDiscount: 15,
-    rebateCredits: true,
+    rebateConfig: {
+      savingsPlansRI: {
+        discountedUsage: false,
+        savingsPlanNegation: false,
+      },
+      discount: {
+        discount: true,
+        bundledDiscount: false,
+        credit: true,
+        privateRateDiscount: false,
+      },
+      adjustment: {
+        credit: false,
+        refund: false,
+      },
+    },
     fundsUtilization: 42,
     totalUsage: 21000.0,
     totalDeposit: 50000.0,
@@ -84,7 +114,22 @@ export const mockUsageAccounts: UsageAccount[] = [
     vatNumber: "GB123456789",
     resellerDiscount: 0,
     customerDiscount: 0,
-    rebateCredits: false,
+    rebateConfig: {
+      savingsPlansRI: {
+        discountedUsage: false,
+        savingsPlanNegation: false,
+      },
+      discount: {
+        discount: false,
+        bundledDiscount: false,
+        credit: false,
+        privateRateDiscount: false,
+      },
+      adjustment: {
+        credit: false,
+        refund: false,
+      },
+    },
     fundsUtilization: 88,
     totalUsage: 44000.0,
     totalDeposit: 50000.0,
@@ -100,7 +145,22 @@ export const mockUsageAccounts: UsageAccount[] = [
     vatNumber: "FR123456789",
     resellerDiscount: 18,
     customerDiscount: 12,
-    rebateCredits: true,
+    rebateConfig: {
+      savingsPlansRI: {
+        discountedUsage: true,
+        savingsPlanNegation: true,
+      },
+      discount: {
+        discount: true,
+        bundledDiscount: true,
+        credit: true,
+        privateRateDiscount: false,
+      },
+      adjustment: {
+        credit: true,
+        refund: true,
+      },
+    },
     fundsUtilization: 34,
     totalUsage: 17000.0,
     totalDeposit: 50000.0,

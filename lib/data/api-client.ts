@@ -149,7 +149,8 @@ class ApiClient {
     sortOrder?: "asc" | "desc"
     payerAccountId?: string
     usageAccountId?: string
-  }): Promise<{data: Record<string, TransactionDetail[]>}> {
+    limit?: number
+  }): Promise<{data: any}> {
     const searchParams = new URLSearchParams()
     
     // Use billing periods if provided, otherwise fall back to dates
@@ -162,8 +163,9 @@ class ApiClient {
     if (params?.sortOrder) searchParams.append("sortOrder", params.sortOrder)
     if (params?.payerAccountId) searchParams.append("payerAccountId", params.payerAccountId)
     if (params?.usageAccountId) searchParams.append("usageAccountId", params.usageAccountId)
+    if (params?.limit) searchParams.append("limit", params.limit.toString())
 
-    return this.request<{data: Record<string, TransactionDetail[]>}>(`/transactions?${searchParams.toString()}`)
+    return this.request<{data: any}>(`/transactions?${searchParams.toString()}`)
   }
 
   async createTransaction(data: Omit<TransactionDetail, "id">): Promise<TransactionDetail> {

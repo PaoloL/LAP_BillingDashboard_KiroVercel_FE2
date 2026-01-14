@@ -2,8 +2,18 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart3, Home, Building2, Receipt, Settings } from "lucide-react"
+import { BarChart3, Home, Building2, Receipt, Settings, LogOut, User } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/lib/auth/auth-context"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -14,6 +24,7 @@ const navigation = [
 
 export function DashboardNav() {
   const pathname = usePathname()
+  const { user, signOut } = useAuth()
 
   return (
     <nav className="border-b border-border bg-card">
@@ -49,6 +60,32 @@ export function DashboardNav() {
               })}
             </div>
           </div>
+
+          {user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <User className="h-4 w-4" />
+                  <span className="hidden sm:inline">{user.givenName || user.email}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium">
+                      {user.givenName && user.familyName ? `${user.givenName} ${user.familyName}` : user.email}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={signOut} className="cursor-pointer text-red-600">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
     </nav>

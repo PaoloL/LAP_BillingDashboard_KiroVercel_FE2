@@ -1,8 +1,8 @@
 "use client"
 
-import type React from "react"
-import React, { useState } from "react"
-
+import React from "react"
+import { useState } from "react"
+import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -14,9 +14,9 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { validateDiscounts } from "@/lib/types"
-import { dataService } from "@/lib/data/data-service"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { validateDiscounts } from "@/lib/types" // Import validateDiscounts
+import { dataService } from "@/lib/data/data-service" // Import dataService
 
 interface EditUsageDialogProps {
   open: boolean
@@ -28,10 +28,22 @@ interface EditUsageDialogProps {
     vatNumber: string
     resellerDiscount: number
     customerDiscount: number
-    rebateCredits: boolean
-    rebateFee: boolean
-    rebateDiscount: boolean
-    rebateAdjustment: boolean
+    rebateConfig: {
+      savingsPlansRI: {
+        discountedUsage: boolean
+        savingsPlanNegation: boolean
+      }
+      discount: {
+        discount: boolean
+        bundledDiscount: boolean
+        credit: boolean
+        privateRateDiscount: boolean
+      }
+      adjustment: {
+        credit: boolean
+        refund: boolean
+      }
+    }
   } | null
   onSuccess?: () => void
 }
@@ -39,22 +51,47 @@ interface EditUsageDialogProps {
 export function EditUsageDialog({ open, onOpenChange, account, onSuccess }: EditUsageDialogProps) {
   const [resellerDiscount, setResellerDiscount] = useState<number>(0)
   const [customerDiscount, setCustomerDiscount] = useState<number>(0)
-  const [rebateCredits, setRebateCredits] = useState<boolean>(false)
-  const [rebateFee, setRebateFee] = useState<boolean>(false)
-  const [rebateDiscount, setRebateDiscount] = useState<boolean>(false)
-  const [rebateAdjustment, setRebateAdjustment] = useState<boolean>(false)
+  const [rebateConfig, setRebateConfig] = useState({
+    savingsPlansRI: {
+      discountedUsage: false,
+      savingsPlanNegation: false,
+    },
+    discount: {
+      discount: false,
+      bundledDiscount: false,
+      credit: false,
+      privateRateDiscount: false,
+    },
+    adjustment: {
+      credit: false,
+      refund: false,
+    },
+  })
   const [validationError, setValidationError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
 
-  // Reset form when account changes
   React.useEffect(() => {
     if (account) {
       setResellerDiscount(account.resellerDiscount || 0)
       setCustomerDiscount(account.customerDiscount || 0)
-      setRebateCredits(account.rebateCredits || false)
-      setRebateFee(account.rebateFee || false)
-      setRebateDiscount(account.rebateDiscount || false)
-      setRebateAdjustment(account.rebateAdjustment || false)
+      setRebateConfig(
+        account.rebateConfig || {
+          savingsPlansRI: {
+            discountedUsage: false,
+            savingsPlanNegation: false,
+          },
+          discount: {
+            discount: false,
+            bundledDiscount: false,
+            credit: false,
+            privateRateDiscount: false,
+          },
+          adjustment: {
+            credit: false,
+            refund: false,
+          },
+        },
+      )
       setValidationError(null)
     }
   }, [account])
@@ -73,16 +110,13 @@ export function EditUsageDialog({ open, onOpenChange, account, onSuccess }: Edit
     setIsSubmitting(true)
     try {
       const formData = new FormData(e.target as HTMLFormElement)
-      const vatNumber = formData.get('vat') as string
+      const vatNumber = formData.get("vat") as string
 
       await dataService.updateUsageAccount(account.id, {
-        vatNumber: vatNumber || '',
+        vatNumber: vatNumber || "",
         resellerDiscount,
         customerDiscount,
-        rebateCredits,
-        rebateFee,
-        rebateDiscount,
-        rebateAdjustment
+        rebateConfig,
       })
 
       onOpenChange(false)
@@ -113,7 +147,7 @@ export function EditUsageDialog({ open, onOpenChange, account, onSuccess }: Edit
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-[#00243E]">Edit Usage Account</DialogTitle>
           <DialogDescription>Update billing configuration for {account.customer}</DialogDescription>
@@ -132,7 +166,7 @@ export function EditUsageDialog({ open, onOpenChange, account, onSuccess }: Edit
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="edit-vat">VAT Number</Label>
-                <Input id="edit-vat" placeholder="DE123456789" defaultValue={account.vatNumber} />
+                <Input id="edit-vat" name="vat" placeholder="DE123456789" defaultValue={account.vatNumber} />
               </div>
             </div>
 
@@ -170,61 +204,172 @@ export function EditUsageDialog({ open, onOpenChange, account, onSuccess }: Edit
             </div>
 
             <div className="grid gap-4">
-              <h3 className="text-sm font-semibold text-[#00243E]">Credit Handling</h3>
-              <div className="flex items-center justify-between space-x-4">
-                <div className="flex-1">
-                  <Label htmlFor="edit-rebate" className="cursor-pointer font-medium">
-                    Rebate Credits to Usage Account
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    If enabled, credit will be rebated to the Usage Account.
-                  </p>
-                </div>
-                <Switch id="edit-rebate" checked={rebateCredits} onCheckedChange={setRebateCredits} />
-              </div>
-              <div className="flex items-center justify-between space-x-4">
-                <div className="flex-1">
-                  <Label htmlFor="edit-rebate-fee" className="cursor-pointer font-medium">
-                    Rebate Fee to Usage Account
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    If enabled, fees will be rebated to the Usage Account.
-                  </p>
-                </div>
-                <Switch id="edit-rebate-fee" checked={rebateFee} onCheckedChange={setRebateFee} />
-              </div>
-              <div className="flex items-center justify-between space-x-4">
-                <div className="flex-1">
-                  <Label htmlFor="edit-rebate-discount" className="cursor-pointer font-medium">
-                    Rebate Discount to Usage Account
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    If enabled, discounts will be rebated to the Usage Account.
-                  </p>
-                </div>
-                <Switch id="edit-rebate-discount" checked={rebateDiscount} onCheckedChange={setRebateDiscount} />
-              </div>
-              <div className="flex items-center justify-between space-x-4">
-                <div className="flex-1">
-                  <Label htmlFor="edit-rebate-adjustment" className="cursor-pointer font-medium">
-                    Rebate Adjustment to Usage Account
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    If enabled, adjustments will be rebated to the Usage Account.
-                  </p>
-                </div>
-                <Switch id="edit-rebate-adjustment" checked={rebateAdjustment} onCheckedChange={setRebateAdjustment} />
+              <h3 className="text-sm font-semibold text-[#00243E]">Rebate Configuration</h3>
+              <p className="text-xs text-muted-foreground">Configure which AWS cost components should be rebated</p>
+
+              <div className="space-y-4">
+                {/* Savings Plans / RI */}
+                <Card className="border-[#026172] border-l-4">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-[#026172]">Savings Plans / RI</CardTitle>
+                    <p className="text-xs text-muted-foreground">Rebate Saving Plans or RI benefits</p>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="edit-sp-discounted" className="text-sm font-normal cursor-pointer">
+                        Discounted Usage
+                      </Label>
+                      <Switch
+                        id="edit-sp-discounted"
+                        checked={rebateConfig.savingsPlansRI.discountedUsage}
+                        onCheckedChange={(checked) =>
+                          setRebateConfig((prev) => ({
+                            ...prev,
+                            savingsPlansRI: { ...prev.savingsPlansRI, discountedUsage: checked },
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="edit-sp-negation" className="text-sm font-normal cursor-pointer">
+                        SP Negation
+                      </Label>
+                      <Switch
+                        id="edit-sp-negation"
+                        checked={rebateConfig.savingsPlansRI.savingsPlanNegation}
+                        onCheckedChange={(checked) =>
+                          setRebateConfig((prev) => ({
+                            ...prev,
+                            savingsPlansRI: { ...prev.savingsPlansRI, savingsPlanNegation: checked },
+                          }))
+                        }
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Discount */}
+                <Card className="border-[#00243E] border-l-4">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-[#00243E]">Discount</CardTitle>
+                    <p className="text-xs text-muted-foreground">Rebate any discounts that AWS applied to your usage</p>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="edit-discount" className="text-sm font-normal cursor-pointer">
+                        Discount
+                      </Label>
+                      <Switch
+                        id="edit-discount"
+                        checked={rebateConfig.discount.discount}
+                        onCheckedChange={(checked) =>
+                          setRebateConfig((prev) => ({
+                            ...prev,
+                            discount: { ...prev.discount, discount: checked },
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="edit-bundled" className="text-sm font-normal cursor-pointer">
+                        Bundled Discount
+                      </Label>
+                      <Switch
+                        id="edit-bundled"
+                        checked={rebateConfig.discount.bundledDiscount}
+                        onCheckedChange={(checked) =>
+                          setRebateConfig((prev) => ({
+                            ...prev,
+                            discount: { ...prev.discount, bundledDiscount: checked },
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="edit-discount-credit" className="text-sm font-normal cursor-pointer">
+                        Credit
+                      </Label>
+                      <Switch
+                        id="edit-discount-credit"
+                        checked={rebateConfig.discount.credit}
+                        onCheckedChange={(checked) =>
+                          setRebateConfig((prev) => ({
+                            ...prev,
+                            discount: { ...prev.discount, credit: checked },
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="edit-private-rate" className="text-sm font-normal cursor-pointer">
+                        Private Rate Discount
+                      </Label>
+                      <Switch
+                        id="edit-private-rate"
+                        checked={rebateConfig.discount.privateRateDiscount}
+                        onCheckedChange={(checked) =>
+                          setRebateConfig((prev) => ({
+                            ...prev,
+                            discount: { ...prev.discount, privateRateDiscount: checked },
+                          }))
+                        }
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Adjustment */}
+                <Card className="border-[#F26522] border-l-4">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-[#F26522]">Adjustment</CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      Rebate any adjustment that AWS applied to your usage
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="edit-adj-credit" className="text-sm font-normal cursor-pointer">
+                        Credit
+                      </Label>
+                      <Switch
+                        id="edit-adj-credit"
+                        checked={rebateConfig.adjustment.credit}
+                        onCheckedChange={(checked) =>
+                          setRebateConfig((prev) => ({
+                            ...prev,
+                            adjustment: { ...prev.adjustment, credit: checked },
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="edit-adj-refund" className="text-sm font-normal cursor-pointer">
+                        Refund
+                      </Label>
+                      <Switch
+                        id="edit-adj-refund"
+                        checked={rebateConfig.adjustment.refund}
+                        onCheckedChange={(checked) =>
+                          setRebateConfig((prev) => ({
+                            ...prev,
+                            adjustment: { ...prev.adjustment, refund: checked },
+                          }))
+                        }
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
+              disabled={isSubmitting || !!validationError}
               className="bg-[#00243E] hover:bg-[#00243E]/90"
-              disabled={isSubmitting}
             >
               {isSubmitting ? "Saving..." : "Save Changes"}
             </Button>

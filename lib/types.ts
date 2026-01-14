@@ -40,10 +40,22 @@ export interface UsageAccount extends Account {
   vatNumber: string
   resellerDiscount: number // Percentage
   customerDiscount: number // Percentage
-  rebateCredits: boolean
-  rebateFee: boolean
-  rebateDiscount: boolean
-  rebateAdjustment: boolean
+  rebateConfig: {
+    savingsPlansRI: {
+      discountedUsage: boolean
+      savingsPlanNegation: boolean
+    }
+    discount: {
+      discount: boolean
+      bundledDiscount: boolean
+      credit: boolean
+      privateRateDiscount: boolean
+    }
+    adjustment: {
+      credit: boolean
+      refund: boolean
+    }
+  }
   fundsUtilization: number
   totalUsage: number
   totalDeposit: number
