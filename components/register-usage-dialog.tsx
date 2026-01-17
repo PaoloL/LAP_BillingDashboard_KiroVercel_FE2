@@ -41,10 +41,9 @@ export function RegisterUsageDialog({
   const [rebateConfig, setRebateConfig] = useState({
     savingsPlansRI: {
       discountedUsage: false,
-      savingsPlanNegation: false,
+      spNegation: false,
     },
     discount: {
-      discount: false,
       bundledDiscount: false,
       credit: false,
       privateRateDiscount: false,
@@ -84,6 +83,9 @@ export function RegisterUsageDialog({
         resellerDiscount,
         customerDiscount,
         rebateConfig,
+        payerAccountId: payerAccount?.accountId || "",
+        payerAccountName: payerAccount?.accountName || "",
+        accountName: accountName || "",
       })
 
       // Then change status to Registered
@@ -128,28 +130,56 @@ export function RegisterUsageDialog({
           <div className="grid gap-6 py-4">
             <div className="grid gap-4">
               <h3 className="text-sm font-semibold text-[#00243E]">Account Information</h3>
-              <div className="grid gap-2">
-                <Label htmlFor="usage-id">Account ID</Label>
-                <Input
-                  id="usage-id"
-                  placeholder="345678901234"
-                  defaultValue={accountId || ""}
-                  disabled
-                  className="bg-muted"
-                  required
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="usage-id">Usage Account ID</Label>
+                  <Input
+                    id="usage-id"
+                    placeholder="345678901234"
+                    defaultValue={accountId || ""}
+                    disabled
+                    className="bg-muted"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="account-name">Usage Account Name</Label>
+                  <Input
+                    id="account-name"
+                    placeholder="Account Name"
+                    defaultValue={accountName || ""}
+                    disabled
+                    className="bg-muted"
+                    required
+                  />
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="account-name">Account Name</Label>
-                <Input
-                  id="account-name"
-                  placeholder="Account Name"
-                  defaultValue={accountName || ""}
-                  disabled
-                  className="bg-muted"
-                  required
-                />
-              </div>
+              {payerAccount && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="payer-account-id">Payer Account ID</Label>
+                    <Input
+                      id="payer-account-id"
+                      value={payerAccount.accountId}
+                      disabled
+                      className="bg-muted"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="payer-account-name">Payer Account Name</Label>
+                    <Input
+                      id="payer-account-name"
+                      value={payerAccount.accountName}
+                      disabled
+                      className="bg-muted"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="grid gap-4">
+              <h3 className="text-sm font-semibold text-[#00243E]">Customer Information</h3>
               <div className="grid gap-2">
                 <Label htmlFor="customer">Customer Name</Label>
                 <Input id="customer" name="customer" placeholder="Acme Corporation" required />
@@ -158,17 +188,6 @@ export function RegisterUsageDialog({
                 <Label htmlFor="vat">VAT Number</Label>
                 <Input id="vat" name="vat" placeholder="DE123456789" />
               </div>
-              {payerAccount && (
-                <div className="grid gap-2">
-                  <Label htmlFor="payer">Payer Account</Label>
-                  <Input
-                    id="payer"
-                    value={`${payerAccount.accountName} (${payerAccount.accountId})`}
-                    disabled
-                    className="bg-muted"
-                  />
-                </div>
-              )}
             </div>
 
             <div className="grid gap-4">
@@ -237,11 +256,11 @@ export function RegisterUsageDialog({
                       </Label>
                       <Switch
                         id="reg-sp-negation"
-                        checked={rebateConfig.savingsPlansRI.savingsPlanNegation}
+                        checked={rebateConfig.savingsPlansRI.spNegation}
                         onCheckedChange={(checked) =>
                           setRebateConfig((prev) => ({
                             ...prev,
-                            savingsPlansRI: { ...prev.savingsPlansRI, savingsPlanNegation: checked },
+                            savingsPlansRI: { ...prev.savingsPlansRI, spNegation: checked },
                           }))
                         }
                       />
@@ -256,21 +275,6 @@ export function RegisterUsageDialog({
                     <p className="text-xs text-muted-foreground">Rebate any discounts that AWS applied to your usage</p>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="reg-discount" className="text-sm font-normal cursor-pointer">
-                        Discount
-                      </Label>
-                      <Switch
-                        id="reg-discount"
-                        checked={rebateConfig.discount.discount}
-                        onCheckedChange={(checked) =>
-                          setRebateConfig((prev) => ({
-                            ...prev,
-                            discount: { ...prev.discount, discount: checked },
-                          }))
-                        }
-                      />
-                    </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="reg-bundled" className="text-sm font-normal cursor-pointer">
                         Bundled Discount

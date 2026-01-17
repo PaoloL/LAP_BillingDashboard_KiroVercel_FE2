@@ -29,7 +29,7 @@ export function TransactionFilters({
   })
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
   const [payerAccounts, setPayerAccounts] = useState<Array<{ id: string; accountId: string; accountName: string }>>([])
-  const [usageAccounts, setUsageAccounts] = useState<Array<{ id: string; accountId: string; accountName: string }>>([])
+  const [usageAccounts, setUsageAccounts] = useState<Array<{ id: string; accountId: string; accountName: string; payerAccountId?: string }>>([])
   const [selectedPayerAccount, setSelectedPayerAccount] = useState<string | undefined>()
   const [selectedUsageAccount, setSelectedUsageAccount] = useState<string | undefined>()
   const [payerPopoverOpen, setPayerPopoverOpen] = useState(false)
@@ -56,7 +56,7 @@ export function TransactionFilters({
         ])
 
         // Set payer accounts from API and merge with transaction data
-        const payerAccountsList = payerData.data || []
+        const payerAccountsList = payerData || []
         const payerAccountsMap = new Map()
 
         // Add API payer accounts
@@ -87,8 +87,15 @@ export function TransactionFilters({
 
         setPayerAccounts(Array.from(payerAccountsMap.values()))
 
+        // Map usage accounts from API to include accountName
+        let usageAccountsList = (usageData || []).map((account) => ({
+          id: account.id,
+          accountId: account.accountId,
+          accountName: account.customer, // Map customer to accountName
+          payerAccountId: account.payerAccountId,
+        }))
+        
         // If usage accounts API is empty, extract from transactions
-        let usageAccountsList = usageData.data || []
         if (usageAccountsList.length === 0 && transactionsData.data) {
           const uniqueUsageAccounts = new Map()
           Object.values(transactionsData.data).forEach((transactions) => {
@@ -163,6 +170,13 @@ export function TransactionFilters({
   const handlePayerAccountChange = (value: string) => {
     const accountId = value === "all" ? undefined : value
     setSelectedPayerAccount(accountId)
+    
+    // Clear usage account selection when payer changes
+    if (accountId !== selectedPayerAccount) {
+      setSelectedUsageAccount(undefined)
+      onUsageAccountChange?.(undefined)
+    }
+    
     onPayerAccountChange?.(accountId)
     setPayerPopoverOpen(false)
   }
@@ -176,6 +190,11 @@ export function TransactionFilters({
 
   const selectedPayerName = payerAccounts.find((a) => a.accountId === selectedPayerAccount)?.accountName
   const selectedUsageName = usageAccounts.find((a) => a.accountId === selectedUsageAccount)?.accountName
+
+  // Filter usage accounts by selected payer account
+  const filteredUsageAccounts = selectedPayerAccount
+    ? usageAccounts.filter((account) => account.payerAccountId === selectedPayerAccount)
+    : usageAccounts
 
   return (
     <div className="flex gap-2">
@@ -256,7 +275,7 @@ export function TransactionFilters({
                 >
                   All Usage Accounts
                 </button>
-                {usageAccounts.map((account) => (
+                {filteredUsageAccounts.map((account) => (
                   <button
                     key={account.accountId}
                     onClick={() => handleUsageAccountChange(account.accountId)}
@@ -268,7 +287,7 @@ export function TransactionFilters({
                     {account.accountName}
                   </button>
                 ))}
-                {usageAccounts.length === 0 && (
+                {filteredUsageAccounts.length === 0 && (
                   <div className="px-4 py-2 text-sm text-muted-foreground">No usage accounts found</div>
                 )}
               </>

@@ -10,6 +10,7 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
   const [isExpanded, setIsExpanded] = useState(false)
 
   const detailedBreakdown = transaction.details?.customer?.entity?.aws || {}
+  const marketplaceBreakdown = transaction.details?.customer?.entity?.awsmp || {}
 
   const marginEur = (transaction.customerCost?.eur || 0) - (transaction.sellerCost?.eur || 0)
   const marginUsd = (transaction.customerCost?.usd || 0) - (transaction.sellerCost?.usd || 0)
@@ -292,6 +293,48 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                       <span className="text-muted-foreground">Tax</span>
                       <span className="font-medium">
                         {formatCurrencyUSD(detailedBreakdown.tax?.breakdown?.Tax?.usd || 0)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Marketplace Section */}
+                <div className="space-y-2 rounded-lg border border-border bg-background p-3">
+                  <div className="flex items-center justify-between border-b border-border pb-2">
+                    <div className="text-sm font-semibold text-purple-600">Marketplace</div>
+                    <div className="text-sm font-bold text-purple-600">
+                      {formatCurrencyUSD(marketplaceBreakdown.totals?.usd || 0)}
+                    </div>
+                  </div>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Usage</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(marketplaceBreakdown.usage?.totals?.usd || 0)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Fee</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(marketplaceBreakdown.fee?.totals?.usd || 0)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Tax</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(marketplaceBreakdown.tax?.totals?.usd || 0)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Discount</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(Math.abs(marketplaceBreakdown.discount?.totals?.usd || 0))}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Adjustment</span>
+                      <span className="font-medium">
+                        {formatCurrencyUSD(Math.abs(marketplaceBreakdown.adjustment?.totals?.usd || 0))}
                       </span>
                     </div>
                   </div>
