@@ -25,16 +25,18 @@ interface EditUsageDialogProps {
     id: string
     customer: string
     status: "Unregistered" | "Registered" | "Archived"
+    payerAccountId?: string
+    payerAccountName?: string
+    accountName?: string
     vatNumber: string
     resellerDiscount: number
     customerDiscount: number
     rebateConfig: {
       savingsPlansRI: {
         discountedUsage: boolean
-        savingsPlanNegation: boolean
+        spNegation: boolean
       }
       discount: {
-        discount: boolean
         bundledDiscount: boolean
         credit: boolean
         privateRateDiscount: boolean
@@ -54,10 +56,9 @@ export function EditUsageDialog({ open, onOpenChange, account, onSuccess }: Edit
   const [rebateConfig, setRebateConfig] = useState({
     savingsPlansRI: {
       discountedUsage: false,
-      savingsPlanNegation: false,
+      spNegation: false,
     },
     discount: {
-      discount: false,
       bundledDiscount: false,
       credit: false,
       privateRateDiscount: false,
@@ -78,10 +79,9 @@ export function EditUsageDialog({ open, onOpenChange, account, onSuccess }: Edit
         account.rebateConfig || {
           savingsPlansRI: {
             discountedUsage: false,
-            savingsPlanNegation: false,
+            spNegation: false,
           },
           discount: {
-            discount: false,
             bundledDiscount: false,
             credit: false,
             privateRateDiscount: false,
@@ -117,6 +117,9 @@ export function EditUsageDialog({ open, onOpenChange, account, onSuccess }: Edit
         resellerDiscount,
         customerDiscount,
         rebateConfig,
+        ...(account.payerAccountId && { payerAccountId: account.payerAccountId }),
+        ...(account.payerAccountName && { payerAccountName: account.payerAccountName }),
+        ...(account.accountName && { accountName: account.accountName }),
       })
 
       onOpenChange(false)
@@ -156,10 +159,47 @@ export function EditUsageDialog({ open, onOpenChange, account, onSuccess }: Edit
           <div className="grid gap-6 py-4">
             <div className="grid gap-4">
               <h3 className="text-sm font-semibold text-[#00243E]">Account Information</h3>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-usage-id">Account ID</Label>
-                <Input id="edit-usage-id" value={account.id} disabled className="bg-muted" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-usage-id">Usage Account ID</Label>
+                  <Input id="edit-usage-id" value={account.id} disabled className="bg-muted" />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-account-name">Usage Account Name</Label>
+                  <Input 
+                    id="edit-account-name" 
+                    value={account.accountName || ''} 
+                    disabled 
+                    className="bg-muted" 
+                  />
+                </div>
               </div>
+              {account.payerAccountId && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-payer-account-id">Payer Account ID</Label>
+                    <Input
+                      id="edit-payer-account-id"
+                      value={account.payerAccountId}
+                      disabled
+                      className="bg-muted"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-payer-account-name">Payer Account Name</Label>
+                    <Input
+                      id="edit-payer-account-name"
+                      value={account.payerAccountName || ''}
+                      disabled
+                      className="bg-muted"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="grid gap-4">
+              <h3 className="text-sm font-semibold text-[#00243E]">Customer Information</h3>
               <div className="grid gap-2">
                 <Label htmlFor="edit-customer">Customer Name</Label>
                 <Input id="edit-customer" value={account.customer} disabled className="bg-muted" />
@@ -236,11 +276,11 @@ export function EditUsageDialog({ open, onOpenChange, account, onSuccess }: Edit
                       </Label>
                       <Switch
                         id="edit-sp-negation"
-                        checked={rebateConfig.savingsPlansRI.savingsPlanNegation}
+                        checked={rebateConfig.savingsPlansRI.spNegation}
                         onCheckedChange={(checked) =>
                           setRebateConfig((prev) => ({
                             ...prev,
-                            savingsPlansRI: { ...prev.savingsPlansRI, savingsPlanNegation: checked },
+                            savingsPlansRI: { ...prev.savingsPlansRI, spNegation: checked },
                           }))
                         }
                       />
@@ -255,21 +295,6 @@ export function EditUsageDialog({ open, onOpenChange, account, onSuccess }: Edit
                     <p className="text-xs text-muted-foreground">Rebate any discounts that AWS applied to your usage</p>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="edit-discount" className="text-sm font-normal cursor-pointer">
-                        Discount
-                      </Label>
-                      <Switch
-                        id="edit-discount"
-                        checked={rebateConfig.discount.discount}
-                        onCheckedChange={(checked) =>
-                          setRebateConfig((prev) => ({
-                            ...prev,
-                            discount: { ...prev.discount, discount: checked },
-                          }))
-                        }
-                      />
-                    </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="edit-bundled" className="text-sm font-normal cursor-pointer">
                         Bundled Discount

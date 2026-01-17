@@ -34,9 +34,11 @@ export interface PayerAccount extends Account {
 
 export interface UsageAccount extends Account {
   accountId: string // Must be exactly 12 digits
+  accountName?: string
   customer: string
   status: "Unregistered" | "Registered" | "Archived"
   payerAccountId: string
+  payerAccountName?: string
   vatNumber: string
   resellerDiscount: number // Percentage
   customerDiscount: number // Percentage

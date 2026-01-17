@@ -108,10 +108,14 @@ export function AccountsGrid() {
 
   const openRegisterUsageDialog = (account: UsageAccount, e: React.MouseEvent) => {
     e.stopPropagation()
-    // Find the payer account for this usage account
-    const payerAccount = payerAccounts.find((p) => p.id === account.id.split("-")[0])
-    setSelectedPayerForUsage(payerAccount || null)
-    setSelectedUsageAccount(account) // Store the account to get its ID and name
+    // Create payer account object from usage account's payer info
+    const payerAccount = account.payerAccountId ? {
+      id: account.payerAccountId,
+      accountId: account.payerAccountId,
+      accountName: account.payerAccountName || `Payer ${account.payerAccountId}`,
+    } : null
+    setSelectedPayerForUsage(payerAccount as any)
+    setSelectedUsageAccount(account)
     setUsageDialogOpen(true)
   }
 
