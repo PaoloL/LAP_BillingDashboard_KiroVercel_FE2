@@ -9,8 +9,8 @@ import { dataService } from "@/lib/data/data-service"
 function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
   const [isExpanded, setIsExpanded] = useState(false)
 
-  const detailedBreakdown = transaction.details?.customer?.entity?.aws || {}
-  const marketplaceBreakdown = transaction.details?.customer?.entity?.awsmp || {}
+  const detailedBreakdown = transaction.details?.entity?.aws?.breakdown || {}
+  const marketplaceBreakdown = transaction.details?.entity?.awsmp?.breakdown || {}
 
   const marginEur = (transaction.customerCost?.eur || 0) - (transaction.sellerCost?.eur || 0)
   const marginUsd = (transaction.customerCost?.usd || 0) - (transaction.sellerCost?.usd || 0)
@@ -148,19 +148,19 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Usage</span>
                       <span className="font-medium">
-                        {formatCurrencyUSD(detailedBreakdown.usage?.breakdown?.Usage?.usd || 0)}
+                        {formatCurrencyUSD(detailedBreakdown.usage?.details?.Usage?.usd || 0)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Discounted Usage</span>
                       <span className="font-medium">
-                        {formatCurrencyUSD(detailedBreakdown.usage?.breakdown?.DiscountedUsage?.usd || 0)}
+                        {formatCurrencyUSD(detailedBreakdown.usage?.details?.DiscountedUsage?.usd || 0)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">SP Covered Usage</span>
                       <span className="font-medium">
-                        {formatCurrencyUSD(detailedBreakdown.usage?.breakdown?.SavingsPlanCoveredUsage?.usd || 0)}
+                        {formatCurrencyUSD(detailedBreakdown.usage?.details?.SavingsPlanCoveredUsage?.usd || 0)}
                       </span>
                     </div>
                   </div>
@@ -178,25 +178,25 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Fee</span>
                       <span className="font-medium">
-                        {formatCurrencyUSD(detailedBreakdown.fee?.breakdown?.Fee?.usd || 0)}
+                        {formatCurrencyUSD(detailedBreakdown.fee?.details?.Fee?.usd || 0)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">RI Fee</span>
                       <span className="font-medium">
-                        {formatCurrencyUSD(detailedBreakdown.fee?.breakdown?.RIFee?.usd || 0)}
+                        {formatCurrencyUSD(detailedBreakdown.fee?.details?.RIFee?.usd || 0)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">SP Recurring Fee</span>
                       <span className="font-medium">
-                        {formatCurrencyUSD(detailedBreakdown.fee?.breakdown?.SavingsPlanRecurringFee?.usd || 0)}
+                        {formatCurrencyUSD(detailedBreakdown.fee?.details?.SavingsPlanRecurringFee?.usd || 0)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">SP Upfront Fee</span>
                       <span className="font-medium">
-                        {formatCurrencyUSD(detailedBreakdown.fee?.breakdown?.SavingsPlanUpfrontFee?.usd || 0)}
+                        {formatCurrencyUSD(detailedBreakdown.fee?.details?.SavingsPlanUpfrontFee?.usd || 0)}
                       </span>
                     </div>
                   </div>
@@ -214,26 +214,26 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Bundled Discount</span>
                       <span className="font-medium">
-                        {formatCurrencyUSD(Math.abs(detailedBreakdown.discount?.breakdown?.BundledDiscount?.usd || 0))}
+                        {formatCurrencyUSD(Math.abs(detailedBreakdown.discount?.details?.BundledDiscount?.usd || 0))}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Discount</span>
                       <span className="font-medium">
-                        {formatCurrencyUSD(Math.abs(detailedBreakdown.discount?.breakdown?.Discount?.usd || 0))}
+                        {formatCurrencyUSD(Math.abs(detailedBreakdown.discount?.details?.Discount?.usd || 0))}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Credit</span>
                       <span className="font-medium">
-                        {formatCurrencyUSD(Math.abs(detailedBreakdown.discount?.breakdown?.Credit?.usd || 0))}
+                        {formatCurrencyUSD(Math.abs(detailedBreakdown.discount?.details?.Credit?.usd || 0))}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Private Rate Discount</span>
                       <span className="font-medium">
                         {formatCurrencyUSD(
-                          Math.abs(detailedBreakdown.discount?.breakdown?.PrivateRateDiscount?.usd || 0),
+                          Math.abs(detailedBreakdown.discount?.details?.PrivateRateDiscount?.usd || 0),
                         )}
                       </span>
                     </div>
@@ -241,7 +241,7 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                       <span className="text-muted-foreground">Distributor Discount</span>
                       <span className="font-medium">
                         {formatCurrencyUSD(
-                          Math.abs(detailedBreakdown.discount?.breakdown?.DistributorDiscount?.usd || 0),
+                          Math.abs(detailedBreakdown.discount?.details?.DistributorDiscount?.usd || 0),
                         )}
                       </span>
                     </div>
@@ -260,20 +260,20 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Credit</span>
                       <span className="font-medium">
-                        {formatCurrencyUSD(Math.abs(detailedBreakdown.adjustment?.breakdown?.Credit?.usd || 0))}
+                        {formatCurrencyUSD(Math.abs(detailedBreakdown.adjustment?.details?.Credit?.usd || 0))}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Refund</span>
                       <span className="font-medium">
-                        {formatCurrencyUSD(Math.abs(detailedBreakdown.adjustment?.breakdown?.Refund?.usd || 0))}
+                        {formatCurrencyUSD(Math.abs(detailedBreakdown.adjustment?.details?.Refund?.usd || 0))}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">SP Negation</span>
                       <span className="font-medium">
                         {formatCurrencyUSD(
-                          Math.abs(detailedBreakdown.adjustment?.breakdown?.SavingsPlanNegation?.usd || 0),
+                          Math.abs(detailedBreakdown.adjustment?.details?.SavingsPlanNegation?.usd || 0),
                         )}
                       </span>
                     </div>
@@ -292,7 +292,7 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Tax</span>
                       <span className="font-medium">
-                        {formatCurrencyUSD(detailedBreakdown.tax?.breakdown?.Tax?.usd || 0)}
+                        {formatCurrencyUSD(detailedBreakdown.tax?.details?.Tax?.usd || 0)}
                       </span>
                     </div>
                   </div>
