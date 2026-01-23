@@ -42,13 +42,15 @@ export default function RegisterPage() {
     setLoading(true)
 
     try {
-      await signUp({
+      const result = await signUp({
         email: formData.email,
         password: formData.password,
         givenName: formData.givenName,
         familyName: formData.familyName,
       })
-      router.push(`/auth/verify?email=${encodeURIComponent(formData.email)}`)
+      // Pass the actual username from Cognito, not the email
+      const username = result.getUsername()
+      router.push(`/auth/verify?username=${encodeURIComponent(username)}&email=${encodeURIComponent(formData.email)}`)
     } catch (err: any) {
       console.error("[v0] Registration error:", err)
       setError(err.message || "Registration failed. Please try again.")
