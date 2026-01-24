@@ -22,7 +22,7 @@
 **Enhancement**: When payer account changes, clear the usage account selection since it may not belong to the new payer.
 
 **Implementation**:
-```typescript
+\`\`\`typescript
 const handlePayerAccountChange = (value: string) => {
   const accountId = value === "all" ? undefined : value
   setSelectedPayerAccount(accountId)
@@ -36,7 +36,7 @@ const handlePayerAccountChange = (value: string) => {
   onPayerAccountChange?.(accountId)
   setPayerPopoverOpen(false)
 }
-```
+\`\`\`
 
 ## How It Works
 
@@ -58,21 +58,21 @@ const handlePayerAccountChange = (value: string) => {
 ## Data Structure
 
 **Usage Account**:
-```typescript
+\`\`\`typescript
 {
   id: string
   accountId: string          // 12-digit AWS account ID
   accountName: string        // Mapped from 'customer' field
   payerAccountId: string     // Links to payer's accountId
 }
-```
+\`\`\`
 
 **Filtering Logic**:
-```typescript
+\`\`\`typescript
 const filteredUsageAccounts = selectedPayerAccount
   ? usageAccounts.filter(account => account.payerAccountId === selectedPayerAccount)
   : usageAccounts
-```
+\`\`\`
 
 ## Result
 

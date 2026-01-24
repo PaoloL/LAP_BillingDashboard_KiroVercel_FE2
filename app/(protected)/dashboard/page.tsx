@@ -1,7 +1,6 @@
 import { StatsCards } from "@/components/stats-cards"
 import { CostCharts } from "@/components/cost-charts"
 import { RecentTransactions } from "@/components/recent-transactions"
-import { UsageMetrics } from "@/components/usage-metrics"
 
 export default function Dashboard() {
   return (
@@ -12,13 +11,13 @@ export default function Dashboard() {
       </div>
 
       <div className="space-y-8">
+        {/* Accounts and Billing Stats */}
         <StatsCards />
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <CostCharts />
-          <UsageMetrics />
-        </div>
+        {/* Charts Section */}
+        <CostCharts />
         
+        {/* Recent Transactions */}
         <RecentTransactions />
       </div>
     </main>

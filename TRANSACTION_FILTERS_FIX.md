@@ -24,7 +24,7 @@ When the transactions page was restored after the build fixes, it was simplified
    - `usageAccountId` - Usage account filter
 
 3. **Added TransactionFilters component** with proper callbacks:
-   ```tsx
+   \`\`\`tsx
    <TransactionFilters
      onDateRangeChange={setDateRange}
      onBillingPeriodRangeChange={setBillingPeriodRange}
@@ -35,10 +35,10 @@ When the transactions page was restored after the build fixes, it was simplified
      onPayerAccountChange={setPayerAccountId}
      onUsageAccountChange={setUsageAccountId}
    />
-   ```
+   \`\`\`
 
 4. **Connected filters to TransactionsList**:
-   ```tsx
+   \`\`\`tsx
    <TransactionsList
      dateRange={dateRange}
      billingPeriodRange={billingPeriodRange}
@@ -47,7 +47,7 @@ When the transactions page was restored after the build fixes, it was simplified
      payerAccountId={payerAccountId}
      usageAccountId={usageAccountId}
    />
-   ```
+   \`\`\`
 
 ## Result
 
