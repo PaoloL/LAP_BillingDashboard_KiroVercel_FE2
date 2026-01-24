@@ -149,34 +149,34 @@ export function StatsCards() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h2 className="mb-4 text-lg font-semibold text-[#00243E]">Accounts</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <h2 className="mb-3 text-base font-semibold text-[#00243E]">Accounts</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
             {[1, 2].map((i) => (
-              <Card key={i}>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <div className="h-4 w-32 animate-pulse rounded bg-muted" />
-                  <div className="h-10 w-10 animate-pulse rounded-lg bg-muted" />
-                </CardHeader>
-                <CardContent>
-                  <div className="h-8 w-16 animate-pulse rounded bg-muted" />
+              <Card key={i} className="py-3">
+                <CardContent className="flex items-center justify-between px-4 py-0">
+                  <div className="space-y-1">
+                    <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+                    <div className="h-6 w-12 animate-pulse rounded bg-muted" />
+                  </div>
+                  <div className="h-8 w-8 animate-pulse rounded-lg bg-muted" />
                 </CardContent>
               </Card>
             ))}
           </div>
         </div>
         <div>
-          <h2 className="mb-4 text-lg font-semibold text-[#00243E]">Billing</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <h2 className="mb-3 text-base font-semibold text-[#00243E]">Billing</h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
-              <Card key={i}>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <div className="h-4 w-24 animate-pulse rounded bg-muted" />
-                  <div className="h-10 w-10 animate-pulse rounded-lg bg-muted" />
-                </CardHeader>
-                <CardContent>
-                  <div className="h-8 w-24 animate-pulse rounded bg-muted" />
+              <Card key={i} className="py-3">
+                <CardContent className="flex items-center justify-between px-4 py-0">
+                  <div className="space-y-1">
+                    <div className="h-3 w-20 animate-pulse rounded bg-muted" />
+                    <div className="h-6 w-16 animate-pulse rounded bg-muted" />
+                  </div>
+                  <div className="h-8 w-8 animate-pulse rounded-lg bg-muted" />
                 </CardContent>
               </Card>
             ))}
@@ -187,26 +187,26 @@ export function StatsCards() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Accounts Section */}
       <div>
-        <h2 className="mb-4 text-lg font-semibold text-[#00243E]">Accounts</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <h2 className="mb-3 text-base font-semibold text-[#00243E]">Accounts</h2>
+        <div className="grid gap-3 sm:grid-cols-2">
           {accountStats.map((stat) => {
             const Icon = stat.icon
             return (
-              <Card key={stat.title}>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
-                  <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg", stat.bgColor)}>
-                    <Icon className={cn("h-5 w-5", stat.color)} />
+              <Card key={stat.title} className="py-3">
+                <CardContent className="flex items-center justify-between px-4 py-0">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">{stat.title}</p>
+                    <div className={cn("text-2xl font-bold", stat.color)}>{stat.value}</div>
+                    {stat.subtitle && (
+                      <p className="text-xs text-muted-foreground">{stat.subtitle}</p>
+                    )}
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className={cn("text-3xl font-bold", stat.color)}>{stat.value}</div>
-                  {stat.subtitle && (
-                    <p className="mt-1 text-sm text-muted-foreground">{stat.subtitle}</p>
-                  )}
+                  <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", stat.bgColor)}>
+                    <Icon className={cn("h-4 w-4", stat.color)} />
+                  </div>
                 </CardContent>
               </Card>
             )
@@ -216,21 +216,21 @@ export function StatsCards() {
 
       {/* Billing Section */}
       <div>
-        <h2 className="mb-4 text-lg font-semibold text-[#00243E]">Billing</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <h2 className="mb-3 text-base font-semibold text-[#00243E]">Billing</h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {billingStats.map((stat) => {
             const Icon = stat.icon
             return (
-              <Card key={stat.title}>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
-                  <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg", stat.bgColor)}>
-                    <Icon className={cn("h-5 w-5", stat.color)} />
+              <Card key={stat.title} className="py-3">
+                <CardContent className="flex items-center justify-between px-4 py-0">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">{stat.title}</p>
+                    <div className={cn("text-2xl font-bold", stat.color)}>
+                      {stat.isCurrency ? formatCurrency(stat.value as number) : stat.value}
+                    </div>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className={cn("text-3xl font-bold", stat.color)}>
-                    {stat.isCurrency ? formatCurrency(stat.value as number) : stat.value}
+                  <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", stat.bgColor)}>
+                    <Icon className={cn("h-4 w-4", stat.color)} />
                   </div>
                 </CardContent>
               </Card>
