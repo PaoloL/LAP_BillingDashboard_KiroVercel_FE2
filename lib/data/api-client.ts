@@ -223,46 +223,6 @@ class ApiClient {
       method: "POST",
     }, true)
   }
-
-  // Dashboard Summary
-  async getDashboardSummary(params?: {
-    period?: string
-    startPeriod?: string
-    endPeriod?: string
-    metric?: 'seller' | 'customer' | 'margin'
-  }): Promise<{
-    period: string
-    totals: {
-      seller: number
-      customer: number
-      deposit: number
-      margin: number
-    }
-    topPayerAccounts: Array<{
-      id: string
-      name: string
-      sellerCost: number
-      customerCost: number
-      margin: number
-    }>
-    topUsageAccounts: Array<{
-      id: string
-      name: string
-      sellerCost: number
-      customerCost: number
-      margin: number
-    }>
-    metric: string
-  }> {
-    const searchParams = new URLSearchParams()
-    if (params?.period) searchParams.append("period", params.period)
-    if (params?.startPeriod) searchParams.append("startPeriod", params.startPeriod)
-    if (params?.endPeriod) searchParams.append("endPeriod", params.endPeriod)
-    if (params?.metric) searchParams.append("metric", params.metric)
-
-    const response = await this.request<{ data: any }>(`/dashboard/summary?${searchParams.toString()}`)
-    return response.data
-  }
 }
 
 export const apiClient = new ApiClient()
