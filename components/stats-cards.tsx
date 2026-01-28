@@ -6,17 +6,26 @@ import { Building2, Users, DollarSign, Wallet, PiggyBank, TrendingUp } from "luc
 import { formatCurrency } from "@/lib/format"
 import { useEffect, useState } from "react"
 import { dataService } from "@/lib/data/data-service"
-import type { PayerAccount, UsageAccount, TransactionDetail } from "@/lib/types"
+import type { PayerAccount, UsageAccount } from "@/lib/types"
 
 interface DashboardStats {
   totalPayerAccounts: number
   totalUsageAccounts: number
   registeredUsageAccounts: number
   unregisteredUsageAccounts: number
-  totalSellerCost: number
-  totalCustomerCost: number
-  totalDeposit: number
-  totalMargin: number
+  year: {
+    totalSellerCost: number
+    totalCustomerCost: number
+    totalDeposit: number
+    totalMargin: number
+  }
+  month: {
+    totalSellerCost: number
+    totalCustomerCost: number
+    totalDeposit: number
+    totalMargin: number
+    period: string
+  }
 }
 
 export function StatsCards() {
@@ -25,10 +34,19 @@ export function StatsCards() {
     totalUsageAccounts: 0,
     registeredUsageAccounts: 0,
     unregisteredUsageAccounts: 0,
-    totalSellerCost: 0,
-    totalCustomerCost: 0,
-    totalDeposit: 0,
-    totalMargin: 0,
+    year: {
+      totalSellerCost: 0,
+      totalCustomerCost: 0,
+      totalDeposit: 0,
+      totalMargin: 0,
+    },
+    month: {
+      totalSellerCost: 0,
+      totalCustomerCost: 0,
+      totalDeposit: 0,
+      totalMargin: 0,
+      period: '',
+    },
   })
   const [loading, setLoading] = useState(true)
 
@@ -37,12 +55,25 @@ export function StatsCards() {
       try {
         setLoading(true)
         
-        // Fetch all data in parallel
-        const [payerAccounts, usageAccounts, transactionsResponse] = await Promise.all([
+        const now = new Date()
+        const currentYear = now.getFullYear()
+        const currentMonth = String(now.getMonth() + 1).padStart(2, '0')
+        const currentPeriod = `${currentYear}-${currentMonth}`
+        const startPeriod = `${currentYear}-01`
+        const endPeriod = `${currentYear}-12`
+        
+        console.log('Fetching stats:', { currentPeriod, startPeriod, endPeriod })
+        
+        // Fetch accounts and both year and month summaries in parallel
+        const [payerAccounts, usageAccounts, yearSummary, monthSummary] = await Promise.all([
           dataService.getPayerAccounts(),
           dataService.getUsageAccounts(),
-          dataService.getTransactions({}),
+          dataService.getDashboardSummary({ startPeriod, endPeriod }),
+          dataService.getDashboardSummary({ period: currentPeriod }),
         ])
+
+        console.log('Year summary:', yearSummary.totals)
+        console.log('Month summary:', monthSummary.totals)
 
         // Calculate account stats
         const activePayerAccounts = payerAccounts.filter((a: PayerAccount) => a.status !== "Archived")
@@ -50,37 +81,35 @@ export function StatsCards() {
         const registeredUsage = activeUsageAccounts.filter((a: UsageAccount) => a.status === "Registered")
         const unregisteredUsage = activeUsageAccounts.filter((a: UsageAccount) => a.status === "Unregistered")
 
-        // Calculate billing stats from transactions
-        let totalSellerCost = 0
-        let totalCustomerCost = 0
-        let totalDeposit = 0
-
-        // Handle transaction data - could be array or object with periods
-        const transactions = Array.isArray(transactionsResponse.data) 
-          ? transactionsResponse.data 
-          : Object.values(transactionsResponse.data || {}).flat()
-
-        transactions.forEach((tx: TransactionDetail) => {
-          totalSellerCost += tx.sellerCost?.eur || 0
-          totalCustomerCost += tx.customerCost?.eur || 0
-        })
-
         // Calculate total deposit from usage accounts
-        usageAccounts.forEach((account: UsageAccount) => {
-          totalDeposit += account.totalDeposit || 0
-        })
+        const totalDeposit = usageAccounts.reduce((sum: number, acc: UsageAccount) => sum + (acc.totalDeposit || 0), 0)
 
-        const totalMargin = totalCustomerCost - totalSellerCost
+        console.log('Year summary:', yearSummary)
+        console.log('Month summary:', monthSummary)
 
         setStats({
           totalPayerAccounts: activePayerAccounts.length,
           totalUsageAccounts: activeUsageAccounts.length,
           registeredUsageAccounts: registeredUsage.length,
           unregisteredUsageAccounts: unregisteredUsage.length,
-          totalSellerCost,
-          totalCustomerCost,
-          totalDeposit,
-          totalMargin,
+          year: {
+            totalSellerCost: yearSummary.totals.seller,
+            totalCustomerCost: yearSummary.totals.customer,
+            totalDeposit,
+            totalMargin: yearSummary.totals.margin,
+          },
+          month: {
+            totalSellerCost: monthSummary.totals.seller,
+            totalCustomerCost: monthSummary.totals.customer,
+            totalDeposit: 0,
+            totalMargin: monthSummary.totals.margin,
+            period: monthSummary.period,
+          },
+        })
+        
+        console.log('Stats set:', {
+          year: yearSummary.totals,
+          month: monthSummary.totals
         })
       } catch (error) {
         console.error("Failed to load dashboard stats:", error)
@@ -114,36 +143,36 @@ export function StatsCards() {
 
   const billingStats = [
     {
-      title: "Total Seller Cost",
-      value: stats.totalSellerCost,
+      title: "Seller Cost",
+      yearValue: stats.year.totalSellerCost,
+      monthValue: stats.month.totalSellerCost,
       icon: DollarSign,
       color: "text-[#EC9400]",
       bgColor: "bg-[#EC9400]/10",
-      isCurrency: true,
     },
     {
-      title: "Total Customer Cost",
-      value: stats.totalCustomerCost,
+      title: "Customer Cost",
+      yearValue: stats.year.totalCustomerCost,
+      monthValue: stats.month.totalCustomerCost,
       icon: Wallet,
       color: "text-[#00243E]",
       bgColor: "bg-[#00243E]/10",
-      isCurrency: true,
     },
     {
-      title: "Total Deposit",
-      value: stats.totalDeposit,
+      title: "Margin",
+      yearValue: stats.year.totalMargin,
+      monthValue: stats.month.totalMargin,
+      icon: TrendingUp,
+      color: stats.year.totalMargin >= 0 ? "text-green-600" : "text-[#F26522]",
+      bgColor: stats.year.totalMargin >= 0 ? "bg-green-600/10" : "bg-[#F26522]/10",
+    },
+    {
+      title: "Deposit",
+      yearValue: stats.year.totalDeposit,
+      monthValue: null,
       icon: PiggyBank,
       color: "text-[#026172]",
       bgColor: "bg-[#026172]/10",
-      isCurrency: true,
-    },
-    {
-      title: "Total Margin",
-      value: stats.totalMargin,
-      icon: TrendingUp,
-      color: stats.totalMargin >= 0 ? "text-green-600" : "text-[#F26522]",
-      bgColor: stats.totalMargin >= 0 ? "bg-green-600/10" : "bg-[#F26522]/10",
-      isCurrency: true,
     },
   ]
 
@@ -222,16 +251,33 @@ export function StatsCards() {
             const Icon = stat.icon
             return (
               <Card key={stat.title} className="py-3">
-                <CardContent className="flex items-center justify-between px-4 py-0">
-                  <div>
+                <CardContent className="px-4 py-0">
+                  <div className="flex items-start justify-between mb-3">
                     <p className="text-xs font-medium text-muted-foreground">{stat.title}</p>
-                    <div className={cn("text-2xl font-bold", stat.color)}>
-                      {stat.isCurrency ? formatCurrency(stat.value as number) : stat.value}
+                    <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", stat.bgColor)}>
+                      <Icon className={cn("h-4 w-4", stat.color)} />
                     </div>
                   </div>
-                  <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", stat.bgColor)}>
-                    <Icon className={cn("h-4 w-4", stat.color)} />
+                  
+                  {/* Year Total */}
+                  <div className="mb-2">
+                    <div className="text-xs text-muted-foreground mb-1">Year {new Date().getFullYear()}</div>
+                    <div className={cn("text-xl font-bold", stat.color)}>
+                      {formatCurrency(stat.yearValue as number)}
+                    </div>
                   </div>
+                  
+                  {/* Month Total */}
+                  {stat.monthValue !== null && (
+                    <div className="pt-2 border-t border-muted">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        {new Date(stats.month.period + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                      </div>
+                      <div className={cn("text-lg font-semibold", stat.color)}>
+                        {formatCurrency(stat.monthValue as number)}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )
