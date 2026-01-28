@@ -6,26 +6,22 @@ import { Building2, Users, DollarSign, Wallet, PiggyBank, TrendingUp } from "luc
 import { formatCurrency } from "@/lib/format"
 import { useEffect, useState } from "react"
 import { dataService } from "@/lib/data/data-service"
-import type { PayerAccount, UsageAccount } from "@/lib/types"
+import type { PayerAccount, UsageAccount, TransactionDetail } from "@/lib/types"
+
+interface BillingPeriodStats {
+  sellerCost: number
+  customerCost: number
+  deposit: number
+  margin: number
+}
 
 interface DashboardStats {
   totalPayerAccounts: number
   totalUsageAccounts: number
   registeredUsageAccounts: number
   unregisteredUsageAccounts: number
-  year: {
-    totalSellerCost: number
-    totalCustomerCost: number
-    totalDeposit: number
-    totalMargin: number
-  }
-  month: {
-    totalSellerCost: number
-    totalCustomerCost: number
-    totalDeposit: number
-    totalMargin: number
-    period: string
-  }
+  currentMonth: BillingPeriodStats
+  currentYear: BillingPeriodStats
 }
 
 export function StatsCards() {
@@ -34,19 +30,8 @@ export function StatsCards() {
     totalUsageAccounts: 0,
     registeredUsageAccounts: 0,
     unregisteredUsageAccounts: 0,
-    year: {
-      totalSellerCost: 0,
-      totalCustomerCost: 0,
-      totalDeposit: 0,
-      totalMargin: 0,
-    },
-    month: {
-      totalSellerCost: 0,
-      totalCustomerCost: 0,
-      totalDeposit: 0,
-      totalMargin: 0,
-      period: '',
-    },
+    currentMonth: { sellerCost: 0, customerCost: 0, deposit: 0, margin: 0 },
+    currentYear: { sellerCost: 0, customerCost: 0, deposit: 0, margin: 0 },
   })
   const [loading, setLoading] = useState(true)
 
@@ -55,25 +40,12 @@ export function StatsCards() {
       try {
         setLoading(true)
         
-        const now = new Date()
-        const currentYear = now.getFullYear()
-        const currentMonth = String(now.getMonth() + 1).padStart(2, '0')
-        const currentPeriod = `${currentYear}-${currentMonth}`
-        const startPeriod = `${currentYear}-01`
-        const endPeriod = `${currentYear}-12`
-        
-        console.log('Fetching stats:', { currentPeriod, startPeriod, endPeriod })
-        
-        // Fetch accounts and both year and month summaries in parallel
-        const [payerAccounts, usageAccounts, yearSummary, monthSummary] = await Promise.all([
+        // Fetch all data in parallel
+        const [payerAccounts, usageAccounts, transactionsResponse] = await Promise.all([
           dataService.getPayerAccounts(),
           dataService.getUsageAccounts(),
-          dataService.getDashboardSummary({ startPeriod, endPeriod }),
-          dataService.getDashboardSummary({ period: currentPeriod }),
+          dataService.getTransactions({}),
         ])
-
-        console.log('Year summary:', yearSummary.totals)
-        console.log('Month summary:', monthSummary.totals)
 
         // Calculate account stats
         const activePayerAccounts = payerAccounts.filter((a: PayerAccount) => a.status !== "Archived")
@@ -81,35 +53,67 @@ export function StatsCards() {
         const registeredUsage = activeUsageAccounts.filter((a: UsageAccount) => a.status === "Registered")
         const unregisteredUsage = activeUsageAccounts.filter((a: UsageAccount) => a.status === "Unregistered")
 
-        // Calculate total deposit from usage accounts
-        const totalDeposit = usageAccounts.reduce((sum: number, acc: UsageAccount) => sum + (acc.totalDeposit || 0), 0)
+        // Calculate billing stats from transactions
+        const now = new Date()
+        const currentMonthStr = now.toISOString().slice(0, 7) // YYYY-MM
+        const currentYear = now.getFullYear()
 
-        console.log('Year summary:', yearSummary)
-        console.log('Month summary:', monthSummary)
+        let monthSellerCost = 0
+        let monthCustomerCost = 0
+        let yearSellerCost = 0
+        let yearCustomerCost = 0
+
+        // Handle transaction data - could be array or object with periods
+        const transactions = Array.isArray(transactionsResponse.data) 
+          ? transactionsResponse.data 
+          : Object.values(transactionsResponse.data || {}).flat()
+
+        transactions.forEach((tx: TransactionDetail) => {
+          const txDate = tx.billingPeriod || (tx.dateTime ? new Date(tx.dateTime).toISOString().slice(0, 7) : "")
+          const txYear = txDate ? parseInt(txDate.slice(0, 4), 10) : 0
+          const sellerCost = tx.sellerCost?.eur || 0
+          const customerCost = tx.customerCost?.eur || 0
+
+          // Current month
+          if (txDate === currentMonthStr) {
+            monthSellerCost += sellerCost
+            monthCustomerCost += customerCost
+          }
+
+          // Current year (Jan-Dec)
+          if (txYear === currentYear) {
+            yearSellerCost += sellerCost
+            yearCustomerCost += customerCost
+          }
+        })
+
+        // Calculate total deposit from usage accounts
+        let totalDeposit = 0
+        usageAccounts.forEach((account: UsageAccount) => {
+          totalDeposit += account.totalDeposit || 0
+        })
+
+        // For simplicity, assume deposit is distributed - use full deposit for both periods
+        const monthDeposit = totalDeposit
+        const yearDeposit = totalDeposit
 
         setStats({
           totalPayerAccounts: activePayerAccounts.length,
           totalUsageAccounts: activeUsageAccounts.length,
           registeredUsageAccounts: registeredUsage.length,
           unregisteredUsageAccounts: unregisteredUsage.length,
-          year: {
-            totalSellerCost: yearSummary.totals.seller,
-            totalCustomerCost: yearSummary.totals.customer,
-            totalDeposit,
-            totalMargin: yearSummary.totals.margin,
+          currentMonth: {
+            sellerCost: monthSellerCost,
+            customerCost: monthCustomerCost,
+            deposit: monthDeposit,
+            margin: monthCustomerCost - monthSellerCost,
           },
-          month: {
-            totalSellerCost: monthSummary.totals.seller,
-            totalCustomerCost: monthSummary.totals.customer,
-            totalDeposit: 0,
-            totalMargin: monthSummary.totals.margin,
-            period: monthSummary.period,
+          currentYear: {
+            sellerCost: yearSellerCost,
+            customerCost: yearCustomerCost,
+            deposit: yearDeposit,
+            margin: yearCustomerCost - yearSellerCost,
           },
-        })
-        
-        console.log('Stats set:', {
-          year: yearSummary.totals,
-          month: monthSummary.totals
         })
       } catch (error) {
         console.error("Failed to load dashboard stats:", error)
@@ -141,40 +145,72 @@ export function StatsCards() {
     },
   ]
 
-  const billingStats = [
+  const now = new Date()
+  const currentMonthName = now.toLocaleDateString("en-GB", { month: "long", year: "numeric" })
+
+  const monthlyBillingStats = [
     {
       title: "Seller Cost",
-      yearValue: stats.year.totalSellerCost,
-      monthValue: stats.month.totalSellerCost,
+      value: stats.currentMonth.sellerCost,
       icon: DollarSign,
       color: "text-[#EC9400]",
       bgColor: "bg-[#EC9400]/10",
     },
     {
       title: "Customer Cost",
-      yearValue: stats.year.totalCustomerCost,
-      monthValue: stats.month.totalCustomerCost,
+      value: stats.currentMonth.customerCost,
       icon: Wallet,
       color: "text-[#00243E]",
       bgColor: "bg-[#00243E]/10",
     },
     {
-      title: "Margin",
-      yearValue: stats.year.totalMargin,
-      monthValue: stats.month.totalMargin,
-      icon: TrendingUp,
-      color: stats.year.totalMargin >= 0 ? "text-green-600" : "text-[#F26522]",
-      bgColor: stats.year.totalMargin >= 0 ? "bg-green-600/10" : "bg-[#F26522]/10",
-    },
-    {
       title: "Deposit",
-      yearValue: stats.year.totalDeposit,
-      monthValue: null,
+      value: stats.currentMonth.deposit,
       icon: PiggyBank,
       color: "text-[#026172]",
       bgColor: "bg-[#026172]/10",
     },
+    {
+      title: "Margin",
+      value: stats.currentMonth.margin,
+      icon: TrendingUp,
+      color: stats.currentMonth.margin >= 0 ? "text-green-600" : "text-[#F26522]",
+      bgColor: stats.currentMonth.margin >= 0 ? "bg-green-600/10" : "bg-[#F26522]/10",
+    },
   ]
+
+  const yearlyBillingStats = [
+    {
+      title: "Seller Cost",
+      value: stats.currentYear.sellerCost,
+      icon: DollarSign,
+      color: "text-[#EC9400]",
+      bgColor: "bg-[#EC9400]/10",
+    },
+    {
+      title: "Customer Cost",
+      value: stats.currentYear.customerCost,
+      icon: Wallet,
+      color: "text-[#00243E]",
+      bgColor: "bg-[#00243E]/10",
+    },
+    {
+      title: "Deposit",
+      value: stats.currentYear.deposit,
+      icon: PiggyBank,
+      color: "text-[#026172]",
+      bgColor: "bg-[#026172]/10",
+    },
+    {
+      title: "Margin",
+      value: stats.currentYear.margin,
+      icon: TrendingUp,
+      color: stats.currentYear.margin >= 0 ? "text-green-600" : "text-[#F26522]",
+      bgColor: stats.currentYear.margin >= 0 ? "bg-green-600/10" : "bg-[#F26522]/10",
+    },
+  ]
+
+  const currentYearNum = new Date().getFullYear()
 
   if (loading) {
     return (
@@ -197,15 +233,19 @@ export function StatsCards() {
         </div>
         <div>
           <h2 className="mb-3 text-base font-semibold text-[#00243E]">Billing</h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {[1, 2].map((i) => (
               <Card key={i} className="py-3">
-                <CardContent className="flex items-center justify-between px-4 py-0">
-                  <div className="space-y-1">
-                    <div className="h-3 w-20 animate-pulse rounded bg-muted" />
-                    <div className="h-6 w-16 animate-pulse rounded bg-muted" />
+                <CardContent className="px-4 py-0">
+                  <div className="mb-2 h-4 w-32 animate-pulse rounded bg-muted" />
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                    {[1, 2, 3, 4].map((j) => (
+                      <div key={j} className="space-y-1">
+                        <div className="h-3 w-16 animate-pulse rounded bg-muted" />
+                        <div className="h-5 w-20 animate-pulse rounded bg-muted" />
+                      </div>
+                    ))}
                   </div>
-                  <div className="h-8 w-8 animate-pulse rounded-lg bg-muted" />
                 </CardContent>
               </Card>
             ))}
@@ -246,42 +286,56 @@ export function StatsCards() {
       {/* Billing Section */}
       <div>
         <h2 className="mb-3 text-base font-semibold text-[#00243E]">Billing</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {billingStats.map((stat) => {
-            const Icon = stat.icon
-            return (
-              <Card key={stat.title} className="py-3">
-                <CardContent className="px-4 py-0">
-                  <div className="flex items-start justify-between mb-3">
-                    <p className="text-xs font-medium text-muted-foreground">{stat.title}</p>
-                    <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", stat.bgColor)}>
-                      <Icon className={cn("h-4 w-4", stat.color)} />
-                    </div>
-                  </div>
-                  
-                  {/* Year Total */}
-                  <div className="mb-2">
-                    <div className="text-xs text-muted-foreground mb-1">Year {new Date().getFullYear()}</div>
-                    <div className={cn("text-xl font-bold", stat.color)}>
-                      {formatCurrency(stat.yearValue as number)}
-                    </div>
-                  </div>
-                  
-                  {/* Month Total */}
-                  {stat.monthValue !== null && (
-                    <div className="pt-2 border-t border-muted">
-                      <div className="text-xs text-muted-foreground mb-1">
-                        {new Date(stats.month.period + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+        <div className="grid gap-4 lg:grid-cols-2">
+          {/* Current Month */}
+          <Card className="py-3">
+            <CardContent className="px-4 py-0">
+              <p className="mb-2 text-sm font-medium text-[#00243E]">{currentMonthName}</p>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {monthlyBillingStats.map((stat) => {
+                  const Icon = stat.icon
+                  return (
+                    <div key={stat.title} className="flex items-center gap-2">
+                      <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", stat.bgColor)}>
+                        <Icon className={cn("h-3.5 w-3.5", stat.color)} />
                       </div>
-                      <div className={cn("text-lg font-semibold", stat.color)}>
-                        {formatCurrency(stat.monthValue as number)}
+                      <div className="min-w-0">
+                        <p className="truncate text-xs text-muted-foreground">{stat.title}</p>
+                        <p className={cn("text-sm font-semibold", stat.color)}>
+                          {formatCurrency(stat.value)}
+                        </p>
                       </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            )
-          })}
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Current Year */}
+          <Card className="py-3">
+            <CardContent className="px-4 py-0">
+              <p className="mb-2 text-sm font-medium text-[#00243E]">Year {currentYearNum} (Jan-Dec)</p>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {yearlyBillingStats.map((stat) => {
+                  const Icon = stat.icon
+                  return (
+                    <div key={stat.title} className="flex items-center gap-2">
+                      <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", stat.bgColor)}>
+                        <Icon className={cn("h-3.5 w-3.5", stat.color)} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-xs text-muted-foreground">{stat.title}</p>
+                        <p className={cn("text-sm font-semibold", stat.color)}>
+                          {formatCurrency(stat.value)}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
