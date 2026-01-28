@@ -12,22 +12,22 @@ Added console logging to help identify the issue:
 ### Console Logs Added:
 
 1. **Individual Account Filtering**:
-```typescript
+\`\`\`typescript
 console.log('Filtering:', { 
   accountName: account.accountName, 
   payerAccountId: account.payerAccountId, 
   selectedPayerAccount 
 })
-```
+\`\`\`
 
 2. **Filter Results Summary**:
-```typescript
+\`\`\`typescript
 console.log('Filter result:', { 
   selectedPayerAccount, 
   totalUsageAccounts: usageAccounts.length, 
   filteredCount: filteredUsageAccounts.length 
 })
-```
+\`\`\`
 
 ## How to Debug
 

@@ -354,4 +354,57 @@ export const dataService = {
     }
     return apiClient.applyExchangeRate(id)
   },
+
+  // Dashboard Summary
+  async getDashboardSummary(params?: {
+    period?: string
+    startPeriod?: string
+    endPeriod?: string
+    metric?: 'seller' | 'customer' | 'margin'
+  }): Promise<{
+    period: string
+    totals: {
+      seller: number
+      customer: number
+      deposit: number
+      margin: number
+    }
+    topPayerAccounts: Array<{
+      id: string
+      name: string
+      sellerCost: number
+      customerCost: number
+      margin: number
+    }>
+    topUsageAccounts: Array<{
+      id: string
+      name: string
+      sellerCost: number
+      customerCost: number
+      margin: number
+    }>
+    metric: string
+  }> {
+    if (config.useMockData) {
+      return Promise.resolve({
+        period: '2026-01',
+        totals: {
+          seller: 45000,
+          customer: 52000,
+          deposit: 10000,
+          margin: 7000
+        },
+        topPayerAccounts: [
+          { id: '123456789012', name: 'AWS Main Account', sellerCost: 25000, customerCost: 29000, margin: 4000 },
+          { id: '987654321098', name: 'AWS Development', sellerCost: 20000, customerCost: 23000, margin: 3000 }
+        ],
+        topUsageAccounts: [
+          { id: '111111111111', name: 'Production', sellerCost: 15000, customerCost: 17500, margin: 2500 },
+          { id: '222222222222', name: 'Staging', sellerCost: 10000, customerCost: 11500, margin: 1500 }
+        ],
+        metric: params?.metric || 'customer'
+      })
+    }
+    return apiClient.getDashboardSummary(params)
+  },
 }

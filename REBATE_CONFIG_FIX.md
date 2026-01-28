@@ -2,9 +2,9 @@
 
 ## Issue
 When trying to register a new usage account, the API returned a 400 error:
-```
+\`\`\`
 {"error": "Invalid rebate configuration structure"}
-```
+\`\`\`
 
 ## Root Cause
 The frontend was sending a rebate configuration structure that didn't match the backend validation requirements:
@@ -23,7 +23,7 @@ The frontend was sending a rebate configuration structure that didn't match the 
 - Removed `discount.discount` from state and UI
 
 **Updated Structure**:
-```typescript
+\`\`\`typescript
 rebateConfig: {
   savingsPlansRI: {
     discountedUsage: boolean
@@ -40,7 +40,7 @@ rebateConfig: {
     refund: boolean
   }
 }
-```
+\`\`\`
 
 ### 2. Edit Usage Dialog (`components/edit-usage-dialog.tsx`)
 

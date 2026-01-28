@@ -7,10 +7,10 @@ The Payer Account and Usage Account filters in the Transactions page were not sh
 The `TransactionFilters` component was trying to access `.data` property on the results from `dataService.getPayerAccounts()` and `dataService.getUsageAccounts()`, but these methods already return the array directly without a wrapper object.
 
 **Incorrect code**:
-```typescript
+\`\`\`typescript
 const payerAccountsList = payerData.data || []  // ❌ .data doesn't exist
 const usageAccountsList = usageData.data || []  // ❌ .data doesn't exist
-```
+\`\`\`
 
 ## Data Flow
 1. **API Client** (`lib/data/api-client.ts`):
@@ -30,7 +30,7 @@ const usageAccountsList = usageData.data || []  // ❌ .data doesn't exist
 **File**: `components/transaction-filters.tsx`
 
 **Changed**:
-```typescript
+\`\`\`typescript
 // Before (incorrect)
 const payerAccountsList = payerData.data || []
 const usageAccountsList = usageData.data || []
@@ -38,7 +38,7 @@ const usageAccountsList = usageData.data || []
 // After (correct)
 const payerAccountsList = payerData || []
 const usageAccountsList = usageData || []
-```
+\`\`\`
 
 ## Result
 

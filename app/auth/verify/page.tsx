@@ -17,8 +17,10 @@ function VerifyEmailContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const emailParam = searchParams.get("email") || ""
+  const usernameParam = searchParams.get("username") || ""
 
   const [email, setEmail] = useState(emailParam)
+  const [username, setUsername] = useState(usernameParam)
   const [code, setCode] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -31,7 +33,7 @@ function VerifyEmailContent() {
     setLoading(true)
 
     try {
-      await verifyEmail(email, code)
+      await verifyEmail(username || email, code)
       setSuccess(true)
       setTimeout(() => {
         router.push("/auth/login")
@@ -49,7 +51,7 @@ function VerifyEmailContent() {
     setResending(true)
 
     try {
-      await resendVerificationCode(email)
+      await resendVerificationCode(username || email)
       setError("")
       alert("Verification code resent to your email")
     } catch (err: any) {

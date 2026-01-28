@@ -1,7 +1,5 @@
 import { StatsCards } from "@/components/stats-cards"
 import { CostCharts } from "@/components/cost-charts"
-import { RecentTransactions } from "@/components/recent-transactions"
-import { UsageMetrics } from "@/components/usage-metrics"
 
 export default function Dashboard() {
   return (
@@ -11,15 +9,12 @@ export default function Dashboard() {
         <p className="mt-2 text-muted-foreground">Overview of your billing and usage metrics</p>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-6">
+        {/* Accounts and Billing Stats */}
         <StatsCards />
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <CostCharts />
-          <UsageMetrics />
-        </div>
-        
-        <RecentTransactions />
+        {/* Charts Section */}
+        <CostCharts />
       </div>
     </main>
   )

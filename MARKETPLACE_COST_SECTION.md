@@ -9,9 +9,9 @@ Added a new "Marketplace" section to the Cost Breakdown display in the transacti
 **File**: `components/transactions-list.tsx`
 
 ### 1. Added Marketplace Data Reference
-```typescript
+\`\`\`typescript
 const marketplaceBreakdown = transaction.details?.customer?.entity?.awsmp || {}
-```
+\`\`\`
 
 ### 2. Added Marketplace Section to UI
 New section displays:
@@ -29,7 +29,7 @@ New section displays:
 
 ### Data Structure
 The marketplace data is accessed from:
-```
+\`\`\`
 transaction.details.customer.entity.awsmp
 ├── totals (usd, eur)
 ├── usage.totals (usd, eur)
@@ -37,7 +37,7 @@ transaction.details.customer.entity.awsmp
 ├── tax.totals (usd, eur)
 ├── discount.totals (usd, eur)
 └── adjustment.totals (usd, eur)
-```
+\`\`\`
 
 ## Result
 

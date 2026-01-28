@@ -16,18 +16,18 @@ The `TransactionFilters` component was expecting usage accounts to have an `acco
 **File**: `components/transaction-filters.tsx`
 
 **Before (incorrect)**:
-```typescript
+\`\`\`typescript
 let usageAccountsList = usageData || []
-```
+\`\`\`
 
 **After (correct)**:
-```typescript
+\`\`\`typescript
 let usageAccountsList = (usageData || []).map((account) => ({
   id: account.id,
   accountId: account.accountId,
   accountName: account.customer, // Map customer to accountName
 }))
-```
+\`\`\`
 
 ## Result
 

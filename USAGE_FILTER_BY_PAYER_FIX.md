@@ -12,41 +12,41 @@ Added filtering logic to show only usage accounts that belong to the selected pa
 
 ### 1. Updated State Type
 Added `payerAccountId` to usage accounts state:
-```typescript
+\`\`\`typescript
 const [usageAccounts, setUsageAccounts] = useState<Array<{ 
   id: string
   accountId: string
   accountName: string
   payerAccountId?: string  // Added
 }>>([])
-```
+\`\`\`
 
 ### 2. Included payerAccountId in Mapping
 When loading usage accounts from API:
-```typescript
+\`\`\`typescript
 let usageAccountsList = (usageData || []).map((account) => ({
   id: account.id,
   accountId: account.accountId,
   accountName: account.customer,
   payerAccountId: account.payerAccountId,  // Added
 }))
-```
+\`\`\`
 
 ### 3. Added Filtering Logic
 Created filtered list based on selected payer account:
-```typescript
+\`\`\`typescript
 const filteredUsageAccounts = selectedPayerAccount
   ? usageAccounts.filter((account) => account.payerAccountId === selectedPayerAccount)
   : usageAccounts
-```
+\`\`\`
 
 ### 4. Updated Dropdown Rendering
 Changed dropdown to use `filteredUsageAccounts` instead of `usageAccounts`:
-```typescript
+\`\`\`typescript
 {filteredUsageAccounts.map((account) => (
   // render account
 ))}
-```
+\`\`\`
 
 ## Result
 

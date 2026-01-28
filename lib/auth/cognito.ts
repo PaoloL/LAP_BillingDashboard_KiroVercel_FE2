@@ -43,7 +43,10 @@ export const signUp = (params: SignUpParams): Promise<CognitoUser> => {
       new CognitoUserAttribute({ Name: "family_name", Value: params.familyName }),
     ]
 
-    userPool.signUp(params.email, params.password, attributeList, [], (err, result) => {
+    // Generate a unique username (UUID) since user pool uses email alias
+    const username = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+
+    userPool.signUp(username, params.password, attributeList, [], (err, result) => {
       if (err) {
         reject(err)
         return
