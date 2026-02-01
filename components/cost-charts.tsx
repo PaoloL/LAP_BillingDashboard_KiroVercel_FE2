@@ -43,65 +43,75 @@ export function CostCharts() {
         setLoading(true)
 
         const currentYear = new Date().getFullYear()
-        const startPeriod = `${currentYear}-01`
-        const endPeriod = `${currentYear}-12`
 
-        const [summary, transactionsResponse, usageAccounts] = await Promise.all([
-          dataService.getDashboardSummary({ metric: 'customer', startPeriod, endPeriod }),
-          dataService.getTransactions({ startPeriod, endPeriod }),
-          dataService.getUsageAccounts(),
-        ])
+        // Fetch all transactions for the year
+        const transactions = await dataService.getTransactions({
+          startPeriod: `${currentYear}-01`,
+          endPeriod: `${currentYear}-12`,
+        })
 
-        // Use top accounts from summary (use sellerCost for charts)
-        const costByPayer = summary.topPayerAccounts.slice(0, 5).map(acc => ({
-          name: acc.name,
-          value: acc.sellerCost
-        }))
+        // Group by payer and usage for charts
+        const payerMap = new Map<string, { name: string; value: number }>()
+        const usageMap = new Map<string, { name: string; value: number }>()
+        const trendMap = new Map<string, { usage: number; deposit: number }>()
 
-        const costByUsage = summary.topUsageAccounts.slice(0, 10).map(acc => ({
-          name: acc.name,
-          value: acc.sellerCost
-        }))
+        transactions.data.forEach(tx => {
+          const sellerCost = tx.totals?.seller?.eur || 0
 
-        // Build trend data from transactions (keep existing logic for historical trend)
-        const transactions = Array.isArray(transactionsResponse.data)
-          ? transactionsResponse.data
-          : Object.values(transactionsResponse.data || {}).flat()
+          // Aggregate by payer
+          const payerId = tx.accounts?.payer?.id
+          const payerName = tx.accounts?.payer?.name || payerId
+          if (payerId) {
+            const current = payerMap.get(payerId)
+            if (current) {
+              current.value += sellerCost
+            } else {
+              payerMap.set(payerId, { name: payerName, value: sellerCost })
+            }
+          }
 
-        const trendMap = new Map<string, { period: string; usage: number; deposit: number }>()
+          // Aggregate by usage
+          const usageId = tx.accounts?.usage?.id
+          const usageName = tx.accounts?.usage?.name || usageId
+          if (usageId) {
+            const current = usageMap.get(usageId)
+            if (current) {
+              current.value += sellerCost
+            } else {
+              usageMap.set(usageId, { name: usageName, value: sellerCost })
+            }
+          }
 
-        transactions.forEach((tx: any) => {
-          const sellerCost = tx.summary?.seller?.eur || 0
+          // Build trend data by month
           const period = tx.billingPeriod
-          
-          if (!period) return
-          
-          if (trendMap.has(period)) {
-            trendMap.get(period)!.usage += sellerCost
-          } else {
-            trendMap.set(period, { period, usage: sellerCost, deposit: 0 })
+          if (period) {
+            if (trendMap.has(period)) {
+              trendMap.get(period)!.usage += sellerCost
+            } else {
+              trendMap.set(period, { usage: sellerCost, deposit: 0 })
+            }
           }
         })
 
-        // Calculate deposit per period from usage accounts
-        const totalDeposit = usageAccounts.reduce((sum: number, acc: UsageAccount) => sum + (acc.totalDeposit || 0), 0)
-        const periods = Array.from(trendMap.keys()).sort()
-        const depositPerPeriod = periods.length > 0 ? totalDeposit / periods.length : 0
+        // Get top payers and usage accounts
+        const costByPayer = Array.from(payerMap.values())
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 5)
 
-        periods.forEach((period) => {
-          if (trendMap.has(period)) {
-            trendMap.get(period)!.deposit = depositPerPeriod
-          }
-        })
+        const costByUsage = Array.from(usageMap.values())
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 10)
 
-        const trendData = Array.from(trendMap.values())
-          .sort((a, b) => a.period.localeCompare(b.period))
-          .map((item) => ({
-            ...item,
-            period: new Date(item.period + "-01").toLocaleDateString("en-GB", {
+        // Format trend data
+        const trendData = Array.from(trendMap.entries())
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([period, data]) => ({
+            period: new Date(period + "-01").toLocaleDateString("en-GB", {
               month: "short",
               year: "numeric",
             }),
+            usage: data.usage,
+            deposit: data.deposit,
           }))
 
         setChartData({

@@ -175,6 +175,18 @@ class ApiClient {
     })
   }
 
+  async createDeposit(data: {
+    usageAccountId: string
+    amountEur: number
+    date: string
+    description: string
+  }): Promise<{ transactionId: string; message: string }> {
+    return this.request("/transactions/deposit", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
   // Exchange Rates
   async getExchangeRates(params?: {
     payerAccountId?: string
@@ -225,43 +237,30 @@ class ApiClient {
   }
 
   // Dashboard Summary
-  async getDashboardSummary(params?: {
-    period?: string
-    startPeriod?: string
-    endPeriod?: string
-    metric?: 'seller' | 'customer' | 'margin'
-  }): Promise<{
+  async getCostTotals(params: {
     period: string
-    totals: {
-      seller: number
-      customer: number
-      deposit: number
-      margin: number
-    }
-    topPayerAccounts: Array<{
-      id: string
-      name: string
-      sellerCost: number
-      customerCost: number
-      margin: number
+    entityType?: 'UsageMonthTotal' | 'UsageYearTotal' | 'PayerMonthTotal' | 'PayerYearTotal' | 'OrgMonthTotal' | 'OrgYearTotal'
+  }): Promise<{
+    count: number
+    data: Array<{
+      billingPeriod: string
+      accounts: {
+        payer: { id: string; name: string }
+        usage: { id: string; name: string }
+      }
+      totals: {
+        distributor: { usd: number; eur: number }
+        seller: { usd: number; eur: number }
+        customer: { usd: number; eur: number }
+      }
     }>
-    topUsageAccounts: Array<{
-      id: string
-      name: string
-      sellerCost: number
-      customerCost: number
-      margin: number
-    }>
-    metric: string
   }> {
     const searchParams = new URLSearchParams()
-    if (params?.period) searchParams.append("period", params.period)
-    if (params?.startPeriod) searchParams.append("startPeriod", params.startPeriod)
-    if (params?.endPeriod) searchParams.append("endPeriod", params.endPeriod)
-    if (params?.metric) searchParams.append("metric", params.metric)
+    searchParams.append("period", params.period)
+    if (params.entityType) searchParams.append("entityType", params.entityType)
 
-    const response = await this.request<{ data: any }>(`/dashboard/summary?${searchParams.toString()}`)
-    return response.data
+    const response = await this.request<{ count: number; data: any[] }>(`/cost-totals?${searchParams.toString()}`)
+    return response
   }
 }
 

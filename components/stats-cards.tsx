@@ -59,21 +59,23 @@ export function StatsCards() {
         const currentYear = now.getFullYear()
         const currentMonth = String(now.getMonth() + 1).padStart(2, '0')
         const currentPeriod = `${currentYear}-${currentMonth}`
-        const startPeriod = `${currentYear}-01`
-        const endPeriod = `${currentYear}-12`
         
-        console.log('Fetching stats:', { currentPeriod, startPeriod, endPeriod })
+        console.log('Fetching stats:', { currentPeriod, currentYear })
         
-        // Fetch accounts and both year and month summaries in parallel
-        const [payerAccounts, usageAccounts, yearSummary, monthSummary] = await Promise.all([
+        // Fetch accounts and cost totals in parallel
+        const [payerAccounts, usageAccounts, yearTotals, monthTotals] = await Promise.all([
           dataService.getPayerAccounts(),
           dataService.getUsageAccounts(),
-          dataService.getDashboardSummary({ startPeriod, endPeriod }),
-          dataService.getDashboardSummary({ period: currentPeriod }),
+          dataService.getCostTotals({ period: currentYear, entityType: 'OrgYearTotal' }),
+          dataService.getCostTotals({ period: currentPeriod, entityType: 'OrgMonthTotal' }),
         ])
 
-        console.log('Year summary:', yearSummary.totals)
-        console.log('Month summary:', monthSummary.totals)
+        // Calculate totals from cost data
+        const yearTotal = yearTotals.data[0]?.totals || { seller: { eur: 0 }, customer: { eur: 0 }, distributor: { eur: 0 } }
+        const monthTotal = monthTotals.data[0]?.totals || { seller: { eur: 0 }, customer: { eur: 0 }, distributor: { eur: 0 } }
+
+        console.log('Year total:', yearTotal)
+        console.log('Month total:', monthTotal)
 
         // Calculate account stats
         const activePayerAccounts = payerAccounts.filter((a: PayerAccount) => a.status !== "Archived")
@@ -84,32 +86,29 @@ export function StatsCards() {
         // Calculate total deposit from usage accounts
         const totalDeposit = usageAccounts.reduce((sum: number, acc: UsageAccount) => sum + (acc.totalDeposit || 0), 0)
 
-        console.log('Year summary:', yearSummary)
-        console.log('Month summary:', monthSummary)
-
         setStats({
           totalPayerAccounts: activePayerAccounts.length,
           totalUsageAccounts: activeUsageAccounts.length,
           registeredUsageAccounts: registeredUsage.length,
           unregisteredUsageAccounts: unregisteredUsage.length,
           year: {
-            totalSellerCost: yearSummary.totals.seller,
-            totalCustomerCost: yearSummary.totals.customer,
+            totalSellerCost: yearTotal.seller.eur,
+            totalCustomerCost: yearTotal.customer.eur,
             totalDeposit,
-            totalMargin: yearSummary.totals.margin,
+            totalMargin: yearTotal.customer.eur - yearTotal.seller.eur,
           },
           month: {
-            totalSellerCost: monthSummary.totals.seller,
-            totalCustomerCost: monthSummary.totals.customer,
+            totalSellerCost: monthTotal.seller.eur,
+            totalCustomerCost: monthTotal.customer.eur,
             totalDeposit: 0,
-            totalMargin: monthSummary.totals.margin,
-            period: monthSummary.period,
+            totalMargin: monthTotal.customer.eur - monthTotal.seller.eur,
+            period: currentPeriod,
           },
         })
         
         console.log('Stats set:', {
-          year: yearSummary.totals,
-          month: monthSummary.totals
+          year: yearTotal,
+          month: monthTotal
         })
       } catch (error) {
         console.error("Failed to load dashboard stats:", error)

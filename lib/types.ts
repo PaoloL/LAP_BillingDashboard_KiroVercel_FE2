@@ -61,6 +61,8 @@ export interface UsageAccount extends Account {
   fundsUtilization: number
   totalUsage: number
   totalDeposit: number
+  totalCustomerCost: number
+  availableFund: number // Calculated: totalDeposit - totalCustomerCost
   distributorName?: string
   lastTransactionDate?: string
   createdAt: string
@@ -102,17 +104,19 @@ export interface RecentTransaction {
 
 export interface TransactionDetail {
   id: string
-  dateTime: Date
+  dateTime?: Date
   billingPeriod?: string
-  payerAccount: {
-    name: string
-    id: string
+  accounts: {
+    payer: {
+      name: string
+      id: string
+    }
+    usage: {
+      name: string
+      id: string
+    }
   }
-  usageAccount: {
-    name: string
-    id: string
-  }
-  costBreakdown: {
+  costBreakdown?: {
     usage: number
     fee: number
     discount: number
@@ -120,21 +124,24 @@ export interface TransactionDetail {
     adjustment: number
     tax: number
   }
-  distributorCost: {
-    usd: number
-    eur: number
+  totals: {
+    distributor: {
+      usd: number
+      eur: number
+    }
+    seller: {
+      usd: number
+      eur: number
+    }
+    customer: {
+      usd: number
+      eur: number
+    }
   }
-  sellerCost: {
-    usd: number
-    eur: number
-  }
-  customerCost: {
-    usd: number
-    eur: number
-  }
-  exchangeRate: number
-  dataType: "Export" | "Manual"
+  exchangeRate?: number
+  dataType?: "Export" | "Manual"
   info?: string
+  details?: any
 }
 
 /**

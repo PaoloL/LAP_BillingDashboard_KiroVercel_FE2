@@ -82,6 +82,12 @@ export function UsageDetailsDialog({ open, onOpenChange, account }: UsageDetails
                   )}
                 </div>
               </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-muted-foreground">Available Fund</span>
+                <span className={cn("text-sm font-semibold", (account.totalDeposit - account.totalUsage) >= 0 ? "text-green-600" : "text-red-600")}>
+                  {formatCurrency(account.totalDeposit - account.totalUsage)}
+                </span>
+              </div>
             </div>
 
             <div className="space-y-3 rounded-lg border border-border p-4">

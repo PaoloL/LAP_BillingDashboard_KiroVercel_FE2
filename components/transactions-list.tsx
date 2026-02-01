@@ -12,8 +12,8 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
   const detailedBreakdown = transaction.details?.entity?.aws?.breakdown || {}
   const marketplaceBreakdown = transaction.details?.entity?.awsmp?.breakdown || {}
 
-  const marginEur = (transaction.customerCost?.eur || 0) - (transaction.sellerCost?.eur || 0)
-  const marginUsd = (transaction.customerCost?.usd || 0) - (transaction.sellerCost?.usd || 0)
+  const marginEur = (transaction.totals?.customer?.eur || 0) - (transaction.totals?.seller?.eur || 0)
+  const marginUsd = (transaction.totals?.customer?.usd || 0) - (transaction.totals?.seller?.usd || 0)
   const marginColor = marginEur < 0 ? "text-[#F26522]" : "text-green-600"
 
   return (
@@ -55,22 +55,22 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
         </td>
         <td className="px-4 py-3">
           <div className="space-y-0.5">
-            <div className="font-medium text-foreground">{transaction.payerAccount.name}</div>
-            <div className="text-sm font-mono text-muted-foreground">{transaction.payerAccount.id}</div>
+            <div className="font-medium text-foreground">{transaction.accounts.payer.name}</div>
+            <div className="text-sm font-mono text-muted-foreground">{transaction.accounts.payer.id}</div>
           </div>
         </td>
         <td className="px-4 py-3">
           <div className="space-y-0.5">
-            <div className="font-medium text-foreground">{transaction.usageAccount.name}</div>
-            <div className="text-sm font-mono text-muted-foreground">{transaction.usageAccount.id}</div>
+            <div className="font-medium text-foreground">{transaction.accounts.usage.name}</div>
+            <div className="text-sm font-mono text-muted-foreground">{transaction.accounts.usage.id}</div>
           </div>
         </td>
         <td className="px-4 py-3 text-right">
           <div className="space-y-0.5">
-            <div className="font-semibold text-foreground">{formatCurrency(transaction.distributorCost?.eur || 0)}</div>
+            <div className="font-semibold text-foreground">{formatCurrency(transaction.totals?.distributor?.eur || 0)}</div>
             <div className="text-sm text-muted-foreground">
               $
-              {(transaction.distributorCost?.usd || 0).toLocaleString("en-US", {
+              {(transaction.totals?.distributor?.usd || 0).toLocaleString("en-US", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
@@ -79,10 +79,10 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
         </td>
         <td className="px-4 py-3 text-right">
           <div className="space-y-0.5">
-            <div className="font-semibold text-foreground">{formatCurrency(transaction.sellerCost?.eur || 0)}</div>
+            <div className="font-semibold text-foreground">{formatCurrency(transaction.totals?.seller?.eur || 0)}</div>
             <div className="text-sm text-muted-foreground">
               $
-              {(transaction.sellerCost?.usd || 0).toLocaleString("en-US", {
+              {(transaction.totals?.seller?.usd || 0).toLocaleString("en-US", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
@@ -91,10 +91,10 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
         </td>
         <td className="px-4 py-3 text-right">
           <div className="space-y-0.5">
-            <div className="font-semibold text-foreground">{formatCurrency(transaction.customerCost?.eur || 0)}</div>
+            <div className="font-semibold text-foreground">{formatCurrency(transaction.totals?.customer?.eur || 0)}</div>
             <div className="text-sm text-muted-foreground">
               $
-              {(transaction.customerCost?.usd || 0).toLocaleString("en-US", {
+              {(transaction.totals?.customer?.usd || 0).toLocaleString("en-US", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
@@ -421,11 +421,7 @@ export function TransactionsList({
                 adjustment: 0,
                 tax: tx.details?.customer?.entity?.aws?.tax?.totals?.usd || 0,
               },
-              distributorCost: tx.summary?.distributor || {},
-              sellerCost: tx.summary?.seller || {},
-              customerCost: tx.summary?.customer || {},
-              payerAccount: tx.accounts?.payer || {},
-              usageAccount: tx.accounts?.usage || {},
+              accounts: tx.accounts || { payer: {}, usage: {} },
             })
           })
         } else {
