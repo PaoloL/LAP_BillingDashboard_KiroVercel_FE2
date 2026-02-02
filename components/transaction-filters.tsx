@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon, ArrowUpDown, Building2, Users, ChevronLeft, ChevronRight } from "lucide-react"
+import { CalendarIcon, ArrowUpDown, Building2, Users, ChevronLeft, ChevronRight, FileText } from "lucide-react"
 import { useState, useEffect } from "react"
 import { format, subMonths, startOfMonth, endOfMonth, addMonths } from "date-fns"
 import { dataService } from "@/lib/data/data-service"
@@ -14,6 +14,7 @@ interface TransactionFiltersProps {
   onSortChange?: (sortBy: "name" | "date", sortOrder: "asc" | "desc") => void
   onPayerAccountChange?: (payerAccountId: string | undefined) => void
   onUsageAccountChange?: (usageAccountId: string | undefined) => void
+  onTransactionTypeChange?: (transactionType: string | undefined) => void
 }
 
 export function TransactionFilters({
@@ -22,6 +23,7 @@ export function TransactionFilters({
   onSortChange,
   onPayerAccountChange,
   onUsageAccountChange,
+  onTransactionTypeChange,
 }: TransactionFiltersProps) {
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
     from: undefined,
@@ -32,8 +34,10 @@ export function TransactionFilters({
   const [usageAccounts, setUsageAccounts] = useState<Array<{ id: string; accountId: string; accountName: string; payerAccountId?: string }>>([])
   const [selectedPayerAccount, setSelectedPayerAccount] = useState<string | undefined>()
   const [selectedUsageAccount, setSelectedUsageAccount] = useState<string | undefined>()
+  const [selectedTransactionType, setSelectedTransactionType] = useState<string | undefined>()
   const [payerPopoverOpen, setPayerPopoverOpen] = useState(false)
   const [usagePopoverOpen, setUsagePopoverOpen] = useState(false)
+  const [typePopoverOpen, setTypePopoverOpen] = useState(false)
   const [loadingAccounts, setLoadingAccounts] = useState(true)
   const [startPeriod, setStartPeriod] = useState<Date>(startOfMonth(new Date()))
   const [endPeriod, setEndPeriod] = useState<Date>(endOfMonth(new Date()))
@@ -388,6 +392,58 @@ export function TransactionFilters({
             >
               Reset to Current Month
             </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      <Popover open={typePopoverOpen} onOpenChange={setTypePopoverOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+            <FileText className="h-4 w-4" />
+            {selectedTransactionType === "MANUAL" ? "Deposit" : selectedTransactionType === "DATAEXPORT" ? "Transactions" : "Transaction Type"}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[200px] p-0" align="start">
+          <div className="max-h-[200px] overflow-y-auto">
+            <button
+              onClick={() => {
+                setSelectedTransactionType(undefined)
+                onTransactionTypeChange?.(undefined)
+                setTypePopoverOpen(false)
+              }}
+              className={cn(
+                "w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors",
+                !selectedTransactionType && "bg-accent font-medium",
+              )}
+            >
+              All Types
+            </button>
+            <button
+              onClick={() => {
+                setSelectedTransactionType("MANUAL")
+                onTransactionTypeChange?.("MANUAL")
+                setTypePopoverOpen(false)
+              }}
+              className={cn(
+                "w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors",
+                selectedTransactionType === "MANUAL" && "bg-accent font-medium",
+              )}
+            >
+              Deposit
+            </button>
+            <button
+              onClick={() => {
+                setSelectedTransactionType("DATAEXPORT")
+                onTransactionTypeChange?.("DATAEXPORT")
+                setTypePopoverOpen(false)
+              }}
+              className={cn(
+                "w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors",
+                selectedTransactionType === "DATAEXPORT" && "bg-accent font-medium",
+              )}
+            >
+              Transactions
+            </button>
           </div>
         </PopoverContent>
       </Popover>

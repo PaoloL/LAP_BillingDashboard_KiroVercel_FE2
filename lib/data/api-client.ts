@@ -22,7 +22,14 @@ class ApiClient {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.error?.message || `API Error: ${response.statusText}`)
+      const errorMessage = errorData.error?.message || errorData.error || response.statusText || 'Unknown error'
+      console.error('API Error Details:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: `${baseUrl}${endpoint}`,
+        errorData
+      })
+      throw new Error(`API Error: ${errorMessage}`)
     }
 
     if (response.status === 204) {

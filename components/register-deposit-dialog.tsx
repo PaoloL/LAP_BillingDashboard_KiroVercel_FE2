@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { dataService } from "@/lib/data/data-service"
+import { useAuth } from "@/lib/auth/auth-context"
 import type { UsageAccount } from "@/lib/types"
 
 interface RegisterDepositDialogProps {
@@ -17,6 +18,7 @@ interface RegisterDepositDialogProps {
 }
 
 export function RegisterDepositDialog({ open, onOpenChange, onSuccess }: RegisterDepositDialogProps) {
+  const { user } = useAuth()
   const [usageAccounts, setUsageAccounts] = useState<UsageAccount[]>([])
   const [selectedAccountId, setSelectedAccountId] = useState<string>("")
   const [date, setDate] = useState<string>("")
@@ -74,6 +76,7 @@ export function RegisterDepositDialog({ open, onOpenChange, onSuccess }: Registe
         amountEur: amount,
         date: new Date(date).toISOString(),
         description: description.trim(),
+        createdBy: user?.email || 'unknown',
       })
 
       onSuccess()

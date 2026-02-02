@@ -17,6 +17,7 @@ export default function Transactions() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
   const [payerAccountId, setPayerAccountId] = useState<string | undefined>()
   const [usageAccountId, setUsageAccountId] = useState<string | undefined>()
+  const [transactionType, setTransactionType] = useState<string | undefined>()
   const [depositDialogOpen, setDepositDialogOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
 
@@ -50,6 +51,7 @@ export default function Transactions() {
           }}
           onPayerAccountChange={setPayerAccountId}
           onUsageAccountChange={setUsageAccountId}
+          onTransactionTypeChange={setTransactionType}
         />
       </div>
 
@@ -61,6 +63,7 @@ export default function Transactions() {
         sortOrder={sortOrder}
         payerAccountId={payerAccountId}
         usageAccountId={usageAccountId}
+        transactionType={transactionType}
       />
 
       <RegisterDepositDialog

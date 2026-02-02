@@ -106,6 +106,7 @@ export interface TransactionDetail {
   id: string
   dateTime?: Date
   billingPeriod?: string
+  transactionType?: string
   accounts: {
     payer: {
       name: string
@@ -124,7 +125,7 @@ export interface TransactionDetail {
     adjustment: number
     tax: number
   }
-  totals: {
+  totals?: {
     distributor: {
       usd: number
       eur: number
@@ -138,10 +139,22 @@ export interface TransactionDetail {
       eur: number
     }
   }
+  amount?: {
+    usd: number
+    eur: number
+  }
+  description?: string
+  date?: string
   exchangeRate?: number
   dataType?: "Export" | "Manual"
   info?: string
-  details?: any
+  details?: {
+    description?: string
+    currency?: string
+    value?: number
+    entity?: any
+  }
+  createdBy?: string
 }
 
 /**

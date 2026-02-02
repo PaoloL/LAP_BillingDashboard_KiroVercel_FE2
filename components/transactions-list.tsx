@@ -11,9 +11,16 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
 
   const detailedBreakdown = transaction.details?.entity?.aws?.breakdown || {}
   const marketplaceBreakdown = transaction.details?.entity?.awsmp?.breakdown || {}
+  
+  const isDeposit = transaction.transactionType === 'DEPOSIT' || transaction.transactionType === 'MANUAL'
 
-  const marginEur = (transaction.totals?.customer?.eur || 0) - (transaction.totals?.seller?.eur || 0)
-  const marginUsd = (transaction.totals?.customer?.usd || 0) - (transaction.totals?.seller?.usd || 0)
+  // For deposits, margin = deposit amount, costs are empty
+  const marginEur = isDeposit 
+    ? (transaction.details?.value || 0)
+    : (transaction.totals?.customer?.eur || 0) - (transaction.totals?.seller?.eur || 0)
+  const marginUsd = isDeposit
+    ? (transaction.details?.value || 0)
+    : (transaction.totals?.customer?.usd || 0) - (transaction.totals?.seller?.usd || 0)
   const marginColor = marginEur < 0 ? "text-[#F26522]" : "text-green-600"
 
   return (
@@ -55,50 +62,62 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
         </td>
         <td className="px-4 py-3">
           <div className="space-y-0.5">
-            <div className="font-medium text-foreground">{transaction.accounts.payer.name}</div>
-            <div className="text-sm font-mono text-muted-foreground">{transaction.accounts.payer.id}</div>
+            <div className="font-medium text-foreground">{transaction.accounts?.payer?.name || 'N/A'}</div>
+            <div className="text-sm font-mono text-muted-foreground">{transaction.accounts?.payer?.id || 'N/A'}</div>
           </div>
         </td>
         <td className="px-4 py-3">
           <div className="space-y-0.5">
-            <div className="font-medium text-foreground">{transaction.accounts.usage.name}</div>
-            <div className="text-sm font-mono text-muted-foreground">{transaction.accounts.usage.id}</div>
+            <div className="font-medium text-foreground">{transaction.accounts?.usage?.name || 'N/A'}</div>
+            <div className="text-sm font-mono text-muted-foreground">{transaction.accounts?.usage?.id || 'N/A'}</div>
           </div>
         </td>
         <td className="px-4 py-3 text-right">
           <div className="space-y-0.5">
-            <div className="font-semibold text-foreground">{formatCurrency(transaction.totals?.distributor?.eur || 0)}</div>
-            <div className="text-sm text-muted-foreground">
-              $
-              {(transaction.totals?.distributor?.usd || 0).toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+            <div className="font-semibold text-foreground">
+              {isDeposit ? '-' : formatCurrency(transaction.totals?.distributor?.eur || 0)}
             </div>
+            {!isDeposit && (
+              <div className="text-sm text-muted-foreground">
+                $
+                {(transaction.totals?.distributor?.usd || 0).toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </div>
+            )}
           </div>
         </td>
         <td className="px-4 py-3 text-right">
           <div className="space-y-0.5">
-            <div className="font-semibold text-foreground">{formatCurrency(transaction.totals?.seller?.eur || 0)}</div>
-            <div className="text-sm text-muted-foreground">
-              $
-              {(transaction.totals?.seller?.usd || 0).toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+            <div className="font-semibold text-foreground">
+              {isDeposit ? '-' : formatCurrency(transaction.totals?.seller?.eur || 0)}
             </div>
+            {!isDeposit && (
+              <div className="text-sm text-muted-foreground">
+                $
+                {(transaction.totals?.seller?.usd || 0).toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </div>
+            )}
           </div>
         </td>
         <td className="px-4 py-3 text-right">
           <div className="space-y-0.5">
-            <div className="font-semibold text-foreground">{formatCurrency(transaction.totals?.customer?.eur || 0)}</div>
-            <div className="text-sm text-muted-foreground">
-              $
-              {(transaction.totals?.customer?.usd || 0).toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+            <div className="font-semibold text-foreground">
+              {isDeposit ? '-' : formatCurrency(transaction.totals?.customer?.eur || 0)}
             </div>
+            {!isDeposit && (
+              <div className="text-sm text-muted-foreground">
+                $
+                {(transaction.totals?.customer?.usd || 0).toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </div>
+            )}
           </div>
         </td>
         <td className="px-4 py-3 text-right">
@@ -126,7 +145,9 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                 {transaction.dataType}
               </span>
             </div>
-            <div className="text-xs text-muted-foreground">Rate: {transaction.exchangeRate.toFixed(3)}</div>
+            <div className="text-xs text-muted-foreground">
+              Rate: {transaction.exchangeRate ? transaction.exchangeRate.toFixed(3) : 'N/A'}
+            </div>
           </div>
         </td>
       </tr>
@@ -134,6 +155,46 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
         <tr className="bg-muted/30">
           <td colSpan={8} className="px-4 py-4">
             <div className="ml-10 space-y-4">
+              {isDeposit ? (
+                <>
+                  <h4 className="text-sm font-semibold text-[#00243E]">Deposit Information</h4>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2 rounded-lg border border-border bg-background p-4">
+                      <div className="text-sm font-semibold text-[#026172]">Amount</div>
+                      <div className="space-y-1">
+                        <div className="text-2xl font-bold text-[#026172]">
+                          {formatCurrency(transaction.details?.value || 0)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Currency: {transaction.details?.currency || 'EUR'}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2 rounded-lg border border-border bg-background p-4">
+                      <div className="text-sm font-semibold text-[#00243E]">Details</div>
+                      <div className="space-y-2 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Period: </span>
+                          <span className="font-medium">{transaction.billingPeriod || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Description: </span>
+                          <span className="font-medium">{transaction.details?.description || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Created By: </span>
+                          <span className="font-medium">{transaction.createdBy || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Transaction ID: </span>
+                          <span className="font-mono text-xs">{transaction.id}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
               <h4 className="text-sm font-semibold text-[#00243E]">Cost Breakdown</h4>
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {/* Usage Section */}
@@ -340,6 +401,8 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                   </div>
                 </div>
               </div>
+              </>
+              )}
             </div>
           </td>
         </tr>
@@ -355,6 +418,7 @@ interface TransactionsListProps {
   sortOrder?: "asc" | "desc"
   payerAccountId?: string
   usageAccountId?: string
+  transactionType?: string
 }
 
 export function TransactionsList({
@@ -364,6 +428,7 @@ export function TransactionsList({
   sortOrder = "desc",
   payerAccountId,
   usageAccountId,
+  transactionType,
 }: TransactionsListProps) {
   const [transactionsByPeriod, setTransactionsByPeriod] = useState<Record<string, TransactionDetail[]>>({})
   const [loading, setLoading] = useState(true)
@@ -395,6 +460,11 @@ export function TransactionsList({
         if (Array.isArray(data.data)) {
           // New format: data is a flat array
           data.data.forEach((tx) => {
+            // Filter by transaction type if specified
+            if (transactionType && tx.transactionType !== transactionType) {
+              return
+            }
+            
             const billingPeriod = tx.billingPeriod || ""
             const periodKey = billingPeriod
               ? new Date(billingPeriod + "-01").toLocaleDateString("en-GB", {
@@ -444,7 +514,7 @@ export function TransactionsList({
       }
     }
     loadData()
-  }, [dateRange, sortBy, sortOrder, payerAccountId, usageAccountId])
+  }, [dateRange, sortBy, sortOrder, payerAccountId, usageAccountId, transactionType, billingPeriodRange])
 
   const filteredAndSortedTransactions = useMemo(() => {
     // If no date filtering is needed, return the original period grouping
