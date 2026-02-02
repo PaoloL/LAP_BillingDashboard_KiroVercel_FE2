@@ -227,12 +227,12 @@ export function AccountsGrid() {
                 )}
                 {/* </CHANGE> */}
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#00243E]/10">
+                  <div className="flex items-start gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#00243E]/10 mt-0.5">
                       <Building2 className="h-4 w-4 text-[#00243E]" />
                     </div>
-                    <div className="flex flex-col">
-                      <CardTitle className="text-base font-semibold text-[#00243E]">{account.accountName}</CardTitle>
+                    <div className="flex flex-col min-h-[3rem]">
+                      <CardTitle className="text-base font-semibold text-[#00243E] line-clamp-2 leading-tight">{account.accountName}</CardTitle>
                       <span className="text-xs text-muted-foreground">({account.accountId})</span>
                     </div>
                   </div>
@@ -349,8 +349,8 @@ export function AccountsGrid() {
                 )}
                 {/* </CHANGE> */}
                 <CardHeader className="pb-3">
-                  <div>
-                    <div className="text-lg font-semibold leading-tight text-[#00243E]">{account.customer}</div>
+                  <div className="min-h-[3.5rem]">
+                    <div className="text-lg font-semibold leading-tight text-[#00243E] line-clamp-2">{account.customer}</div>
                     <div className="text-sm text-muted-foreground">({account.id})</div>
                   </div>
                 </CardHeader>

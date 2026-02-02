@@ -62,29 +62,36 @@ export function StatsCards() {
         
         console.log('Fetching stats:', { currentPeriod, currentYear })
         
-        // Fetch accounts and cost totals in parallel
-        const [payerAccounts, usageAccounts, yearTotals, monthTotals] = await Promise.all([
+        // Fetch accounts, cost totals, and transactions in parallel
+        const [payerAccounts, usageAccounts, yearTotals, monthTotals, allTransactions] = await Promise.all([
           dataService.getPayerAccounts(),
           dataService.getUsageAccounts(),
-          dataService.getCostTotals({ period: currentYear, entityType: 'OrgYearTotal' }),
+          dataService.getCostTotals({ period: String(currentYear), entityType: 'OrgYearTotal' }),
           dataService.getCostTotals({ period: currentPeriod, entityType: 'OrgMonthTotal' }),
+          dataService.getTransactions({ startPeriod: `${currentYear}-01`, endPeriod: `${currentYear}-12` }),
         ])
 
         // Calculate totals from cost data
         const yearTotal = yearTotals.data[0]?.totals || { seller: { eur: 0 }, customer: { eur: 0 }, distributor: { eur: 0 } }
         const monthTotal = monthTotals.data[0]?.totals || { seller: { eur: 0 }, customer: { eur: 0 }, distributor: { eur: 0 } }
 
-        console.log('Year total:', yearTotal)
-        console.log('Month total:', monthTotal)
+        // Calculate deposits from transactions
+        const yearDeposits = allTransactions.data
+          .filter((tx: any) => tx.transactionType === 'DEPOSIT')
+          .reduce((sum: number, tx: any) => sum + (tx.totals?.customer?.eur || 0), 0)
+        
+        const monthDeposits = allTransactions.data
+          .filter((tx: any) => tx.transactionType === 'DEPOSIT' && tx.billingPeriod === currentPeriod)
+          .reduce((sum: number, tx: any) => sum + (tx.totals?.customer?.eur || 0), 0)
+
+        console.log('Year total:', yearTotal, 'Year deposits:', yearDeposits)
+        console.log('Month total:', monthTotal, 'Month deposits:', monthDeposits)
 
         // Calculate account stats
         const activePayerAccounts = payerAccounts.filter((a: PayerAccount) => a.status !== "Archived")
         const activeUsageAccounts = usageAccounts.filter((a: UsageAccount) => a.status !== "Archived")
         const registeredUsage = activeUsageAccounts.filter((a: UsageAccount) => a.status === "Registered")
         const unregisteredUsage = activeUsageAccounts.filter((a: UsageAccount) => a.status === "Unregistered")
-
-        // Calculate total deposit from usage accounts
-        const totalDeposit = usageAccounts.reduce((sum: number, acc: UsageAccount) => sum + (acc.totalDeposit || 0), 0)
 
         setStats({
           totalPayerAccounts: activePayerAccounts.length,
@@ -94,13 +101,13 @@ export function StatsCards() {
           year: {
             totalSellerCost: yearTotal.seller.eur,
             totalCustomerCost: yearTotal.customer.eur,
-            totalDeposit,
+            totalDeposit: yearDeposits,
             totalMargin: yearTotal.customer.eur - yearTotal.seller.eur,
           },
           month: {
             totalSellerCost: monthTotal.seller.eur,
             totalCustomerCost: monthTotal.customer.eur,
-            totalDeposit: 0,
+            totalDeposit: monthDeposits,
             totalMargin: monthTotal.customer.eur - monthTotal.seller.eur,
             period: currentPeriod,
           },
@@ -168,7 +175,7 @@ export function StatsCards() {
     {
       title: "Deposit",
       yearValue: stats.year.totalDeposit,
-      monthValue: null,
+      monthValue: stats.month.totalDeposit,
       icon: PiggyBank,
       color: "text-[#026172]",
       bgColor: "bg-[#026172]/10",
