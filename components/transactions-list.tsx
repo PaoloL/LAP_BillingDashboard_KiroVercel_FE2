@@ -1,5 +1,6 @@
 "use client"
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { formatCurrency, formatCurrencyUSD } from "@/lib/format"
 import { ChevronDown, ChevronRight } from "lucide-react"
 import { useState, useMemo, useEffect } from "react"
@@ -33,127 +34,59 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
             ) : (
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             )}
-            <div className="space-y-0.5">
-              <div className="font-medium text-foreground whitespace-nowrap">
-                {transaction.billingPeriod
-                  ? new Date(transaction.billingPeriod + "-01").toLocaleDateString("en-GB", {
-                      month: "short",
-                      year: "numeric",
-                    })
-                  : transaction.dateTime.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {transaction.dateTime
-                  .toLocaleDateString("en-GB", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "2-digit",
+            <div className="font-medium text-foreground whitespace-nowrap">
+              {transaction.billingPeriod
+                ? new Date(transaction.billingPeriod + "-01").toLocaleDateString("en-GB", {
+                    month: "short",
+                    year: "numeric",
                   })
-                  .replace(/\//g, "/")}{" "}
-                -{" "}
-                {transaction.dateTime.toLocaleTimeString("en-GB", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: false,
-                })}
-              </div>
+                : transaction.dateTime.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}
             </div>
           </div>
         </td>
         <td className="px-4 py-3">
           <div className="space-y-0.5">
             <div className="font-medium text-foreground">{transaction.accounts?.payer?.name || 'N/A'}</div>
-            <div className="text-sm font-mono text-muted-foreground">{transaction.accounts?.payer?.id || 'N/A'}</div>
+            <div className="text-xs font-mono text-muted-foreground">{transaction.accounts?.payer?.id || 'N/A'}</div>
           </div>
         </td>
         <td className="px-4 py-3">
           <div className="space-y-0.5">
             <div className="font-medium text-foreground">{transaction.accounts?.usage?.name || 'N/A'}</div>
-            <div className="text-sm font-mono text-muted-foreground">{transaction.accounts?.usage?.id || 'N/A'}</div>
+            <div className="text-xs font-mono text-muted-foreground">{transaction.accounts?.usage?.id || 'N/A'}</div>
           </div>
         </td>
         <td className="px-4 py-3 text-right">
-          <div className="space-y-0.5">
-            <div className="font-semibold text-foreground">
-              {isDeposit ? '-' : formatCurrency(transaction.totals?.distributor?.eur || 0)}
-            </div>
-            {!isDeposit && (
-              <div className="text-sm text-muted-foreground">
-                $
-                {(transaction.totals?.distributor?.usd || 0).toLocaleString("en-US", {
+          {isDeposit ? (
+            <div className="space-y-0.5">
+              <div className="font-semibold text-[#026172]">
+                +{formatCurrency(transaction.details?.value || 0)}
+              </div>
+              <div className="text-sm text-[#026172]/70">
+                +${(transaction.details?.value || 0).toLocaleString("en-US", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}
               </div>
-            )}
-          </div>
-        </td>
-        <td className="px-4 py-3 text-right">
-          <div className="space-y-0.5">
-            <div className="font-semibold text-foreground">
-              {isDeposit ? '-' : formatCurrency(transaction.totals?.seller?.eur || 0)}
             </div>
-            {!isDeposit && (
-              <div className="text-sm text-muted-foreground">
-                $
-                {(transaction.totals?.seller?.usd || 0).toLocaleString("en-US", {
+          ) : (
+            <div className="space-y-0.5">
+              <div className="font-semibold text-[#EC9400]">
+                -{formatCurrency(transaction.totals?.customer?.eur || 0)}
+              </div>
+              <div className="text-sm text-[#EC9400]/70">
+                -${(transaction.totals?.customer?.usd || 0).toLocaleString("en-US", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}
               </div>
-            )}
-          </div>
-        </td>
-        <td className="px-4 py-3 text-right">
-          <div className="space-y-0.5">
-            <div className="font-semibold text-foreground">
-              {isDeposit ? '-' : formatCurrency(transaction.totals?.customer?.eur || 0)}
             </div>
-            {!isDeposit && (
-              <div className="text-sm text-muted-foreground">
-                $
-                {(transaction.totals?.customer?.usd || 0).toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </div>
-            )}
-          </div>
-        </td>
-        <td className="px-4 py-3 text-right">
-          <div className="space-y-0.5">
-            <div className={`font-semibold ${marginColor}`}>{formatCurrency(marginEur)}</div>
-            <div className={`text-sm ${marginColor === "text-[#F26522]" ? "text-[#F26522]/70" : "text-green-600/70"}`}>
-              $
-              {marginUsd.toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </div>
-          </div>
-        </td>
-        <td className="px-4 py-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span
-                className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                  transaction.dataType === "Export"
-                    ? "bg-[#026172]/10 text-[#026172]"
-                    : "bg-[#EC9400]/10 text-[#EC9400]"
-                }`}
-              >
-                {transaction.dataType}
-              </span>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              Rate: {transaction.exchangeRate ? transaction.exchangeRate.toFixed(3) : 'N/A'}
-            </div>
-          </div>
+          )}
         </td>
       </tr>
       {isExpanded && (
         <tr className="bg-muted/30">
-          <td colSpan={8} className="px-4 py-4">
+          <td colSpan={4} className="px-4 py-4">
             <div className="ml-10 space-y-4">
               {isDeposit ? (
                 <>
@@ -195,7 +128,66 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                 </>
               ) : (
                 <>
-              <h4 className="text-sm font-semibold text-[#00243E]">Cost Breakdown</h4>
+                  <h4 className="text-sm font-semibold text-[#00243E]">Cost Summary</h4>
+                  <div className="grid gap-4 md:grid-cols-4 mb-4">
+                    <div className="space-y-2 rounded-lg border border-border bg-background p-4">
+                      <div className="text-sm font-semibold text-muted-foreground">Distributor Cost</div>
+                      <div className="space-y-1">
+                        <div className="text-xl font-bold text-foreground">
+                          {formatCurrency(transaction.totals?.distributor?.eur || 0)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          ${(transaction.totals?.distributor?.usd || 0).toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2 rounded-lg border border-border bg-background p-4">
+                      <div className="text-sm font-semibold text-muted-foreground">Seller Cost</div>
+                      <div className="space-y-1">
+                        <div className="text-xl font-bold text-foreground">
+                          {formatCurrency(transaction.totals?.seller?.eur || 0)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          ${(transaction.totals?.seller?.usd || 0).toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2 rounded-lg border border-border bg-background p-4">
+                      <div className="text-sm font-semibold text-muted-foreground">Customer Cost</div>
+                      <div className="space-y-1">
+                        <div className="text-xl font-bold text-[#F26522]">
+                          {formatCurrency(transaction.totals?.customer?.eur || 0)}
+                        </div>
+                        <div className="text-sm text-[#F26522]/70">
+                          ${(transaction.totals?.customer?.usd || 0).toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2 rounded-lg border border-border bg-background p-4">
+                      <div className="text-sm font-semibold text-muted-foreground">Margin</div>
+                      <div className="space-y-1">
+                        <div className={`text-xl font-bold ${marginColor}`}>
+                          {formatCurrency(marginEur)}
+                        </div>
+                        <div className={`text-sm ${marginColor === "text-[#F26522]" ? "text-[#F26522]/70" : "text-green-600/70"}`}>
+                          ${marginUsd.toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <h4 className="text-sm font-semibold text-[#00243E]">Cost Breakdown</h4>
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {/* Usage Section */}
                 <div className="space-y-2 rounded-lg border border-border bg-background p-3">
@@ -432,6 +424,12 @@ export function TransactionsList({
 }: TransactionsListProps) {
   const [transactionsByPeriod, setTransactionsByPeriod] = useState<Record<string, TransactionDetail[]>>({})
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(0)
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(0)
+  }, [dateRange, billingPeriodRange, payerAccountId, usageAccountId, transactionType])
 
   useEffect(() => {
     async function loadData() {
@@ -608,11 +606,44 @@ export function TransactionsList({
     )
   }
 
+  // Pagination: one page per period, sorted by date descending
+  const periods = Object.keys(filteredAndSortedTransactions).sort((a, b) => {
+    const dateA = new Date(a.split(' ').reverse().join(' '))
+    const dateB = new Date(b.split(' ').reverse().join(' '))
+    return dateB.getTime() - dateA.getTime()
+  })
+
+  const currentPeriod = periods[currentPage]
+  const currentTransactions = currentPeriod ? filteredAndSortedTransactions[currentPeriod] : []
+
   return (
     <div className="space-y-6">
-      {Object.entries(filteredAndSortedTransactions).map(([period, transactions]) => (
-        <div key={period}>
-          <h3 className="mb-3 text-sm font-semibold text-muted-foreground">{period}</h3>
+      {periods.length > 0 ? (
+        <>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-foreground">{currentPeriod}</h3>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                disabled={currentPage === 0}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {currentPage + 1} of {periods.length}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(periods.length - 1, prev + 1))}
+                disabled={currentPage === periods.length - 1}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
           <Card>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -622,17 +653,11 @@ export function TransactionsList({
                       <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Period</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Payer Account</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Usage Account</th>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
-                        Distributor Cost
-                      </th>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Seller Cost</th>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Customer Cost</th>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Margin</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Info</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Amount (EUR / USD)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {transactions.map((transaction) => (
+                    {currentTransactions.map((transaction) => (
                       <TransactionRow key={transaction.id} transaction={transaction} />
                     ))}
                   </tbody>
@@ -640,9 +665,8 @@ export function TransactionsList({
               </div>
             </CardContent>
           </Card>
-        </div>
-      ))}
-      {Object.keys(filteredAndSortedTransactions).length === 0 && (
+        </>
+      ) : (
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground">No transactions found for the selected filters.</p>
