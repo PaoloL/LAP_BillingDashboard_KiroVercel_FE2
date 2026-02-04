@@ -93,34 +93,40 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                   <h4 className="text-sm font-semibold text-[#00243E]">Deposit Information</h4>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2 rounded-lg border border-border bg-background p-4">
-                      <div className="text-sm font-semibold text-[#026172]">Amount</div>
+                      <div className="text-sm font-semibold text-muted-foreground">Deposit Amount</div>
                       <div className="space-y-1">
-                        <div className="text-2xl font-bold text-[#026172]">
+                        <div className="text-xl font-bold text-[#026172]">
                           {formatCurrency(transaction.details?.value || 0)}
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          Currency: {transaction.details?.currency || 'EUR'}
+                        <div className="text-sm text-[#026172]/70">
+                          ${(transaction.details?.value || 0).toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </div>
                       </div>
                     </div>
                     <div className="space-y-2 rounded-lg border border-border bg-background p-4">
-                      <div className="text-sm font-semibold text-[#00243E]">Details</div>
+                      <div className="text-sm font-semibold text-muted-foreground">Details</div>
                       <div className="space-y-2 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Period: </span>
-                          <span className="font-medium">{transaction.billingPeriod || 'N/A'}</span>
-                        </div>
                         <div>
                           <span className="text-muted-foreground">Description: </span>
                           <span className="font-medium">{transaction.details?.description || 'N/A'}</span>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Created By: </span>
-                          <span className="font-medium">{transaction.createdBy || 'N/A'}</span>
+                          <span className="text-muted-foreground">Period: </span>
+                          <span className="font-medium">
+                            {transaction.billingPeriod || 'N/A'}
+                            {transaction.dateTime && (
+                              <span className="text-muted-foreground">
+                                {' '}({transaction.dateTime.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {transaction.dateTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })})
+                              </span>
+                            )}
+                          </span>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Transaction ID: </span>
-                          <span className="font-mono text-xs">{transaction.id}</span>
+                          <span className="text-muted-foreground">Created By: </span>
+                          <span className="font-medium">{transaction.createdBy || 'N/A'}</span>
                         </div>
                       </div>
                     </div>
@@ -393,6 +399,11 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                   </div>
                 </div>
               </div>
+              <div className="mt-4 rounded-lg border border-[#026172]/20 bg-[#026172]/5 p-3">
+                <div className="text-xs text-muted-foreground">
+                  Exchange Rate Applied: <span className="font-semibold text-[#026172]">{(transaction.exchangeRate || 1.0).toFixed(4)}</span>
+                </div>
+              </div>
               </>
               )}
             </div>
@@ -450,6 +461,7 @@ export function TransactionsList({
           sortOrder,
           payerAccountId,
           usageAccountId,
+          limit: 500, // Fetch up to 500 transactions
         })
 
         // Handle new API response format (flat array) and group by period
@@ -598,6 +610,27 @@ export function TransactionsList({
     return result
   }, [transactionsByPeriod, dateRange, sortBy, sortOrder])
 
+  // Pagination: 20 items per page
+  const ITEMS_PER_PAGE = 20
+  const allTransactions = useMemo(() => {
+    const periods = Object.keys(filteredAndSortedTransactions).sort((a, b) => {
+      const dateA = new Date(a.split(' ').reverse().join(' '))
+      const dateB = new Date(b.split(' ').reverse().join(' '))
+      return dateB.getTime() - dateA.getTime()
+    })
+    
+    const transactions: TransactionDetail[] = []
+    periods.forEach(period => {
+      transactions.push(...filteredAndSortedTransactions[period])
+    })
+    return transactions
+  }, [filteredAndSortedTransactions])
+
+  const totalPages = Math.ceil(allTransactions.length / ITEMS_PER_PAGE)
+  const startIndex = currentPage * ITEMS_PER_PAGE
+  const endIndex = startIndex + ITEMS_PER_PAGE
+  const currentTransactions = allTransactions.slice(startIndex, endIndex)
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -606,43 +639,14 @@ export function TransactionsList({
     )
   }
 
-  // Pagination: one page per period, sorted by date descending
-  const periods = Object.keys(filteredAndSortedTransactions).sort((a, b) => {
-    const dateA = new Date(a.split(' ').reverse().join(' '))
-    const dateB = new Date(b.split(' ').reverse().join(' '))
-    return dateB.getTime() - dateA.getTime()
-  })
-
-  const currentPeriod = periods[currentPage]
-  const currentTransactions = currentPeriod ? filteredAndSortedTransactions[currentPeriod] : []
-
   return (
     <div className="space-y-6">
-      {periods.length > 0 ? (
+      {allTransactions.length > 0 ? (
         <>
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-foreground">{currentPeriod}</h3>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
-                disabled={currentPage === 0}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Page {currentPage + 1} of {periods.length}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.min(periods.length - 1, prev + 1))}
-                disabled={currentPage === periods.length - 1}
-              >
-                Next
-              </Button>
-            </div>
+            <h3 className="text-lg font-semibold text-foreground">
+              Showing {startIndex + 1}-{Math.min(endIndex, allTransactions.length)} of {allTransactions.length} transactions
+            </h3>
           </div>
           <Card>
             <CardContent className="p-0">
@@ -665,6 +669,27 @@ export function TransactionsList({
               </div>
             </CardContent>
           </Card>
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+              disabled={currentPage === 0}
+            >
+              Previous
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Page {currentPage + 1} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+              disabled={currentPage === totalPages - 1}
+            >
+              Next
+            </Button>
+          </div>
         </>
       ) : (
         <Card>
