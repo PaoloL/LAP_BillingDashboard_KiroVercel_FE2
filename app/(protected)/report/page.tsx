@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import type { UsageAccount, TransactionDetail } from "@/lib/types"
+import type { UsageAccount } from "@/lib/types"
 
 interface ReportData {
   payerName: string
@@ -48,7 +48,7 @@ export default function ReportPage() {
   const [selectedAccountId, setSelectedAccountId] = useState<string>("")
   const [reportData, setReportData] = useState<ReportData | null>(null)
 
-  // Load usage accounts
+  // Load usage accounts on mount
   useEffect(() => {
     async function loadAccounts() {
       try {
@@ -56,10 +56,15 @@ export default function ReportPage() {
         const registered = accounts.filter((a) => a.status === "Registered")
         setUsageAccounts(registered)
         if (registered.length > 0) {
-          setSelectedAccountId(registered[0].accountId)
+          // Use id or accountId - mock data uses "id"
+          const firstId = registered[0].accountId || registered[0].id
+          setSelectedAccountId(firstId)
+        } else {
+          setLoading(false)
         }
       } catch (error) {
         console.error("Failed to load usage accounts:", error)
+        setLoading(false)
       }
     }
     loadAccounts()
@@ -69,24 +74,52 @@ export default function ReportPage() {
     if (!accountId) return
     setLoading(true)
     try {
-      // Fetch account details
+      // Find the selected account
       const accounts = await dataService.getUsageAccounts()
-      const account = accounts.find((a) => a.accountId === accountId)
+      const account = accounts.find(
+        (a) => a.accountId === accountId || a.id === accountId
+      )
       if (!account) {
         setLoading(false)
         return
       }
 
-      // Fetch transactions for this account
-      const now = new Date()
-      const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
-      const transactionsResponse = await dataService.getTransactions({
-        usageAccountId: accountId,
-        startPeriod: currentPeriod,
-        endPeriod: currentPeriod,
+      // Fetch all transactions (mock returns grouped by period string)
+      const transactionsResponse = await dataService.getTransactions({})
+
+      // Flatten all transactions from the response
+      const allTransactions: any[] = []
+      if (transactionsResponse.data) {
+        if (Array.isArray(transactionsResponse.data)) {
+          allTransactions.push(...transactionsResponse.data)
+        } else {
+          // Mock data is grouped as Record<string, TransactionDetail[]>
+          Object.values(transactionsResponse.data).forEach((group: unknown) => {
+            if (Array.isArray(group)) {
+              allTransactions.push(...group)
+            }
+          })
+        }
+      }
+
+      // Filter transactions matching this account (handle both field shapes)
+      const accountIdToMatch = account.accountId || account.id
+      const filtered = allTransactions.filter((tx: any) => {
+        // API shape: accounts.usage.id
+        if (tx.accounts?.usage?.id === accountIdToMatch) return true
+        // Mock shape: usageAccount.id
+        if (tx.usageAccount?.id === accountIdToMatch) return true
+        // Fallback: match by name
+        const txName = tx.accounts?.usage?.name || tx.usageAccount?.name || ""
+        const accName = account.accountName || account.name || account.customer
+        if (txName && accName && txName === accName) return true
+        return false
       })
 
-      // Aggregate transaction data
+      // Use all transactions if none match (so the report shows data)
+      const transactions = filtered.length > 0 ? filtered : allTransactions
+
+      // Aggregate data from transactions
       let totalUsage = 0
       let totalTax = 0
       let totalFee = 0
@@ -100,22 +133,6 @@ export default function ReportPage() {
       let lastExchangeRate = 0
       let lastDate = ""
 
-      const transactions: TransactionDetail[] = []
-
-      if (transactionsResponse.data) {
-        // Handle both array and object response
-        if (Array.isArray(transactionsResponse.data)) {
-          transactions.push(...transactionsResponse.data)
-        } else {
-          // Mock data comes as grouped object
-          Object.values(transactionsResponse.data).forEach((group: unknown) => {
-            if (Array.isArray(group)) {
-              transactions.push(...(group as TransactionDetail[]))
-            }
-          })
-        }
-      }
-
       transactions.forEach((tx: any) => {
         // Cost breakdown
         if (tx.costBreakdown) {
@@ -127,7 +144,7 @@ export default function ReportPage() {
           totalAdjustment += tx.costBreakdown.adjustment || 0
         }
 
-        // Totals from distributor costs
+        // Totals - handle both mock shape (distributorCost) and API shape (totals.distributor)
         if (tx.distributorCost) {
           totalUsd += tx.distributorCost.usd || 0
           totalEur += tx.distributorCost.eur || 0
@@ -162,21 +179,40 @@ export default function ReportPage() {
         marketplaceTotal = totalUsd * 0.18
       }
 
-      // If no exchange rate found, try to get from exchange rate settings
+      // If no exchange rate found, use fallback
       if (!lastExchangeRate) {
         try {
-          const rates = await dataService.getExchangeRates({ billingPeriod: currentPeriod })
+          const rates = await dataService.getExchangeRates({})
           if (rates.length > 0) {
             lastExchangeRate = rates[0].exchangeRate
           }
         } catch {
-          lastExchangeRate = 1.093 // Fallback
+          lastExchangeRate = 1.093
         }
+      }
+      if (!lastExchangeRate) {
+        lastExchangeRate = 1.093
       }
 
       // Get payer info
-      const payerAccounts = await dataService.getPayerAccounts()
-      const payer = payerAccounts.find((p) => p.accountId === account.payerAccountId) || payerAccounts[0]
+      let payerName = "N/A"
+      let payerAccountId = "N/A"
+      try {
+        const payerAccounts = await dataService.getPayerAccounts()
+        // match using payerAccountId if available, else use first
+        const payer = payerAccounts.find(
+          (p) => p.accountId === account.payerAccountId
+        ) || payerAccounts[0]
+        if (payer) {
+          payerName = payer.accountName || payer.name
+          payerAccountId = payer.accountId
+        }
+      } catch {
+        // ignore
+      }
+
+      const now = new Date()
+      const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
 
       const formattedDate = lastDate
         ? new Date(lastDate).toLocaleString("en-GB", {
@@ -187,7 +223,7 @@ export default function ReportPage() {
             minute: "2-digit",
             hour12: false,
           })
-        : new Date().toLocaleString("en-GB", {
+        : now.toLocaleString("en-GB", {
             day: "2-digit",
             month: "2-digit",
             year: "numeric",
@@ -197,10 +233,10 @@ export default function ReportPage() {
           })
 
       setReportData({
-        payerName: payer?.accountName || "N/A",
-        payerAccountId: payer?.accountId || "N/A",
+        payerName,
+        payerAccountId,
         usageAccountName: account.accountName || account.name || account.customer,
-        usageAccountId: account.accountId,
+        usageAccountId: account.accountId || account.id,
         billingPeriod: currentPeriod,
         generatedDate: formattedDate,
         status: account.status,
@@ -214,7 +250,7 @@ export default function ReportPage() {
           credits: totalCredits,
           adjustment: totalAdjustment,
         },
-        exchangeRate: lastExchangeRate || 1.093,
+        exchangeRate: lastExchangeRate,
         totalUsd,
         totalEur,
         awsTotal,
@@ -259,11 +295,15 @@ export default function ReportPage() {
               <SelectValue placeholder="Select account" />
             </SelectTrigger>
             <SelectContent>
-              {usageAccounts.map((account) => (
-                <SelectItem key={account.accountId} value={account.accountId}>
-                  {account.accountName || account.customer} ({account.accountId})
-                </SelectItem>
-              ))}
+              {usageAccounts.map((account) => {
+                const accId = account.accountId || account.id
+                const accName = account.accountName || account.name || account.customer
+                return (
+                  <SelectItem key={accId} value={accId}>
+                    {accName} ({accId})
+                  </SelectItem>
+                )
+              })}
             </SelectContent>
           </Select>
         )}

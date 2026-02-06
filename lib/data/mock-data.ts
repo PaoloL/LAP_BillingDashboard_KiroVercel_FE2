@@ -45,10 +45,13 @@ export const mockPayerAccounts: PayerAccount[] = [
 export const mockUsageAccounts: UsageAccount[] = [
   {
     id: "345678901234",
+    accountId: "345678901234",
+    accountName: "Acme Corporation",
     name: "Acme Corporation",
     type: "USAGE",
     customer: "Acme Corporation",
     status: "Registered",
+    payerAccountId: "123456789012",
     vatNumber: "DE123456789",
     resellerDiscount: 15,
     customerDiscount: 10,
@@ -76,10 +79,13 @@ export const mockUsageAccounts: UsageAccount[] = [
   },
   {
     id: "456789012345",
+    accountId: "456789012345",
+    accountName: "TechStart GmbH",
     name: "TechStart GmbH",
     type: "USAGE",
     customer: "TechStart GmbH",
     status: "Registered",
+    payerAccountId: "123456789012",
     vatNumber: "DE987654321",
     resellerDiscount: 20,
     customerDiscount: 15,
@@ -107,10 +113,13 @@ export const mockUsageAccounts: UsageAccount[] = [
   },
   {
     id: "567890123456",
+    accountId: "567890123456",
+    accountName: "Global Solutions Ltd",
     name: "Global Solutions Ltd",
     type: "USAGE",
     customer: "Global Solutions Ltd",
     status: "Unregistered",
+    payerAccountId: "234567890123",
     vatNumber: "GB123456789",
     resellerDiscount: 0,
     customerDiscount: 0,
@@ -138,10 +147,13 @@ export const mockUsageAccounts: UsageAccount[] = [
   },
   {
     id: "678901234567",
+    accountId: "678901234567",
+    accountName: "Innovation Labs",
     name: "Innovation Labs",
     type: "USAGE",
     customer: "Innovation Labs",
     status: "Archived",
+    payerAccountId: "234567890123",
     vatNumber: "FR123456789",
     resellerDiscount: 18,
     customerDiscount: 12,
@@ -180,7 +192,7 @@ export const mockTransactionsByPeriod: Record<string, TransactionDetail[]> = {
       },
       usageAccount: {
         name: "Acme Corporation",
-        id: "aws-123456",
+        id: "345678901234",
       },
       costBreakdown: {
         usage: 12345.67,
@@ -214,7 +226,7 @@ export const mockTransactionsByPeriod: Record<string, TransactionDetail[]> = {
       },
       usageAccount: {
         name: "TechStart GmbH",
-        id: "aws-789012",
+        id: "456789012345",
       },
       costBreakdown: {
         usage: 8765.43,
@@ -250,7 +262,7 @@ export const mockTransactionsByPeriod: Record<string, TransactionDetail[]> = {
       },
       usageAccount: {
         name: "Global Solutions",
-        id: "aws-345678",
+        id: "567890123456",
       },
       costBreakdown: {
         usage: 15678.9,
