@@ -14,8 +14,10 @@ import { PiggyBank } from "lucide-react"
 
 export interface DepositRow {
   id: string
-  date: string
-  description: string
+  period: string
+  payerAccount: string
+  usageAccountName: string
+  usageAccountId: string
   amountEur: number
 }
 
@@ -42,21 +44,28 @@ export function RecentDepositsWidget({ deposits }: RecentDepositsWidgetProps) {
             <Table>
               <TableHeader>
                 <TableRow className="border-border hover:bg-transparent">
-                  <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Date</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Description</TableHead>
-                  <TableHead className="text-right text-xs font-semibold uppercase text-muted-foreground">Amount (EUR)</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Period</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Payer Account</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Usage Account</TableHead>
+                  <TableHead className="text-right text-xs font-semibold uppercase text-muted-foreground">Value (EUR)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {deposits.map((dep) => (
                   <TableRow key={dep.id} className="border-border">
-                    <TableCell className="py-2 text-xs text-muted-foreground whitespace-nowrap">
-                      {dep.date}
+                    <TableCell className="py-2.5 text-sm text-muted-foreground whitespace-nowrap">
+                      {dep.period}
                     </TableCell>
-                    <TableCell className="py-2 text-sm text-foreground">
-                      <span className="truncate max-w-[180px] block">{dep.description}</span>
+                    <TableCell className="py-2.5 text-sm text-foreground whitespace-nowrap">
+                      {dep.payerAccount}
                     </TableCell>
-                    <TableCell className="py-2 text-right text-sm font-semibold text-secondary whitespace-nowrap">
+                    <TableCell className="py-2.5">
+                      <div className="flex flex-col">
+                        <span className="text-sm text-foreground">{dep.usageAccountName}</span>
+                        <span className="text-xs font-mono text-muted-foreground">{dep.usageAccountId}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-2.5 text-right text-sm font-semibold text-secondary whitespace-nowrap">
                       {formatCurrency(dep.amountEur)}
                     </TableCell>
                   </TableRow>

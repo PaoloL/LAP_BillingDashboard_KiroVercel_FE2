@@ -178,17 +178,20 @@ export default function ReportPage() {
         const txUsd = tx.distributorCost?.usd || tx.totals?.distributor?.usd || 0
         const txEur = tx.distributorCost?.eur || tx.totals?.distributor?.eur || 0
         const txRate = tx.exchangeRate || lastExchangeRate
-        const txDate = tx.dateTime
-          ? new Date(tx.dateTime).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" })
-          : "N/A"
+        const txDate = tx.dateTime ? new Date(tx.dateTime) : new Date()
+        const period = txDate.toLocaleDateString("en-US", { month: "short", year: "numeric" })
+        const txPayerName = tx.payerAccount?.name || payerName
+        const txUsageName = tx.usageAccount?.name || account.accountName || account.name || account.customer
+        const txUsageId = tx.usageAccount?.id || account.accountId || account.id
         return {
           id: tx.id,
-          date: txDate,
-          description: tx.info || tx.description || "AWS Transaction",
+          period,
+          payerAccount: txPayerName,
+          usageAccountName: txUsageName,
+          usageAccountId: txUsageId,
           amountUsd: txUsd,
           amountEur: txEur,
           exchangeRate: txRate,
-          dataType: tx.dataType,
         }
       })
 
@@ -202,12 +205,18 @@ export default function ReportPage() {
             .filter((d) => d.usageAccountId === accountIdToMatch)
             .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime())
             .slice(0, 10)
-          depositRows = accountDeposits.map((d) => ({
-            id: d.id,
-            date: new Date(d.dateTime).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }),
-            description: d.description,
-            amountEur: d.amountEur,
-          }))
+          depositRows = accountDeposits.map((d) => {
+            const depDate = new Date(d.dateTime)
+            const period = depDate.toLocaleDateString("en-US", { month: "short", year: "numeric" })
+            return {
+              id: d.id,
+              period,
+              payerAccount: payerName,
+              usageAccountName: d.usageAccountName || account.accountName || account.name || account.customer,
+              usageAccountId: d.usageAccountId || account.accountId || account.id,
+              amountEur: d.amountEur,
+            }
+          })
         }
       } catch { /* no deposits */ }
 

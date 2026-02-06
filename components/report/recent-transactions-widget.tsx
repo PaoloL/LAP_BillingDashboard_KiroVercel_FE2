@@ -11,16 +11,16 @@ import {
 } from "@/components/ui/table"
 import { formatCurrencyUSD, formatCurrency } from "@/lib/format"
 import { Receipt, ArrowRightLeft } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
 
 export interface TransactionRow {
   id: string
-  date: string
-  description: string
+  period: string
+  payerAccount: string
+  usageAccountName: string
+  usageAccountId: string
   amountUsd: number
   amountEur: number
   exchangeRate: number
-  dataType?: string
 }
 
 interface RecentTransactionsWidgetProps {
@@ -46,42 +46,36 @@ export function RecentTransactionsWidget({ transactions }: RecentTransactionsWid
             <Table>
               <TableHeader>
                 <TableRow className="border-border hover:bg-transparent">
-                  <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Date</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Description</TableHead>
-                  <TableHead className="text-right text-xs font-semibold uppercase text-muted-foreground">USD</TableHead>
-                  <TableHead className="text-right text-xs font-semibold uppercase text-muted-foreground">EUR</TableHead>
-                  <TableHead className="text-right text-xs font-semibold uppercase text-muted-foreground">
-                    <span className="flex items-center justify-end gap-1">
-                      <ArrowRightLeft className="h-3 w-3" />
-                      Rate
-                    </span>
-                  </TableHead>
+                  <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Period</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Payer Account</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Usage Account</TableHead>
+                  <TableHead className="text-right text-xs font-semibold uppercase text-muted-foreground">Value</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {transactions.map((tx) => (
                   <TableRow key={tx.id} className="border-border">
-                    <TableCell className="py-2 text-xs text-muted-foreground whitespace-nowrap">
-                      {tx.date}
+                    <TableCell className="py-2.5 text-sm text-muted-foreground whitespace-nowrap">
+                      {tx.period}
                     </TableCell>
-                    <TableCell className="py-2 text-sm text-foreground">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate max-w-[140px]">{tx.description}</span>
-                        {tx.dataType && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal shrink-0">
-                            {tx.dataType}
-                          </Badge>
-                        )}
+                    <TableCell className="py-2.5 text-sm text-foreground whitespace-nowrap">
+                      {tx.payerAccount}
+                    </TableCell>
+                    <TableCell className="py-2.5">
+                      <div className="flex flex-col">
+                        <span className="text-sm text-foreground">{tx.usageAccountName}</span>
+                        <span className="text-xs font-mono text-muted-foreground">{tx.usageAccountId}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="py-2 text-right text-sm font-medium text-foreground whitespace-nowrap">
-                      {formatCurrencyUSD(tx.amountUsd)}
-                    </TableCell>
-                    <TableCell className="py-2 text-right text-sm font-medium text-foreground whitespace-nowrap">
-                      {formatCurrency(tx.amountEur)}
-                    </TableCell>
-                    <TableCell className="py-2 text-right text-xs font-mono text-muted-foreground whitespace-nowrap">
-                      {tx.exchangeRate.toFixed(4)}
+                    <TableCell className="py-2.5 text-right">
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span className="text-sm font-semibold text-foreground">{formatCurrencyUSD(tx.amountUsd)}</span>
+                        <span className="text-xs text-muted-foreground">{formatCurrency(tx.amountEur)}</span>
+                        <span className="flex items-center gap-0.5 text-[10px] font-mono text-muted-foreground">
+                          <ArrowRightLeft className="h-2.5 w-2.5" />
+                          {tx.exchangeRate.toFixed(4)}
+                        </span>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
