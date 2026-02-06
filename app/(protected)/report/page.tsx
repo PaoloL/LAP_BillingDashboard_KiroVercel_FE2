@@ -174,7 +174,7 @@ export default function ReportPage() {
         const dateB = new Date(b.dateTime || 0).getTime()
         return dateB - dateA
       })
-      const transactionRows: TransactionRow[] = sortedTransactions.slice(0, 10).map((tx: any) => {
+      const transactionRows: TransactionRow[] = sortedTransactions.map((tx: any) => {
         const txUsd = tx.distributorCost?.usd || tx.totals?.distributor?.usd || 0
         const txEur = tx.distributorCost?.eur || tx.totals?.distributor?.eur || 0
         const txRate = tx.exchangeRate || lastExchangeRate
@@ -185,6 +185,7 @@ export default function ReportPage() {
         const txUsageId = tx.usageAccount?.id || account.accountId || account.id
         return {
           id: tx.id,
+          dateTime: txDate.toISOString(),
           period,
           payerAccount: txPayerName,
           usageAccountName: txUsageName,
@@ -204,12 +205,12 @@ export default function ReportPage() {
           const accountDeposits = mockDeposits
             .filter((d) => d.usageAccountId === accountIdToMatch)
             .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime())
-            .slice(0, 10)
           depositRows = accountDeposits.map((d) => {
             const depDate = new Date(d.dateTime)
             const period = depDate.toLocaleDateString("en-US", { month: "short", year: "numeric" })
             return {
               id: d.id,
+              dateTime: depDate.toISOString(),
               period,
               payerAccount: payerName,
               usageAccountName: d.usageAccountName || account.accountName || account.name || account.customer,

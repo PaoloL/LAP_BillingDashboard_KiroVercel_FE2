@@ -1,6 +1,8 @@
 "use client"
 
+import { useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -14,6 +16,7 @@ import { Receipt, ArrowRightLeft } from "lucide-react"
 
 export interface TransactionRow {
   id: string
+  dateTime: string
   period: string
   payerAccount: string
   usageAccountName: string
@@ -27,19 +30,53 @@ interface RecentTransactionsWidgetProps {
   transactions: TransactionRow[]
 }
 
+type RangeFilter = "3M" | "6M" | "12M"
+
+function getMonthsCutoff(months: number): Date {
+  const d = new Date()
+  d.setMonth(d.getMonth() - months)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
 export function RecentTransactionsWidget({ transactions }: RecentTransactionsWidgetProps) {
+  const [range, setRange] = useState<RangeFilter>("3M")
+
+  const filtered = useMemo(() => {
+    const months = range === "3M" ? 3 : range === "6M" ? 6 : 12
+    const cutoff = getMonthsCutoff(months)
+    return transactions
+      .filter((tx) => new Date(tx.dateTime) >= cutoff)
+      .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime())
+  }, [transactions, range])
+
   return (
     <Card className="border-border">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <Receipt className="h-4 w-4 text-secondary" />
-          Last 10 Transactions
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Receipt className="h-4 w-4 text-secondary" />
+            Transactions
+          </CardTitle>
+          <div className="flex items-center gap-1">
+            {(["3M", "6M", "12M"] as RangeFilter[]).map((r) => (
+              <Button
+                key={r}
+                variant={range === r ? "default" : "outline"}
+                size="sm"
+                className={`h-7 px-2.5 text-xs ${range === r ? "" : "text-muted-foreground"}`}
+                onClick={() => setRange(r)}
+              >
+                {r}
+              </Button>
+            ))}
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        {transactions.length === 0 ? (
+        {filtered.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            No transactions found
+            No transactions found in the last {range === "3M" ? "3 months" : range === "6M" ? "6 months" : "12 months"}
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -53,7 +90,7 @@ export function RecentTransactionsWidget({ transactions }: RecentTransactionsWid
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions.map((tx) => (
+                {filtered.map((tx) => (
                   <TableRow key={tx.id} className="border-border">
                     <TableCell className="py-2.5 text-sm text-muted-foreground whitespace-nowrap">
                       {tx.period}

@@ -1,6 +1,8 @@
 "use client"
 
+import { useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -14,6 +16,7 @@ import { PiggyBank } from "lucide-react"
 
 export interface DepositRow {
   id: string
+  dateTime: string
   period: string
   payerAccount: string
   usageAccountName: string
@@ -25,19 +28,53 @@ interface RecentDepositsWidgetProps {
   deposits: DepositRow[]
 }
 
+type RangeFilter = "3M" | "6M" | "12M"
+
+function getMonthsCutoff(months: number): Date {
+  const d = new Date()
+  d.setMonth(d.getMonth() - months)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
 export function RecentDepositsWidget({ deposits }: RecentDepositsWidgetProps) {
+  const [range, setRange] = useState<RangeFilter>("3M")
+
+  const filtered = useMemo(() => {
+    const months = range === "3M" ? 3 : range === "6M" ? 6 : 12
+    const cutoff = getMonthsCutoff(months)
+    return deposits
+      .filter((dep) => new Date(dep.dateTime) >= cutoff)
+      .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime())
+  }, [deposits, range])
+
   return (
     <Card className="border-border">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <PiggyBank className="h-4 w-4 text-secondary" />
-          Last 10 Deposits
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <PiggyBank className="h-4 w-4 text-secondary" />
+            Deposits
+          </CardTitle>
+          <div className="flex items-center gap-1">
+            {(["3M", "6M", "12M"] as RangeFilter[]).map((r) => (
+              <Button
+                key={r}
+                variant={range === r ? "default" : "outline"}
+                size="sm"
+                className={`h-7 px-2.5 text-xs ${range === r ? "" : "text-muted-foreground"}`}
+                onClick={() => setRange(r)}
+              >
+                {r}
+              </Button>
+            ))}
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        {deposits.length === 0 ? (
+        {filtered.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            No deposits found
+            No deposits found in the last {range === "3M" ? "3 months" : range === "6M" ? "6 months" : "12 months"}
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -51,7 +88,7 @@ export function RecentDepositsWidget({ deposits }: RecentDepositsWidgetProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {deposits.map((dep) => (
+                {filtered.map((dep) => (
                   <TableRow key={dep.id} className="border-border">
                     <TableCell className="py-2.5 text-sm text-muted-foreground whitespace-nowrap">
                       {dep.period}
