@@ -206,9 +206,7 @@ export default function ReportPage() {
             id: d.id,
             date: new Date(d.dateTime).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }),
             description: d.description,
-            amountUsd: d.amountUsd,
             amountEur: d.amountEur,
-            exchangeRate: d.exchangeRate,
           }))
         }
       } catch { /* no deposits */ }

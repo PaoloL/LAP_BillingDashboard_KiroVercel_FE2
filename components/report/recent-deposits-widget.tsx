@@ -9,16 +9,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { formatCurrencyUSD, formatCurrency } from "@/lib/format"
-import { PiggyBank, ArrowRightLeft } from "lucide-react"
+import { formatCurrency } from "@/lib/format"
+import { PiggyBank } from "lucide-react"
 
 export interface DepositRow {
   id: string
   date: string
   description: string
-  amountUsd: number
   amountEur: number
-  exchangeRate: number
 }
 
 interface RecentDepositsWidgetProps {
@@ -46,14 +44,7 @@ export function RecentDepositsWidget({ deposits }: RecentDepositsWidgetProps) {
                 <TableRow className="border-border hover:bg-transparent">
                   <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Date</TableHead>
                   <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Description</TableHead>
-                  <TableHead className="text-right text-xs font-semibold uppercase text-muted-foreground">USD</TableHead>
-                  <TableHead className="text-right text-xs font-semibold uppercase text-muted-foreground">EUR</TableHead>
-                  <TableHead className="text-right text-xs font-semibold uppercase text-muted-foreground">
-                    <span className="flex items-center justify-end gap-1">
-                      <ArrowRightLeft className="h-3 w-3" />
-                      Rate
-                    </span>
-                  </TableHead>
+                  <TableHead className="text-right text-xs font-semibold uppercase text-muted-foreground">Amount (EUR)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -65,14 +56,8 @@ export function RecentDepositsWidget({ deposits }: RecentDepositsWidgetProps) {
                     <TableCell className="py-2 text-sm text-foreground">
                       <span className="truncate max-w-[180px] block">{dep.description}</span>
                     </TableCell>
-                    <TableCell className="py-2 text-right text-sm font-medium text-secondary whitespace-nowrap">
-                      {formatCurrencyUSD(dep.amountUsd)}
-                    </TableCell>
-                    <TableCell className="py-2 text-right text-sm font-medium text-secondary whitespace-nowrap">
+                    <TableCell className="py-2 text-right text-sm font-semibold text-secondary whitespace-nowrap">
                       {formatCurrency(dep.amountEur)}
-                    </TableCell>
-                    <TableCell className="py-2 text-right text-xs font-mono text-muted-foreground whitespace-nowrap">
-                      {dep.exchangeRate.toFixed(4)}
                     </TableCell>
                   </TableRow>
                 ))}
