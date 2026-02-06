@@ -289,3 +289,97 @@ export const mockTransactionsByPeriod: Record<string, TransactionDetail[]> = {
     },
   ],
 }
+
+export interface MockDeposit {
+  id: string
+  dateTime: Date
+  usageAccountId: string
+  usageAccountName: string
+  amountEur: number
+  amountUsd: number
+  exchangeRate: number
+  description: string
+}
+
+export const mockDeposits: MockDeposit[] = [
+  {
+    id: "dep-001",
+    dateTime: new Date("2025-01-02T10:00:00"),
+    usageAccountId: "345678901234",
+    usageAccountName: "Acme Corporation",
+    amountEur: 15000.0,
+    amountUsd: 16395.0,
+    exchangeRate: 1.093,
+    description: "Q1 2025 Prepayment",
+  },
+  {
+    id: "dep-002",
+    dateTime: new Date("2025-01-10T14:30:00"),
+    usageAccountId: "345678901234",
+    usageAccountName: "Acme Corporation",
+    amountEur: 10000.0,
+    amountUsd: 10930.0,
+    exchangeRate: 1.093,
+    description: "Additional fund top-up",
+  },
+  {
+    id: "dep-003",
+    dateTime: new Date("2025-01-05T09:00:00"),
+    usageAccountId: "456789012345",
+    usageAccountName: "TechStart GmbH",
+    amountEur: 20000.0,
+    amountUsd: 21680.0,
+    exchangeRate: 1.084,
+    description: "Initial deposit",
+  },
+  {
+    id: "dep-004",
+    dateTime: new Date("2025-01-15T11:00:00"),
+    usageAccountId: "456789012345",
+    usageAccountName: "TechStart GmbH",
+    amountEur: 5000.0,
+    amountUsd: 5420.0,
+    exchangeRate: 1.084,
+    description: "Emergency top-up",
+  },
+  {
+    id: "dep-005",
+    dateTime: new Date("2024-12-01T08:00:00"),
+    usageAccountId: "567890123456",
+    usageAccountName: "Global Solutions Ltd",
+    amountEur: 25000.0,
+    amountUsd: 27100.0,
+    exchangeRate: 1.084,
+    description: "Annual prepayment",
+  },
+  {
+    id: "dep-006",
+    dateTime: new Date("2024-12-15T16:00:00"),
+    usageAccountId: "567890123456",
+    usageAccountName: "Global Solutions Ltd",
+    amountEur: 8000.0,
+    amountUsd: 8672.0,
+    exchangeRate: 1.084,
+    description: "Marketplace fund allocation",
+  },
+  {
+    id: "dep-007",
+    dateTime: new Date("2024-11-20T12:00:00"),
+    usageAccountId: "345678901234",
+    usageAccountName: "Acme Corporation",
+    amountEur: 12000.0,
+    amountUsd: 13020.0,
+    exchangeRate: 1.085,
+    description: "Q4 2024 Deposit",
+  },
+  {
+    id: "dep-008",
+    dateTime: new Date("2024-11-05T09:30:00"),
+    usageAccountId: "456789012345",
+    usageAccountName: "TechStart GmbH",
+    amountEur: 7500.0,
+    amountUsd: 8137.5,
+    exchangeRate: 1.085,
+    description: "Infrastructure fund",
+  },
+]

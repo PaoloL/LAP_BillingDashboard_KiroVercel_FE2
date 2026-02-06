@@ -4,8 +4,9 @@ import { useEffect, useState, useCallback } from "react"
 import { ReportHeader } from "@/components/report/report-header"
 import { FundBalanceWidget } from "@/components/report/fund-balance-widget"
 import { CostBreakdownWidget } from "@/components/report/cost-breakdown-widget"
-import { ExchangeRateWidget } from "@/components/report/exchange-rate-widget"
 import { AwsVsMarketplaceWidget } from "@/components/report/aws-vs-marketplace-widget"
+import { RecentTransactionsWidget, type TransactionRow } from "@/components/report/recent-transactions-widget"
+import { RecentDepositsWidget, type DepositRow } from "@/components/report/recent-deposits-widget"
 import { dataService } from "@/lib/data/data-service"
 import { Loader2 } from "lucide-react"
 import {
@@ -35,11 +36,10 @@ interface ReportData {
     credits: number
     adjustment: number
   }
-  exchangeRate: number
-  totalUsd: number
-  totalEur: number
   awsTotal: number
   marketplaceTotal: number
+  transactions: TransactionRow[]
+  deposits: DepositRow[]
 }
 
 export default function ReportPage() {
@@ -48,7 +48,6 @@ export default function ReportPage() {
   const [selectedAccountId, setSelectedAccountId] = useState<string>("")
   const [reportData, setReportData] = useState<ReportData | null>(null)
 
-  // Load usage accounts on mount
   useEffect(() => {
     async function loadAccounts() {
       try {
@@ -56,7 +55,6 @@ export default function ReportPage() {
         const registered = accounts.filter((a) => a.status === "Registered")
         setUsageAccounts(registered)
         if (registered.length > 0) {
-          // Use id or accountId - mock data uses "id"
           const firstId = registered[0].accountId || registered[0].id
           setSelectedAccountId(firstId)
         } else {
@@ -74,7 +72,6 @@ export default function ReportPage() {
     if (!accountId) return
     setLoading(true)
     try {
-      // Find the selected account
       const accounts = await dataService.getUsageAccounts()
       const account = accounts.find(
         (a) => a.accountId === accountId || a.id === accountId
@@ -84,16 +81,13 @@ export default function ReportPage() {
         return
       }
 
-      // Fetch all transactions (mock returns grouped by period string)
+      // Fetch all transactions
       const transactionsResponse = await dataService.getTransactions({})
-
-      // Flatten all transactions from the response
       const allTransactions: any[] = []
       if (transactionsResponse.data) {
         if (Array.isArray(transactionsResponse.data)) {
           allTransactions.push(...transactionsResponse.data)
         } else {
-          // Mock data is grouped as Record<string, TransactionDetail[]>
           Object.values(transactionsResponse.data).forEach((group: unknown) => {
             if (Array.isArray(group)) {
               allTransactions.push(...group)
@@ -102,39 +96,26 @@ export default function ReportPage() {
         }
       }
 
-      // Filter transactions matching this account (handle both field shapes)
+      // Filter transactions for this account
       const accountIdToMatch = account.accountId || account.id
       const filtered = allTransactions.filter((tx: any) => {
-        // API shape: accounts.usage.id
         if (tx.accounts?.usage?.id === accountIdToMatch) return true
-        // Mock shape: usageAccount.id
         if (tx.usageAccount?.id === accountIdToMatch) return true
-        // Fallback: match by name
         const txName = tx.accounts?.usage?.name || tx.usageAccount?.name || ""
         const accName = account.accountName || account.name || account.customer
         if (txName && accName && txName === accName) return true
         return false
       })
-
-      // Use all transactions if none match (so the report shows data)
       const transactions = filtered.length > 0 ? filtered : allTransactions
 
-      // Aggregate data from transactions
-      let totalUsage = 0
-      let totalTax = 0
-      let totalFee = 0
-      let totalDiscount = 0
-      let totalCredits = 0
-      let totalAdjustment = 0
-      let totalUsd = 0
-      let totalEur = 0
-      let awsTotal = 0
-      let marketplaceTotal = 0
+      // Aggregate cost breakdown
+      let totalUsage = 0, totalTax = 0, totalFee = 0, totalDiscount = 0, totalCredits = 0, totalAdjustment = 0
+      let totalUsd = 0, totalEur = 0
+      let awsTotal = 0, marketplaceTotal = 0
       let lastExchangeRate = 0
       let lastDate = ""
 
       transactions.forEach((tx: any) => {
-        // Cost breakdown
         if (tx.costBreakdown) {
           totalUsage += tx.costBreakdown.usage || 0
           totalTax += tx.costBreakdown.tax || 0
@@ -143,8 +124,6 @@ export default function ReportPage() {
           totalCredits += tx.costBreakdown.credits || 0
           totalAdjustment += tx.costBreakdown.adjustment || 0
         }
-
-        // Totals - handle both mock shape (distributorCost) and API shape (totals.distributor)
         if (tx.distributorCost) {
           totalUsd += tx.distributorCost.usd || 0
           totalEur += tx.distributorCost.eur || 0
@@ -152,89 +131,103 @@ export default function ReportPage() {
           totalUsd += tx.totals.distributor.usd || 0
           totalEur += tx.totals.distributor.eur || 0
         }
-
-        // Exchange rate
-        if (tx.exchangeRate) {
-          lastExchangeRate = tx.exchangeRate
-        }
-
-        // AWS vs Marketplace split from entity data
+        if (tx.exchangeRate) lastExchangeRate = tx.exchangeRate
         if (tx.details?.entity) {
           awsTotal += tx.details.entity.aws || 0
           marketplaceTotal += tx.details.entity.awsmp || 0
         }
-
-        // Track latest date
         if (tx.dateTime) {
           const txDate = new Date(tx.dateTime)
-          if (!lastDate || txDate.toISOString() > lastDate) {
-            lastDate = txDate.toISOString()
-          }
+          if (!lastDate || txDate.toISOString() > lastDate) lastDate = txDate.toISOString()
         }
       })
 
-      // If no entity-level split, estimate from totals
       if (awsTotal === 0 && marketplaceTotal === 0 && totalUsd > 0) {
         awsTotal = totalUsd * 0.82
         marketplaceTotal = totalUsd * 0.18
       }
 
-      // If no exchange rate found, use fallback
       if (!lastExchangeRate) {
         try {
           const rates = await dataService.getExchangeRates({})
-          if (rates.length > 0) {
-            lastExchangeRate = rates[0].exchangeRate
-          }
-        } catch {
-          lastExchangeRate = 1.093
-        }
+          if (rates.length > 0) lastExchangeRate = rates[0].exchangeRate
+        } catch { /* ignore */ }
       }
-      if (!lastExchangeRate) {
-        lastExchangeRate = 1.093
-      }
+      if (!lastExchangeRate) lastExchangeRate = 1.093
 
       // Get payer info
-      let payerName = "N/A"
-      let payerAccountId = "N/A"
+      let payerName = "N/A", payerAccountIdValue = "N/A"
       try {
         const payerAccounts = await dataService.getPayerAccounts()
-        // match using payerAccountId if available, else use first
         const payer = payerAccounts.find(
           (p) => p.accountId === account.payerAccountId
         ) || payerAccounts[0]
         if (payer) {
           payerName = payer.accountName || payer.name
-          payerAccountId = payer.accountId
+          payerAccountIdValue = payer.accountId
         }
-      } catch {
-        // ignore
-      }
+      } catch { /* ignore */ }
+
+      // Build transaction rows (last 10, sorted by date desc)
+      const sortedTransactions = [...transactions].sort((a, b) => {
+        const dateA = new Date(a.dateTime || 0).getTime()
+        const dateB = new Date(b.dateTime || 0).getTime()
+        return dateB - dateA
+      })
+      const transactionRows: TransactionRow[] = sortedTransactions.slice(0, 10).map((tx: any) => {
+        const txUsd = tx.distributorCost?.usd || tx.totals?.distributor?.usd || 0
+        const txEur = tx.distributorCost?.eur || tx.totals?.distributor?.eur || 0
+        const txRate = tx.exchangeRate || lastExchangeRate
+        const txDate = tx.dateTime
+          ? new Date(tx.dateTime).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" })
+          : "N/A"
+        return {
+          id: tx.id,
+          date: txDate,
+          description: tx.info || tx.description || "AWS Transaction",
+          amountUsd: txUsd,
+          amountEur: txEur,
+          exchangeRate: txRate,
+          dataType: tx.dataType,
+        }
+      })
+
+      // Build deposit rows (last 10, sorted by date desc)
+      let depositRows: DepositRow[] = []
+      try {
+        // Import mock deposits dynamically if available
+        const { mockDeposits } = await import("@/lib/data/mock-data")
+        if (mockDeposits) {
+          const accountDeposits = mockDeposits
+            .filter((d) => d.usageAccountId === accountIdToMatch)
+            .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime())
+            .slice(0, 10)
+          depositRows = accountDeposits.map((d) => ({
+            id: d.id,
+            date: new Date(d.dateTime).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }),
+            description: d.description,
+            amountUsd: d.amountUsd,
+            amountEur: d.amountEur,
+            exchangeRate: d.exchangeRate,
+          }))
+        }
+      } catch { /* no deposits */ }
 
       const now = new Date()
       const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
-
       const formattedDate = lastDate
         ? new Date(lastDate).toLocaleString("en-GB", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
+            day: "2-digit", month: "2-digit", year: "numeric",
+            hour: "2-digit", minute: "2-digit", hour12: false,
           })
         : now.toLocaleString("en-GB", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
+            day: "2-digit", month: "2-digit", year: "numeric",
+            hour: "2-digit", minute: "2-digit", hour12: false,
           })
 
       setReportData({
         payerName,
-        payerAccountId,
+        payerAccountId: payerAccountIdValue,
         usageAccountName: account.accountName || account.name || account.customer,
         usageAccountId: account.accountId || account.id,
         billingPeriod: currentPeriod,
@@ -243,18 +236,13 @@ export default function ReportPage() {
         totalDeposit: account.totalDeposit || 0,
         totalCost: account.totalCustomerCost || totalEur || 0,
         costBreakdown: {
-          usage: totalUsage,
-          tax: totalTax,
-          fee: totalFee,
-          discount: totalDiscount,
-          credits: totalCredits,
-          adjustment: totalAdjustment,
+          usage: totalUsage, tax: totalTax, fee: totalFee,
+          discount: totalDiscount, credits: totalCredits, adjustment: totalAdjustment,
         },
-        exchangeRate: lastExchangeRate,
-        totalUsd,
-        totalEur,
         awsTotal,
         marketplaceTotal,
+        transactions: transactionRows,
+        deposits: depositRows,
       })
     } catch (error) {
       console.error("Failed to load report data:", error)
@@ -328,29 +316,30 @@ export default function ReportPage() {
             totalCost={reportData.totalCost}
           />
 
-          {/* Top Row: Cost Breakdown + Exchange Rate */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <CostBreakdownWidget
-              usage={reportData.costBreakdown.usage}
-              tax={reportData.costBreakdown.tax}
-              fee={reportData.costBreakdown.fee}
-              discount={reportData.costBreakdown.discount}
-              credits={reportData.costBreakdown.credits}
-              adjustment={reportData.costBreakdown.adjustment}
-            />
-            <ExchangeRateWidget
-              rate={reportData.exchangeRate}
-              totalUsd={reportData.totalUsd}
-              totalEur={reportData.totalEur}
-            />
+          {/* Cost Breakdown + AWS vs Marketplace - Same Row */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+            <div className="lg:col-span-3">
+              <CostBreakdownWidget
+                usage={reportData.costBreakdown.usage}
+                tax={reportData.costBreakdown.tax}
+                fee={reportData.costBreakdown.fee}
+                discount={reportData.costBreakdown.discount}
+                credits={reportData.costBreakdown.credits}
+                adjustment={reportData.costBreakdown.adjustment}
+              />
+            </div>
+            <div className="lg:col-span-2">
+              <AwsVsMarketplaceWidget
+                awsTotal={reportData.awsTotal}
+                marketplaceTotal={reportData.marketplaceTotal}
+              />
+            </div>
           </div>
 
-          {/* Bottom Row: AWS vs Marketplace */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <AwsVsMarketplaceWidget
-              awsTotal={reportData.awsTotal}
-              marketplaceTotal={reportData.marketplaceTotal}
-            />
+          {/* Transactions Section: Last 10 Transactions (left) + Last 10 Deposits (right) */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <RecentTransactionsWidget transactions={reportData.transactions} />
+            <RecentDepositsWidget deposits={reportData.deposits} />
           </div>
         </div>
       ) : (
