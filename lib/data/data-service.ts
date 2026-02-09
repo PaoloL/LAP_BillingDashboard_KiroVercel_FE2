@@ -1,11 +1,12 @@
 import { config } from "@/lib/config"
-import { mockPayerAccounts, mockUsageAccounts, mockTransactionsByPeriod } from "./mock-data"
+import { mockPayerAccounts, mockUsageAccounts, mockTransactionsByPeriod, mockCustomers } from "./mock-data"
 import { apiClient } from "./api-client"
-import type { PayerAccount, UsageAccount, TransactionDetail, ExchangeRateConfig, CreateExchangeRateDTO, UpdateExchangeRateDTO } from "@/lib/types"
+import type { PayerAccount, UsageAccount, TransactionDetail, ExchangeRateConfig, CreateExchangeRateDTO, UpdateExchangeRateDTO, Customer, CreateCustomerDTO, CostCenter } from "@/lib/types"
 
 // Create mutable copies for mock data
 const mutablePayerAccounts = [...mockPayerAccounts]
 const mutableUsageAccounts = [...mockUsageAccounts]
+const mutableCustomers = [...mockCustomers]
 
 export const dataService = {
   // Payer Accounts
@@ -410,5 +411,88 @@ export const dataService = {
       })
     }
     return apiClient.getCostTotals(params)
+  },
+
+  // Customers
+  async getCustomers(): Promise<Customer[]> {
+    return Promise.resolve([...mutableCustomers])
+  },
+
+  async createCustomer(data: CreateCustomerDTO): Promise<Customer> {
+    const newCustomer: Customer = {
+      id: `cust-${Math.random().toString(36).substr(2, 9)}`,
+      ...data,
+      status: "Active",
+      costCenters: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    mutableCustomers.push(newCustomer)
+    return Promise.resolve(newCustomer)
+  },
+
+  async updateCustomer(id: string, data: Partial<Customer>): Promise<Customer> {
+    const index = mutableCustomers.findIndex((c) => c.id === id)
+    if (index === -1) throw new Error("Customer not found")
+    const updated = { ...mutableCustomers[index], ...data, updatedAt: new Date().toISOString() }
+    mutableCustomers[index] = updated
+    return Promise.resolve(updated)
+  },
+
+  async archiveCustomer(id: string): Promise<Customer> {
+    const index = mutableCustomers.findIndex((c) => c.id === id)
+    if (index === -1) throw new Error("Customer not found")
+    mutableCustomers[index] = { ...mutableCustomers[index], status: "Archived", updatedAt: new Date().toISOString() }
+    return Promise.resolve(mutableCustomers[index])
+  },
+
+  async restoreCustomer(id: string): Promise<Customer> {
+    const index = mutableCustomers.findIndex((c) => c.id === id)
+    if (index === -1) throw new Error("Customer not found")
+    mutableCustomers[index] = { ...mutableCustomers[index], status: "Active", updatedAt: new Date().toISOString() }
+    return Promise.resolve(mutableCustomers[index])
+  },
+
+  async deleteCustomer(id: string): Promise<void> {
+    const index = mutableCustomers.findIndex((c) => c.id === id)
+    if (index === -1) throw new Error("Customer not found")
+    if (mutableCustomers[index].status !== "Archived") throw new Error("Customer must be archived before deletion")
+    mutableCustomers.splice(index, 1)
+    return Promise.resolve()
+  },
+
+  // Cost Centers
+  async addCostCenter(customerId: string, data: { name: string; description: string }): Promise<Customer> {
+    const index = mutableCustomers.findIndex((c) => c.id === customerId)
+    if (index === -1) throw new Error("Customer not found")
+    const newCC: CostCenter = {
+      id: `cc-${Math.random().toString(36).substr(2, 9)}`,
+      name: data.name,
+      description: data.description,
+      usageAccountIds: [],
+      createdAt: new Date().toISOString(),
+    }
+    mutableCustomers[index].costCenters.push(newCC)
+    mutableCustomers[index].updatedAt = new Date().toISOString()
+    return Promise.resolve(mutableCustomers[index])
+  },
+
+  async removeCostCenter(customerId: string, costCenterId: string): Promise<Customer> {
+    const index = mutableCustomers.findIndex((c) => c.id === customerId)
+    if (index === -1) throw new Error("Customer not found")
+    mutableCustomers[index].costCenters = mutableCustomers[index].costCenters.filter((cc) => cc.id !== costCenterId)
+    mutableCustomers[index].updatedAt = new Date().toISOString()
+    return Promise.resolve(mutableCustomers[index])
+  },
+
+  // Cost Center -> Usage Account association
+  async updateCostCenterAccounts(customerId: string, costCenterId: string, usageAccountIds: string[]): Promise<Customer> {
+    const index = mutableCustomers.findIndex((c) => c.id === customerId)
+    if (index === -1) throw new Error("Customer not found")
+    const cc = mutableCustomers[index].costCenters.find((c) => c.id === costCenterId)
+    if (!cc) throw new Error("Cost center not found")
+    cc.usageAccountIds = usageAccountIds
+    mutableCustomers[index].updatedAt = new Date().toISOString()
+    return Promise.resolve(mutableCustomers[index])
   },
 }

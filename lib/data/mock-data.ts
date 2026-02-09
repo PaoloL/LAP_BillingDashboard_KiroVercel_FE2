@@ -1,4 +1,4 @@
-import type { PayerAccount, UsageAccount, TransactionDetail } from "@/lib/types"
+import type { PayerAccount, UsageAccount, TransactionDetail, Customer } from "@/lib/types"
 
 export const mockPayerAccounts: PayerAccount[] = [
   {
@@ -381,5 +381,46 @@ export const mockDeposits: MockDeposit[] = [
     amountUsd: 8137.5,
     exchangeRate: 1.085,
     description: "Infrastructure fund",
+  },
+]
+
+export const mockCustomers: Customer[] = [
+  {
+    id: "cust-001",
+    legalName: "Acme Corporation GmbH",
+    vatNumber: "DE123456789",
+    contactName: "Hans Mueller",
+    contactEmail: "hans.mueller@acme-corp.de",
+    status: "Active",
+    costCenters: [
+      { id: "cc-001", name: "Engineering", description: "R&D and engineering workloads", usageAccountIds: ["345678901234"], createdAt: "2024-10-15T10:00:00Z" },
+      { id: "cc-002", name: "Marketing", description: "Marketing analytics and campaigns", usageAccountIds: [], createdAt: "2024-11-01T09:00:00Z" },
+    ],
+    createdAt: "2024-10-01T10:00:00Z",
+    updatedAt: "2025-01-15T14:30:00Z",
+  },
+  {
+    id: "cust-002",
+    legalName: "TechStart GmbH",
+    vatNumber: "DE987654321",
+    contactName: "Maria Schmidt",
+    contactEmail: "maria.schmidt@techstart.de",
+    status: "Active",
+    costCenters: [
+      { id: "cc-003", name: "Production", description: "Production environment costs", usageAccountIds: ["456789012345"], createdAt: "2024-12-01T10:00:00Z" },
+    ],
+    createdAt: "2024-11-15T08:00:00Z",
+    updatedAt: "2025-01-10T09:15:00Z",
+  },
+  {
+    id: "cust-003",
+    legalName: "Old Company Ltd.",
+    vatNumber: "GB111222333",
+    contactName: "John Smith",
+    contactEmail: "john.smith@oldcompany.co.uk",
+    status: "Archived",
+    costCenters: [],
+    createdAt: "2024-01-01T10:00:00Z",
+    updatedAt: "2024-12-20T12:00:00Z",
   },
 ]
