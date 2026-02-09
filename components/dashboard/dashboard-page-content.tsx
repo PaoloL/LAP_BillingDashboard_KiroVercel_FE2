@@ -1,5 +1,5 @@
-import { StatsCards } from "@/components/stats-cards"
-import { CostCharts } from "@/components/cost-charts"
+import { StatsCards } from "@/components/dashboard/stats-cards"
+import { CostCharts } from "@/components/dashboard/cost-charts"
 
 export function DashboardPageContent() {
   return (

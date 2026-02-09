@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { TransactionsList } from "@/components/transactions-list"
-import { TransactionFilters } from "@/components/transaction-filters"
-import { RegisterDepositDialog } from "@/components/register-deposit-dialog"
+import { TransactionsList } from "@/components/transactions/transactions-list"
+import { TransactionFilters } from "@/components/transactions/transaction-filters"
+import { RegisterDepositDialog } from "@/components/transactions/register-deposit-dialog"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 

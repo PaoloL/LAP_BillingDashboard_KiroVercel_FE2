@@ -1,5 +1,5 @@
-import { AccountsGrid } from "@/components/accounts-grid"
-import { UnregisteredAlert } from "@/components/unregistered-alert"
+import { AccountsGrid } from "@/components/accounts/accounts-grid"
+import { UnregisteredAlert } from "@/components/accounts/unregistered-alert"
 
 export function AccountsPageContent() {
   return (

@@ -1,4 +1,4 @@
-import { ExchangeRateSettings } from "@/components/exchange-rate-settings"
+import { ExchangeRateSettings } from "@/components/settings/exchange-rate-settings"
 
 export function SettingsPageContent() {
   return (
