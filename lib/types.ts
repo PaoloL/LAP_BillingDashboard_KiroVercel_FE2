@@ -189,6 +189,33 @@ export const validateDiscounts = (reseller: number, customer: number): string | 
   return null
 }
 
+export interface CostCenter {
+  id: string
+  name: string
+  description: string
+  usageAccountIds: string[]
+  createdAt: string
+}
+
+export interface Customer {
+  id: string
+  legalName: string
+  vatNumber: string
+  contactName: string
+  contactEmail: string
+  status: "Active" | "Archived"
+  costCenters: CostCenter[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateCustomerDTO {
+  legalName: string
+  vatNumber: string
+  contactName: string
+  contactEmail: string
+}
+
 export interface ExchangeRateConfig {
   id: string
   payerAccountId: string

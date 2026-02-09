@@ -19,11 +19,11 @@ import {
   Tag,
   FileEdit,
 } from "lucide-react"
-import { RegisterPayerDialog } from "@/components/register-payer-dialog"
-import { EditPayerDialog } from "@/components/edit-payer-dialog"
-import { RegisterUsageDialog } from "@/components/register-usage-dialog"
-import { EditUsageDialog } from "@/components/edit-usage-dialog"
-import { UsageDetailsDialog } from "@/components/usage-details-dialog"
+import { RegisterPayerDialog } from "@/components/accounts/register-payer-dialog"
+import { EditPayerDialog } from "@/components/accounts/edit-payer-dialog"
+import { RegisterUsageDialog } from "@/components/accounts/register-usage-dialog"
+import { EditUsageDialog } from "@/components/accounts/edit-usage-dialog"
+import { UsageDetailsDialog } from "@/components/accounts/usage-details-dialog"
 import type { PayerAccount, UsageAccount } from "@/lib/types"
 import { dataService } from "@/lib/data/data-service"
 import { formatCurrency } from "@/lib/format"
