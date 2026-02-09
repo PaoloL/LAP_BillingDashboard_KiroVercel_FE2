@@ -1,5 +1,5 @@
 import { config } from "@/lib/config"
-import type { PayerAccount, UsageAccount, TransactionDetail, ExchangeRateConfig, CreateExchangeRateDTO, UpdateExchangeRateDTO } from "@/lib/types"
+import type { PayerAccount, UsageAccount, TransactionDetail, ExchangeRateConfig, CreateExchangeRateDTO, UpdateExchangeRateDTO, Customer, CreateCustomerDTO, CostCenter } from "@/lib/types"
 
 class ApiClient {
   private baseUrl: string
@@ -268,6 +268,70 @@ class ApiClient {
 
     const response = await this.request<{ count: number; data: any[] }>(`/cost-totals?${searchParams.toString()}`)
     return response
+  }
+
+  // Customers
+  async getCustomers(): Promise<Customer[]> {
+    return this.request<Customer[]>("/customers")
+  }
+
+  async createCustomer(data: CreateCustomerDTO): Promise<Customer> {
+    return this.request<Customer>("/customers", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateCustomer(vatNumber: string, data: Partial<Customer>): Promise<Customer> {
+    return this.request<Customer>(`/customers/${vatNumber}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async archiveCustomer(vatNumber: string): Promise<Customer> {
+    return this.request<Customer>(`/customers/${vatNumber}/archive`, {
+      method: "POST",
+    })
+  }
+
+  async restoreCustomer(vatNumber: string): Promise<Customer> {
+    return this.request<Customer>(`/customers/${vatNumber}/restore`, {
+      method: "POST",
+    })
+  }
+
+  async deleteCustomer(vatNumber: string): Promise<void> {
+    await this.request<void>(`/customers/${vatNumber}`, {
+      method: "DELETE",
+    })
+  }
+
+  async addCostCenter(vatNumber: string, data: { name: string; description: string }): Promise<Customer> {
+    return this.request<Customer>(`/customers/${vatNumber}/cost-centers`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async removeCostCenter(vatNumber: string, costCenterId: string): Promise<Customer> {
+    return this.request<Customer>(`/customers/${vatNumber}/cost-centers/${costCenterId}`, {
+      method: "DELETE",
+    })
+  }
+
+  async updateCostCenterAccounts(vatNumber: string, costCenterId: string, accountIds: string[]): Promise<Customer> {
+    return this.request<Customer>(`/customers/${vatNumber}/cost-centers/${costCenterId}/accounts`, {
+      method: "PUT",
+      body: JSON.stringify({ accountIds }),
+    })
+  }
+
+  async createDeposit(vatNumber: string, data: { costCenterId: string; amountEur: number; description: string; poNumber: string }): Promise<any> {
+    return this.request(`/customers/${vatNumber}/deposits`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
   }
 }
 

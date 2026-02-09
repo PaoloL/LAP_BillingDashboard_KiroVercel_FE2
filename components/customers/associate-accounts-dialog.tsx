@@ -42,7 +42,8 @@ export function AssociateAccountsDialog({
   const filtered = usageAccounts.filter((a) => {
     if (!search.trim()) return true
     const q = search.toLowerCase()
-    return a.name.toLowerCase().includes(q) || a.accountId.includes(q)
+    const name = a.accountName || 'Unnamed Account'
+    return name.toLowerCase().includes(q) || a.accountId.includes(q)
   })
 
   function toggle(accountId: string) {
@@ -91,13 +92,14 @@ export function AssociateAccountsDialog({
                     onCheckedChange={() => toggle(account.accountId)}
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{account.name}</p>
-                    <p className="text-xs font-mono text-muted-foreground">{account.accountId}</p>
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {account.accountName || 'Unnamed Account'} ({account.accountId})
+                    </p>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Badge variant="outline" className="text-[10px]">{account.status}</Badge>
                     {assignedElsewhere && (
-                      <Badge variant="secondary" className="text-[10px]">Other CC</Badge>
+                      <Badge variant="secondary" className="text-[10px]">Assigned</Badge>
                     )}
                   </div>
                 </label>
@@ -111,7 +113,16 @@ export function AssociateAccountsDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={() => { if (costCenter) { onSave(costCenter.id, selected); onOpenChange(false) } }}>
+          <Button onClick={async () => { 
+            if (costCenter) { 
+              try {
+                await onSave(costCenter.id, selected)
+                onOpenChange(false)
+              } catch (err) {
+                // Error handled by parent, keep dialog open
+              }
+            } 
+          }}>
             Save ({selected.length} selected)
           </Button>
         </DialogFooter>

@@ -213,6 +213,35 @@ export function CustomersPageContent() {
     setDepositCustomer(null)
   }
 
+  // Details dialog handlers
+  async function handleAddCostCenter(data: { name: string; description: string }) {
+    if (!editCustomer) return
+    try {
+      const updated = await dataService.addCostCenter(editCustomer.id, data)
+      setEditCustomer(updated)
+      await loadData()
+    } catch (err) {
+      console.error("Failed to add cost center:", err)
+    }
+  }
+
+  async function handleRemoveCostCenter(costCenterId: string) {
+    if (!editCustomer) return
+    try {
+      const updated = await dataService.removeCostCenter(editCustomer.id, costCenterId)
+      setEditCustomer(updated)
+      await loadData()
+    } catch (err) {
+      console.error("Failed to remove cost center:", err)
+    }
+  }
+
+  function handleManageAccounts(cc: CostCenter) {
+    if (!editCustomer) return
+    setAssociateCustomerId(editCustomer.id)
+    setAssociateCostCenter(cc)
+    setAssociateOpen(true)
+  }
 
   async function handleSaveAccounts(costCenterId: string, accountIds: string[]) {
     if (!associateCustomerId) return
@@ -223,22 +252,14 @@ export function CustomersPageContent() {
         setManageCustomer(updated)
       }
       await loadData()
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to update accounts:", err)
-      // Show user-friendly error for conflicts
-      if (err.message && err.message.includes('already assigned')) {
-        alert('Cannot assign account: One or more accounts are already assigned to another cost center.')
-      } else {
-        alert('Failed to update accounts. Please try again.')
-      }
-      throw err // Re-throw to prevent dialog from closing
     }
   }
 
-  // Get all assigned account IDs across ALL customers (global uniqueness)
-  const allAssignedAccountIds = customers.flatMap((customer) =>
-    customer.costCenters.flatMap((cc) => cc.usageAccountIds)
-  )
+  const allAssignedAccountIds = manageCustomer
+    ? manageCustomer.costCenters.flatMap((cc) => cc.usageAccountIds)
+    : []
 
   if (loading) {
     return (
@@ -261,7 +282,7 @@ export function CustomersPageContent() {
             Manage customer registrations, cost centers, and deposits.
           </p>
         </div>
-        <Button onClick={() => setFormOpen(true)}>
+        <Button onClick={() => { setEditCustomer(null); setFormOpen(true) }}>
           <Plus className="h-4 w-4 mr-1.5" /> Register Customer
         </Button>
       </div>

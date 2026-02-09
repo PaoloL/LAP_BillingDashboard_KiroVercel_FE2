@@ -28,9 +28,6 @@ interface CustomerDetailsDialogProps {
   onOpenChange: (open: boolean) => void
   customer: Customer | null
   usageAccounts: UsageAccount[]
-  onManageAccounts: (costCenter: CostCenter) => void
-  onAddCostCenter: (data: { name: string; description: string }) => void
-  onRemoveCostCenter: (costCenterId: string) => void
 }
 
 export function CustomerDetailsDialog({
@@ -38,13 +35,7 @@ export function CustomerDetailsDialog({
   onOpenChange,
   customer,
   usageAccounts,
-  onManageAccounts,
-  onAddCostCenter,
-  onRemoveCostCenter,
 }: CustomerDetailsDialogProps) {
-  const [ccName, setCcName] = useState("")
-  const [ccDesc, setCcDesc] = useState("")
-  const [showCcForm, setShowCcForm] = useState(false)
   const [expandedCCs, setExpandedCCs] = useState<Set<string>>(new Set())
 
   if (!customer) return null
@@ -58,17 +49,9 @@ export function CustomerDetailsDialog({
     })
   }
 
-  function handleAddCC() {
-    if (!ccName.trim()) return
-    onAddCostCenter({ name: ccName.trim(), description: ccDesc.trim() })
-    setCcName("")
-    setCcDesc("")
-    setShowCcForm(false)
-  }
-
   function getAccountName(accountId: string) {
     const acc = usageAccounts.find((a) => a.accountId === accountId)
-    return acc?.name || acc?.accountName || accountId
+    return acc?.accountName || accountId
   }
 
   const totalAccounts = customer.costCenters.reduce((sum, cc) => sum + cc.usageAccountIds.length, 0)
@@ -144,38 +127,14 @@ export function CustomerDetailsDialog({
 
             {/* Cost Centers */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <Layers className="h-4 w-4 text-muted-foreground" />
-                  Cost Centers ({customer.costCenters.length})
-                </h3>
-                {customer.status === "Active" && (
-                  <Button variant="outline" size="sm" onClick={() => setShowCcForm(!showCcForm)}>
-                    <Plus className="h-3.5 w-3.5 mr-1" /> Add
-                  </Button>
-                )}
-              </div>
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Layers className="h-4 w-4 text-muted-foreground" />
+                Cost Centers ({customer.costCenters.length})
+              </h3>
 
-              {showCcForm && (
-                <div className="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4 space-y-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Name</Label>
-                    <Input value={ccName} onChange={(e) => setCcName(e.target.value)} placeholder="e.g. Engineering" className="h-8 text-sm" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Description</Label>
-                    <Input value={ccDesc} onChange={(e) => setCcDesc(e.target.value)} placeholder="Optional description" className="h-8 text-sm" />
-                  </div>
-                  <div className="flex gap-2 justify-end">
-                    <Button variant="ghost" size="sm" onClick={() => { setShowCcForm(false); setCcName(""); setCcDesc("") }}>Cancel</Button>
-                    <Button size="sm" onClick={handleAddCC} disabled={!ccName.trim()}>Create</Button>
-                  </div>
-                </div>
-              )}
-
-              {customer.costCenters.length === 0 && !showCcForm && (
+              {customer.costCenters.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4 border border-dashed rounded-lg">
-                  No cost centers yet. Add one to start associating usage accounts.
+                  No cost centers configured.
                 </p>
               )}
 
@@ -201,7 +160,7 @@ export function CustomerDetailsDialog({
                       </button>
 
                       {isExpanded && (
-                        <div className="border-t border-border bg-muted/20 px-4 py-3 space-y-3">
+                        <div className="border-t border-border bg-muted/20 px-4 py-3">
                           {cc.usageAccountIds.length > 0 ? (
                             <div className="space-y-1.5">
                               {cc.usageAccountIds.map((accId) => (
@@ -213,20 +172,8 @@ export function CustomerDetailsDialog({
                               ))}
                             </div>
                           ) : (
-                            <p className="text-xs text-muted-foreground">No accounts linked yet.</p>
+                            <p className="text-xs text-muted-foreground">No accounts linked.</p>
                           )}
-                          <div className="flex gap-2 justify-end">
-                            {customer.status === "Active" && (
-                              <>
-                                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => onManageAccounts(cc)}>
-                                  <Link2 className="h-3 w-3 mr-1" /> Manage Accounts
-                                </Button>
-                                <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive hover:text-destructive" onClick={() => onRemoveCostCenter(cc.id)}>
-                                  <Trash2 className="h-3 w-3 mr-1" /> Remove
-                                </Button>
-                              </>
-                            )}
-                          </div>
                         </div>
                       )}
                     </div>
