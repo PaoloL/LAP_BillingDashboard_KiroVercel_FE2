@@ -80,157 +80,53 @@ export function ReportPageContent() {
     if (!vatNumber) return
     setLoading(true)
     try {
-      const customer = await dataService.getCustomer(vatNumber)
-      if (!customer) {
+      // Use the backend reports API
+      const report = await dataService.getCustomerReport(vatNumber)
+      
+      if (!report) {
         setLoading(false)
         return
       }
 
-      // Get all usage account IDs from all cost centers
-      const allUsageAccountIds = customer.costCenters.flatMap(cc => cc.usageAccountIds)
+      // Transform backend response to match frontend format
+      const transactionRows: TransactionRow[] = (report.transactions || []).map((tx: any) => ({
+        id: tx.id || tx.transactionId,
+        dateTime: tx.dateTime || tx.updatedAt,
+        period: tx.billingPeriod || '',
+        payerAccount: tx.accounts?.payer?.name || report.customerName,
+        usageAccountName: tx.accounts?.usage?.name || '',
+        usageAccountId: tx.accounts?.usage?.id || '',
+        amountUsd: tx.costs?.customer?.totals?.usd || 0,
+        amountEur: tx.costs?.customer?.totals?.eur || 0,
+        exchangeRate: tx.exchangeRate || 1.0,
+      }))
 
-      // Fetch all transactions for these usage accounts
-      const transactionsResponse = await dataService.getTransactions({})
-      const allTransactions: any[] = []
-      if (transactionsResponse.data) {
-        if (Array.isArray(transactionsResponse.data)) {
-          allTransactions.push(...transactionsResponse.data)
-        } else {
-          Object.values(transactionsResponse.data).forEach((group: unknown) => {
-            if (Array.isArray(group)) {
-              allTransactions.push(...group)
-            }
-          })
-        }
-      }
-
-      // Filter transactions for this customer's usage accounts
-      const customerTransactions = allTransactions.filter((tx: any) => {
-        const usageId = tx.accounts?.usage?.id || tx.usageAccount?.id
-        return allUsageAccountIds.includes(usageId)
-      })
-
-      // Calculate cost center balances
-      const costCenterBalances: CostCenterBalance[] = customer.costCenters.map(cc => {
-        // Get transactions for this cost center's usage accounts
-        const ccTransactions = customerTransactions.filter((tx: any) => {
-          const usageId = tx.accounts?.usage?.id || tx.usageAccount?.id
-          return cc.usageAccountIds.includes(usageId)
-        })
-
-        // Calculate total cost for this cost center
-        let ccTotalCost = 0
-        ccTransactions.forEach((tx: any) => {
-          if (tx.totals?.customer?.eur) {
-            ccTotalCost += tx.totals.customer.eur
-          } else if (tx.distributorCost?.eur) {
-            ccTotalCost += tx.distributorCost.eur
-          }
-        })
-
-        // TODO: Get actual deposit amount per cost center from deposits
-        const ccTotalDeposit = 0 // Will be calculated from deposits
-
-        return {
-          costCenterId: cc.id,
-          costCenterName: cc.name,
-          totalDeposit: ccTotalDeposit,
-          totalCost: ccTotalCost,
-          availableFund: ccTotalDeposit - ccTotalCost
-        }
-      })
-
-      // Aggregate total cost breakdown
-      let totalUsage = 0, totalTax = 0, totalFee = 0, totalDiscount = 0, totalCredits = 0, totalAdjustment = 0
-      let totalEur = 0
-      let awsTotal = 0, marketplaceTotal = 0
-      let lastDate = ""
-
-      customerTransactions.forEach((tx: any) => {
-        if (tx.costBreakdown) {
-          totalUsage += tx.costBreakdown.usage || 0
-          totalTax += tx.costBreakdown.tax || 0
-          totalFee += tx.costBreakdown.fee || 0
-          totalDiscount += tx.costBreakdown.discount || 0
-          totalCredits += tx.costBreakdown.credits || 0
-          totalAdjustment += tx.costBreakdown.adjustment || 0
-        }
-        if (tx.totals?.customer?.eur) {
-          totalEur += tx.totals.customer.eur
-        } else if (tx.distributorCost?.eur) {
-          totalEur += tx.distributorCost.eur
-        }
-        if (tx.details?.entity) {
-          awsTotal += tx.details.entity.aws || 0
-          marketplaceTotal += tx.details.entity.awsmp || 0
-        }
-        if (tx.dateTime) {
-          const txDate = new Date(tx.dateTime)
-          if (!lastDate || txDate.toISOString() > lastDate) lastDate = txDate.toISOString()
-        }
-      })
-
-      // Build transaction rows
-      const sortedTransactions = [...customerTransactions].sort((a, b) => {
-        const dateA = new Date(a.dateTime || 0).getTime()
-        const dateB = new Date(b.dateTime || 0).getTime()
-        return dateB - dateA
-      })
-      const transactionRows: TransactionRow[] = sortedTransactions.slice(0, 10).map((tx: any) => {
-        const txUsd = tx.distributorCost?.usd || tx.totals?.distributor?.usd || 0
-        const txEur = tx.distributorCost?.eur || tx.totals?.distributor?.eur || 0
-        const txRate = tx.exchangeRate || 1.093
-        const txDate = tx.dateTime ? new Date(tx.dateTime) : new Date()
-        const period = txDate.toLocaleDateString("en-US", { month: "short", year: "numeric" })
-        const txUsageName = tx.accounts?.usage?.name || tx.usageAccount?.name || 'N/A'
-        const txUsageId = tx.accounts?.usage?.id || tx.usageAccount?.id || 'N/A'
-        return {
-          id: tx.id,
-          dateTime: txDate.toISOString(),
-          period,
-          payerAccount: customer.legalName,
-          usageAccountName: txUsageName,
-          usageAccountId: txUsageId,
-          amountUsd: txUsd,
-          amountEur: txEur,
-          exchangeRate: txRate,
-        }
-      })
-
-      // TODO: Get actual deposits for this customer
-      const depositRows: DepositRow[] = []
-
-      const now = new Date()
-      const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
-      const formattedDate = lastDate
-        ? new Date(lastDate).toLocaleString("en-GB", {
-            day: "2-digit", month: "2-digit", year: "numeric",
-            hour: "2-digit", minute: "2-digit", hour12: false,
-          })
-        : now.toLocaleString("en-GB", {
-            day: "2-digit", month: "2-digit", year: "numeric",
-            hour: "2-digit", minute: "2-digit", hour12: false,
-          })
-
-      const totalDeposit = costCenterBalances.reduce((sum, cc) => sum + cc.totalDeposit, 0)
+      const depositRows: DepositRow[] = (report.deposits || []).map((dep: any) => ({
+        id: dep.id,
+        dateTime: dep.createdAt || dep.dateTime,
+        period: dep.billingPeriod || '',
+        costCenter: dep.details?.costCenterName || '',
+        amountEur: dep.details?.value || 0,
+        description: dep.details?.description || '',
+        poNumber: dep.details?.poNumber || '',
+      }))
 
       setReportData({
-        customerName: customer.legalName,
-        customerVat: customer.vatNumber,
-        contactName: customer.contactName,
-        contactEmail: customer.contactEmail,
-        billingPeriod: currentPeriod,
-        generatedDate: formattedDate,
-        status: customer.status,
-        totalDeposit,
-        totalCost: totalEur,
-        costCenterBalances,
-        costBreakdown: {
-          usage: totalUsage, tax: totalTax, fee: totalFee,
-          discount: totalDiscount, credits: totalCredits, adjustment: totalAdjustment,
+        customerName: report.customerName,
+        customerVat: report.customerVat,
+        contactName: report.contactName || '',
+        contactEmail: report.contactEmail || '',
+        billingPeriod: report.billingPeriod || '',
+        generatedDate: report.generatedDate || new Date().toISOString(),
+        status: report.status || 'Active',
+        totalDeposit: report.totalDeposit || 0,
+        totalCost: report.totalCost || 0,
+        costCenterBalances: report.costCenterBalances || [],
+        costBreakdown: report.costBreakdown || {
+          usage: 0, tax: 0, fee: 0, discount: 0, credits: 0, adjustment: 0
         },
-        awsTotal,
-        marketplaceTotal,
+        awsTotal: report.awsTotal || 0,
+        marketplaceTotal: report.marketplaceTotal || 0,
         transactions: transactionRows,
         deposits: depositRows,
       })

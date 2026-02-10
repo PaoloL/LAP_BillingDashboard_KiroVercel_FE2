@@ -248,12 +248,12 @@ export const dataService = {
     amountEur: number
     date: string
     description: string
-  }): Promise<{ transactionId: string; message: string }> {
+    createdBy?: string
+  }): Promise<{ id: string }> {
     if (config.useMockData) {
       console.log("[v0] Mock: Created deposit", data)
       return Promise.resolve({ 
-        transactionId: `DEP-${Math.random().toString(36).substr(2, 12).toUpperCase()}`,
-        message: "Deposit registered successfully"
+        id: `DEP-${Math.random().toString(36).substr(2, 12).toUpperCase()}`
       })
     }
     return apiClient.createDeposit(data)
@@ -552,5 +552,24 @@ export const dataService = {
     const customer = mutableCustomers.find(c => c.id === customerId)
     if (!customer) throw new Error("Customer not found")
     return apiClient.createDeposit(customer.vatNumber, data)
+  },
+
+  // Reports
+  async getCustomerReport(vatNumber: string, billingPeriod?: string): Promise<any> {
+    if (config.useMockData) {
+      return Promise.resolve({
+        customerName: "Mock Customer",
+        customerVat: vatNumber,
+        totalDeposit: 0,
+        totalCost: 0,
+        costCenterBalances: [],
+        costBreakdown: { usage: 0, tax: 0, fee: 0, discount: 0, credits: 0, adjustment: 0 },
+        awsTotal: 0,
+        marketplaceTotal: 0,
+        transactions: [],
+        deposits: []
+      })
+    }
+    return apiClient.getCustomerReport(vatNumber, billingPeriod)
   },
 }
