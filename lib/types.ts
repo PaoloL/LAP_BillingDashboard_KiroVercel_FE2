@@ -153,6 +153,10 @@ export interface TransactionDetail {
     currency?: string
     value?: number
     entity?: any
+    poNumber?: string
+    costCenterId?: string
+    costCenterName?: string
+    customerVatNumber?: string
   }
   createdBy?: string
 }
