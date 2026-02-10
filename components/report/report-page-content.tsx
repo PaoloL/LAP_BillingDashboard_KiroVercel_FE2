@@ -16,18 +16,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import type { UsageAccount } from "@/lib/types"
+import type { Customer } from "@/lib/types"
+
+interface CostCenterBalance {
+  costCenterId: string
+  costCenterName: string
+  totalDeposit: number
+  totalCost: number
+  availableFund: number
+}
 
 interface ReportData {
-  payerName: string
-  payerAccountId: string
-  usageAccountName: string
-  usageAccountId: string
+  customerName: string
+  customerVat: string
+  contactName: string
+  contactEmail: string
   billingPeriod: string
   generatedDate: string
   status: string
   totalDeposit: number
   totalCost: number
+  costCenterBalances: CostCenterBalance[]
   costBreakdown: {
     usage: number
     tax: number
@@ -44,44 +53,43 @@ interface ReportData {
 
 export function ReportPageContent() {
   const [loading, setLoading] = useState(true)
-  const [usageAccounts, setUsageAccounts] = useState<UsageAccount[]>([])
-  const [selectedAccountId, setSelectedAccountId] = useState<string>("")
+  const [customers, setCustomers] = useState<Customer[]>([])
+  const [selectedCustomerVat, setSelectedCustomerVat] = useState<string>("")
   const [reportData, setReportData] = useState<ReportData | null>(null)
 
   useEffect(() => {
-    async function loadAccounts() {
+    async function loadCustomers() {
       try {
-        const accounts = await dataService.getUsageAccounts()
-        const registered = accounts.filter((a) => a.status === "Registered")
-        setUsageAccounts(registered)
-        if (registered.length > 0) {
-          const firstId = registered[0].accountId || registered[0].id
-          setSelectedAccountId(firstId)
+        const customerList = await dataService.getCustomers()
+        const active = customerList.filter((c) => c.status === "Active")
+        setCustomers(active)
+        if (active.length > 0) {
+          setSelectedCustomerVat(active[0].vatNumber)
         } else {
           setLoading(false)
         }
       } catch (error) {
-        console.error("Failed to load usage accounts:", error)
+        console.error("Failed to load customers:", error)
         setLoading(false)
       }
     }
-    loadAccounts()
+    loadCustomers()
   }, [])
 
-  const loadReportData = useCallback(async (accountId: string) => {
-    if (!accountId) return
+  const loadReportData = useCallback(async (vatNumber: string) => {
+    if (!vatNumber) return
     setLoading(true)
     try {
-      const accounts = await dataService.getUsageAccounts()
-      const account = accounts.find(
-        (a) => a.accountId === accountId || a.id === accountId
-      )
-      if (!account) {
+      const customer = await dataService.getCustomer(vatNumber)
+      if (!customer) {
         setLoading(false)
         return
       }
 
-      // Fetch all transactions
+      // Get all usage account IDs from all cost centers
+      const allUsageAccountIds = customer.costCenters.flatMap(cc => cc.usageAccountIds)
+
+      // Fetch all transactions for these usage accounts
       const transactionsResponse = await dataService.getTransactions({})
       const allTransactions: any[] = []
       if (transactionsResponse.data) {
@@ -96,26 +104,49 @@ export function ReportPageContent() {
         }
       }
 
-      // Filter transactions for this account
-      const accountIdToMatch = account.accountId || account.id
-      const filtered = allTransactions.filter((tx: any) => {
-        if (tx.accounts?.usage?.id === accountIdToMatch) return true
-        if (tx.usageAccount?.id === accountIdToMatch) return true
-        const txName = tx.accounts?.usage?.name || tx.usageAccount?.name || ""
-        const accName = account.accountName || account.name || account.customer
-        if (txName && accName && txName === accName) return true
-        return false
+      // Filter transactions for this customer's usage accounts
+      const customerTransactions = allTransactions.filter((tx: any) => {
+        const usageId = tx.accounts?.usage?.id || tx.usageAccount?.id
+        return allUsageAccountIds.includes(usageId)
       })
-      const transactions = filtered.length > 0 ? filtered : allTransactions
 
-      // Aggregate cost breakdown
+      // Calculate cost center balances
+      const costCenterBalances: CostCenterBalance[] = customer.costCenters.map(cc => {
+        // Get transactions for this cost center's usage accounts
+        const ccTransactions = customerTransactions.filter((tx: any) => {
+          const usageId = tx.accounts?.usage?.id || tx.usageAccount?.id
+          return cc.usageAccountIds.includes(usageId)
+        })
+
+        // Calculate total cost for this cost center
+        let ccTotalCost = 0
+        ccTransactions.forEach((tx: any) => {
+          if (tx.totals?.customer?.eur) {
+            ccTotalCost += tx.totals.customer.eur
+          } else if (tx.distributorCost?.eur) {
+            ccTotalCost += tx.distributorCost.eur
+          }
+        })
+
+        // TODO: Get actual deposit amount per cost center from deposits
+        const ccTotalDeposit = 0 // Will be calculated from deposits
+
+        return {
+          costCenterId: cc.id,
+          costCenterName: cc.name,
+          totalDeposit: ccTotalDeposit,
+          totalCost: ccTotalCost,
+          availableFund: ccTotalDeposit - ccTotalCost
+        }
+      })
+
+      // Aggregate total cost breakdown
       let totalUsage = 0, totalTax = 0, totalFee = 0, totalDiscount = 0, totalCredits = 0, totalAdjustment = 0
-      let totalUsd = 0, totalEur = 0
+      let totalEur = 0
       let awsTotal = 0, marketplaceTotal = 0
-      let lastExchangeRate = 0
       let lastDate = ""
 
-      transactions.forEach((tx: any) => {
+      customerTransactions.forEach((tx: any) => {
         if (tx.costBreakdown) {
           totalUsage += tx.costBreakdown.usage || 0
           totalTax += tx.costBreakdown.tax || 0
@@ -124,14 +155,11 @@ export function ReportPageContent() {
           totalCredits += tx.costBreakdown.credits || 0
           totalAdjustment += tx.costBreakdown.adjustment || 0
         }
-        if (tx.distributorCost) {
-          totalUsd += tx.distributorCost.usd || 0
-          totalEur += tx.distributorCost.eur || 0
-        } else if (tx.totals?.distributor) {
-          totalUsd += tx.totals.distributor.usd || 0
-          totalEur += tx.totals.distributor.eur || 0
+        if (tx.totals?.customer?.eur) {
+          totalEur += tx.totals.customer.eur
+        } else if (tx.distributorCost?.eur) {
+          totalEur += tx.distributorCost.eur
         }
-        if (tx.exchangeRate) lastExchangeRate = tx.exchangeRate
         if (tx.details?.entity) {
           awsTotal += tx.details.entity.aws || 0
           marketplaceTotal += tx.details.entity.awsmp || 0
@@ -142,52 +170,25 @@ export function ReportPageContent() {
         }
       })
 
-      if (awsTotal === 0 && marketplaceTotal === 0 && totalUsd > 0) {
-        awsTotal = totalUsd * 0.82
-        marketplaceTotal = totalUsd * 0.18
-      }
-
-      if (!lastExchangeRate) {
-        try {
-          const rates = await dataService.getExchangeRates({})
-          if (rates.length > 0) lastExchangeRate = rates[0].exchangeRate
-        } catch { /* ignore */ }
-      }
-      if (!lastExchangeRate) lastExchangeRate = 1.093
-
-      // Get payer info
-      let payerName = "N/A", payerAccountIdValue = "N/A"
-      try {
-        const payerAccounts = await dataService.getPayerAccounts()
-        const payer = payerAccounts.find(
-          (p) => p.accountId === account.payerAccountId
-        ) || payerAccounts[0]
-        if (payer) {
-          payerName = payer.accountName || payer.name
-          payerAccountIdValue = payer.accountId
-        }
-      } catch { /* ignore */ }
-
-      // Build transaction rows (last 10, sorted by date desc)
-      const sortedTransactions = [...transactions].sort((a, b) => {
+      // Build transaction rows
+      const sortedTransactions = [...customerTransactions].sort((a, b) => {
         const dateA = new Date(a.dateTime || 0).getTime()
         const dateB = new Date(b.dateTime || 0).getTime()
         return dateB - dateA
       })
-      const transactionRows: TransactionRow[] = sortedTransactions.map((tx: any) => {
+      const transactionRows: TransactionRow[] = sortedTransactions.slice(0, 10).map((tx: any) => {
         const txUsd = tx.distributorCost?.usd || tx.totals?.distributor?.usd || 0
         const txEur = tx.distributorCost?.eur || tx.totals?.distributor?.eur || 0
-        const txRate = tx.exchangeRate || lastExchangeRate
+        const txRate = tx.exchangeRate || 1.093
         const txDate = tx.dateTime ? new Date(tx.dateTime) : new Date()
         const period = txDate.toLocaleDateString("en-US", { month: "short", year: "numeric" })
-        const txPayerName = tx.payerAccount?.name || payerName
-        const txUsageName = tx.usageAccount?.name || account.accountName || account.name || account.customer
-        const txUsageId = tx.usageAccount?.id || account.accountId || account.id
+        const txUsageName = tx.accounts?.usage?.name || tx.usageAccount?.name || 'N/A'
+        const txUsageId = tx.accounts?.usage?.id || tx.usageAccount?.id || 'N/A'
         return {
           id: tx.id,
           dateTime: txDate.toISOString(),
           period,
-          payerAccount: txPayerName,
+          payerAccount: customer.legalName,
           usageAccountName: txUsageName,
           usageAccountId: txUsageId,
           amountUsd: txUsd,
@@ -196,30 +197,8 @@ export function ReportPageContent() {
         }
       })
 
-      // Build deposit rows (last 10, sorted by date desc)
-      let depositRows: DepositRow[] = []
-      try {
-        // Import mock deposits dynamically if available
-        const { mockDeposits } = await import("@/lib/data/mock-data")
-        if (mockDeposits) {
-          const accountDeposits = mockDeposits
-            .filter((d) => d.usageAccountId === accountIdToMatch)
-            .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime())
-          depositRows = accountDeposits.map((d) => {
-            const depDate = new Date(d.dateTime)
-            const period = depDate.toLocaleDateString("en-US", { month: "short", year: "numeric" })
-            return {
-              id: d.id,
-              dateTime: depDate.toISOString(),
-              period,
-              payerAccount: payerName,
-              usageAccountName: d.usageAccountName || account.accountName || account.name || account.customer,
-              usageAccountId: d.usageAccountId || account.accountId || account.id,
-              amountEur: d.amountEur,
-            }
-          })
-        }
-      } catch { /* no deposits */ }
+      // TODO: Get actual deposits for this customer
+      const depositRows: DepositRow[] = []
 
       const now = new Date()
       const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
@@ -233,16 +212,19 @@ export function ReportPageContent() {
             hour: "2-digit", minute: "2-digit", hour12: false,
           })
 
+      const totalDeposit = costCenterBalances.reduce((sum, cc) => sum + cc.totalDeposit, 0)
+
       setReportData({
-        payerName,
-        payerAccountId: payerAccountIdValue,
-        usageAccountName: account.accountName || account.name || account.customer,
-        usageAccountId: account.accountId || account.id,
+        customerName: customer.legalName,
+        customerVat: customer.vatNumber,
+        contactName: customer.contactName,
+        contactEmail: customer.contactEmail,
         billingPeriod: currentPeriod,
         generatedDate: formattedDate,
-        status: account.status,
-        totalDeposit: account.totalDeposit || 0,
-        totalCost: account.totalCustomerCost || totalEur || 0,
+        status: customer.status,
+        totalDeposit,
+        totalCost: totalEur,
+        costCenterBalances,
         costBreakdown: {
           usage: totalUsage, tax: totalTax, fee: totalFee,
           discount: totalDiscount, credits: totalCredits, adjustment: totalAdjustment,
@@ -260,10 +242,10 @@ export function ReportPageContent() {
   }, [])
 
   useEffect(() => {
-    if (selectedAccountId) {
-      loadReportData(selectedAccountId)
+    if (selectedCustomerVat) {
+      loadReportData(selectedCustomerVat)
     }
-  }, [selectedAccountId, loadReportData])
+  }, [selectedCustomerVat, loadReportData])
 
   if (loading && !reportData) {
     return (
@@ -277,29 +259,25 @@ export function ReportPageContent() {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Page Title & Account Selector */}
+      {/* Page Title & Customer Selector */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-primary">Report</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Billing report for the selected usage account
+            Billing report for the selected customer
           </p>
         </div>
-        {usageAccounts.length > 0 && (
-          <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+        {customers.length > 0 && (
+          <Select value={selectedCustomerVat} onValueChange={setSelectedCustomerVat}>
             <SelectTrigger className="w-full sm:w-72">
-              <SelectValue placeholder="Select account" />
+              <SelectValue placeholder="Select customer" />
             </SelectTrigger>
             <SelectContent>
-              {usageAccounts.map((account) => {
-                const accId = account.accountId || account.id
-                const accName = account.accountName || account.name || account.customer
-                return (
-                  <SelectItem key={accId} value={accId}>
-                    {accName} ({accId})
-                  </SelectItem>
-                )
-              })}
+              {customers.map((customer) => (
+                <SelectItem key={customer.vatNumber} value={customer.vatNumber}>
+                  {customer.legalName} ({customer.vatNumber})
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         )}
@@ -309,19 +287,20 @@ export function ReportPageContent() {
         <div className="space-y-6">
           {/* Header Section */}
           <ReportHeader
-            payerName={reportData.payerName}
-            payerAccountId={reportData.payerAccountId}
-            usageAccountName={reportData.usageAccountName}
-            usageAccountId={reportData.usageAccountId}
+            customerName={reportData.customerName}
+            customerVat={reportData.customerVat}
+            contactName={reportData.contactName}
+            contactEmail={reportData.contactEmail}
             billingPeriod={reportData.billingPeriod}
             generatedDate={reportData.generatedDate}
             status={reportData.status}
           />
 
-          {/* Fund Balance - Full Width */}
+          {/* Fund Balance by Cost Center */}
           <FundBalanceWidget
             totalDeposit={reportData.totalDeposit}
             totalCost={reportData.totalCost}
+            costCenterBalances={reportData.costCenterBalances}
           />
 
           {/* Cost Breakdown + AWS vs Marketplace - Same Row */}

@@ -41,8 +41,9 @@ class ApiClient {
 
   // Payer Accounts
   async getPayerAccounts(): Promise<PayerAccount[]> {
-    const response = await this.request<{ data: PayerAccount[] }>("/payer-accounts")
-    return response.data
+    const response = await this.request<any>("/payer-accounts")
+    // Handle both response formats: {data: [...]} or direct array
+    return Array.isArray(response) ? response : (response.data || [])
   }
 
   async createPayerAccount(data: Omit<PayerAccount, "id">): Promise<PayerAccount> {
@@ -84,8 +85,9 @@ class ApiClient {
 
   // Usage Accounts
   async getUsageAccounts(): Promise<UsageAccount[]> {
-    const response = await this.request<{ data: UsageAccount[] }>("/usage-accounts")
-    return response.data
+    const response = await this.request<any>("/usage-accounts")
+    // Handle both response formats: {data: [...]} or direct array
+    return Array.isArray(response) ? response : (response.data || [])
   }
 
   async discoverUsageAccounts(startDate?: string, endDate?: string): Promise<{
