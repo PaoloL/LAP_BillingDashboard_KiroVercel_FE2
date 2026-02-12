@@ -23,6 +23,7 @@ import type { TransactionDetail, UsageAccount } from "@/lib/types"
 interface ChartData {
   costByPayer: { name: string; value: number }[]
   costByUsage: { name: string; value: number }[]
+  costByCustomer: { name: string; value: number }[]
   trendData: { period: string; usage: number; deposit: number }[]
 }
 
@@ -33,6 +34,7 @@ export function CostCharts() {
   const [chartData, setChartData] = useState<ChartData>({
     costByPayer: [],
     costByUsage: [],
+    costByCustomer: [],
     trendData: [],
   })
   const [loading, setLoading] = useState(true)
@@ -44,61 +46,95 @@ export function CostCharts() {
 
         const currentYear = new Date().getFullYear()
 
-        // Fetch all transactions for the year
-        const transactions = await dataService.getTransactions({
-          startPeriod: `${currentYear}-01`,
-          endPeriod: `${currentYear}-12`,
-        })
+        // Fetch transactions and usage accounts
+        const [transactions, usageAccounts] = await Promise.all([
+          dataService.getTransactions({
+            startPeriod: `${currentYear}-01`,
+            endPeriod: `${currentYear}-12`,
+          }),
+          dataService.getUsageAccounts(),
+        ])
 
-        // Group by payer and usage for charts
+        // Create usage account map for customer lookup
+        const usageAccountMap = new Map(
+          usageAccounts.map((acc: UsageAccount) => [acc.accountId, acc.customer])
+        )
+
+        // Group by payer, usage, and customer
         const payerMap = new Map<string, { name: string; value: number }>()
         const usageMap = new Map<string, { name: string; value: number }>()
+        const customerMap = new Map<string, { name: string; value: number }>()
         const trendMap = new Map<string, { usage: number; deposit: number }>()
 
         transactions.data.forEach(tx => {
-          const sellerCost = tx.totals?.seller?.eur || 0
+          const isDataExport = tx.transactionType === 'DATAEXPORT'
+          const sellerCost = isDataExport ? (tx.totals?.seller?.eur || 0) : 0
 
-          // Aggregate by payer
-          const payerId = tx.accounts?.payer?.id
-          const payerName = tx.accounts?.payer?.name || payerId
-          if (payerId) {
-            const current = payerMap.get(payerId)
-            if (current) {
-              current.value += sellerCost
-            } else {
-              payerMap.set(payerId, { name: payerName, value: sellerCost })
+          console.log('Transaction:', {
+            type: tx.transactionType,
+            isDataExport,
+            sellerCost,
+            totals: tx.totals,
+            payer: tx.accounts?.payer,
+            usage: tx.accounts?.usage
+          })
+
+          // Aggregate by payer (only DATAEXPORT)
+          if (isDataExport) {
+            const payerId = tx.accounts?.payer?.id
+            const payerName = tx.accounts?.payer?.name || payerId
+            if (payerId) {
+              const current = payerMap.get(payerId)
+              if (current) {
+                current.value += sellerCost
+              } else {
+                payerMap.set(payerId, { name: payerName, value: sellerCost })
+              }
             }
-          }
 
-          // Aggregate by usage
-          const usageId = tx.accounts?.usage?.id
-          const usageName = tx.accounts?.usage?.name || usageId
-          if (usageId) {
-            const current = usageMap.get(usageId)
-            if (current) {
-              current.value += sellerCost
-            } else {
-              usageMap.set(usageId, { name: usageName, value: sellerCost })
+            // Aggregate by usage account
+            const usageId = tx.accounts?.usage?.id
+            const usageName = tx.accounts?.usage?.name || usageId
+            if (usageId) {
+              const current = usageMap.get(usageId)
+              if (current) {
+                current.value += sellerCost
+              } else {
+                usageMap.set(usageId, { name: usageName, value: sellerCost })
+              }
+
+              // Aggregate by customer
+              const customerName = usageAccountMap.get(usageId) || 'Unknown Customer'
+              const current2 = customerMap.get(customerName)
+              if (current2) {
+                current2.value += sellerCost
+              } else {
+                customerMap.set(customerName, { name: customerName, value: sellerCost })
+              }
             }
-          }
 
-          // Build trend data by month
-          const period = tx.billingPeriod
-          if (period) {
-            if (trendMap.has(period)) {
-              trendMap.get(period)!.usage += sellerCost
-            } else {
-              trendMap.set(period, { usage: sellerCost, deposit: 0 })
+            // Build trend data by month
+            const period = tx.billingPeriod
+            if (period) {
+              if (trendMap.has(period)) {
+                trendMap.get(period)!.usage += sellerCost
+              } else {
+                trendMap.set(period, { usage: sellerCost, deposit: 0 })
+              }
             }
           }
         })
 
-        // Get top payers and usage accounts
+        // Get top payers, usage accounts, and customers
         const costByPayer = Array.from(payerMap.values())
           .sort((a, b) => b.value - a.value)
           .slice(0, 5)
 
         const costByUsage = Array.from(usageMap.values())
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 10)
+
+        const costByCustomer = Array.from(customerMap.values())
           .sort((a, b) => b.value - a.value)
           .slice(0, 10)
 
@@ -117,7 +153,15 @@ export function CostCharts() {
         setChartData({
           costByPayer,
           costByUsage,
+          costByCustomer,
           trendData,
+        })
+
+        console.log('Chart data set:', {
+          costByPayer,
+          costByUsage,
+          costByCustomer,
+          totalTransactions: transactions.data.length
         })
       } catch (error) {
         console.error("Failed to load chart data:", error)
@@ -156,8 +200,8 @@ export function CostCharts() {
     return (
       <div className="space-y-6">
         <h2 className="text-lg font-semibold text-[#00243E]">Charts</h2>
-        <div className="grid gap-6 lg:grid-cols-2">
-          {[1, 2].map((i) => (
+        <div className="grid gap-6 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
             <Card key={i}>
               <CardHeader>
                 <div className="h-6 w-48 animate-pulse rounded bg-muted" />
@@ -185,7 +229,7 @@ export function CostCharts() {
       <h2 className="text-lg font-semibold text-[#00243E]">Charts</h2>
 
       {/* Pie Charts Row */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
         {/* Seller Cost by Payer Account (Pie Chart, Top 5) */}
         <Card>
           <CardHeader>
@@ -247,6 +291,48 @@ export function CostCharts() {
                     dataKey="value"
                   >
                     {chartData.costByUsage.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={USAGE_COLORS[index % USAGE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: number) => formatCurrency(value)}
+                    contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e5e5", borderRadius: "8px" }}
+                  />
+                  <Legend
+                    layout="horizontal"
+                    verticalAlign="bottom"
+                    align="center"
+                    wrapperStyle={{ paddingTop: "20px", fontSize: "12px" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+                No data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Seller Cost by Customer (Pie Chart, Top 10) */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-[#00243E]">Total Seller Cost by Customer (Top 10)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {chartData.costByCustomer.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={chartData.costByCustomer}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={renderCustomizedLabel}
+                    outerRadius={100}
+                    dataKey="value"
+                  >
+                    {chartData.costByCustomer.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={USAGE_COLORS[index % USAGE_COLORS.length]} />
                     ))}
                   </Pie>

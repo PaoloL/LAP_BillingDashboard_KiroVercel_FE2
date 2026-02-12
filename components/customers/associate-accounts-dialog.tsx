@@ -90,13 +90,14 @@ export function AssociateAccountsDialog({
                     checked={checked}
                     disabled={assignedElsewhere}
                     onCheckedChange={() => toggle(account.accountId)}
+                    className="flex-shrink-0"
                   />
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 overflow-hidden">
                     <p className="text-sm font-medium text-foreground truncate">
                       {account.accountName || 'Unnamed Account'} ({account.accountId})
                     </p>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
                     <Badge variant="outline" className="text-[10px]">{account.status}</Badge>
                     {assignedElsewhere && (
                       <Badge variant="secondary" className="text-[10px]">Assigned</Badge>

@@ -31,7 +31,7 @@ export function ManageAccountsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px]">
+      <DialogContent className="sm:max-w-[560px] max-h-[85vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Link2 className="h-5 w-5 text-muted-foreground" />
@@ -39,7 +39,7 @@ export function ManageAccountsDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 py-2 overflow-y-auto max-h-[calc(85vh-120px)]">
           {customer.costCenters.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-8 border border-dashed rounded-lg">
               No cost centers available. Create a cost center first.
@@ -69,10 +69,10 @@ export function ManageAccountsDialog({
                   {cc.usageAccountIds.length > 0 ? (
                     <div className="space-y-1">
                       {cc.usageAccountIds.map((accId) => (
-                        <div key={accId} className="flex items-center gap-2 text-xs bg-muted/50 rounded px-2 py-1.5">
-                          <Link2 className="h-3 w-3 text-muted-foreground" />
-                          <span className="font-medium">{getAccountName(accId)}</span>
-                          <span className="text-muted-foreground">({accId})</span>
+                        <div key={accId} className="flex items-center gap-2 text-xs bg-muted/50 rounded px-2 py-1.5 overflow-hidden">
+                          <Link2 className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                          <span className="font-medium truncate">{getAccountName(accId)}</span>
+                          <span className="text-muted-foreground flex-shrink-0">({accId})</span>
                         </div>
                       ))}
                     </div>

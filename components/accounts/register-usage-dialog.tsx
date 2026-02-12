@@ -72,14 +72,10 @@ export function RegisterUsageDialog({
 
     setIsSubmitting(true)
     try {
-      const formData = new FormData(e.target as HTMLFormElement)
-      const customerName = formData.get("customer") as string
-      const vatNumber = formData.get("vat") as string
-
-      // First update the account with all configuration
+      // Update the account with all configuration
       await dataService.updateUsageAccount(accountId, {
-        customer: customerName,
-        vatNumber: vatNumber || "",
+        customer: accountName || "",
+        vatNumber: "",
         resellerDiscount,
         customerDiscount,
         rebateConfig,
@@ -117,7 +113,7 @@ export function RegisterUsageDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-[#00243E]">Register Usage Account</DialogTitle>
           <DialogDescription>
@@ -179,46 +175,36 @@ export function RegisterUsageDialog({
             </div>
 
             <div className="grid gap-4">
-              <h3 className="text-sm font-semibold text-[#00243E]">Customer Information</h3>
-              <div className="grid gap-2">
-                <Label htmlFor="customer">Customer Name</Label>
-                <Input id="customer" name="customer" placeholder="Acme Corporation" required />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="vat">VAT Number</Label>
-                <Input id="vat" name="vat" placeholder="DE123456789" />
-              </div>
-            </div>
-
-            <div className="grid gap-4">
               <h3 className="text-sm font-semibold text-[#00243E]">Financial Configuration</h3>
-              <div className="grid gap-2">
-                <Label htmlFor="reseller-discount">Reseller Discount (%)</Label>
-                <Input
-                  id="reseller-discount"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  placeholder="15"
-                  value={resellerDiscount}
-                  onChange={(e) => handleResellerDiscountChange(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="customer-discount">Customer Discount (%)</Label>
-                <Input
-                  id="customer-discount"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  placeholder="10"
-                  value={customerDiscount}
-                  onChange={(e) => handleCustomerDiscountChange(e.target.value)}
-                  required
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="reseller-discount">Reseller Discount (%)</Label>
+                  <Input
+                    id="reseller-discount"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    placeholder="15"
+                    value={resellerDiscount}
+                    onChange={(e) => handleResellerDiscountChange(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="customer-discount">Customer Discount (%)</Label>
+                  <Input
+                    id="customer-discount"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    placeholder="10"
+                    value={customerDiscount}
+                    onChange={(e) => handleCustomerDiscountChange(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
               {validationError && <p className="text-sm text-[#EBB700]">{validationError}</p>}
             </div>
@@ -227,16 +213,15 @@ export function RegisterUsageDialog({
               <h3 className="text-sm font-semibold text-[#00243E]">Rebate Configuration</h3>
               <p className="text-xs text-muted-foreground">Configure which AWS cost components should be rebated</p>
 
-              <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 {/* Savings Plans / RI */}
                 <Card className="border-[#026172] border-l-4">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm font-medium text-[#026172]">Savings Plans / RI</CardTitle>
-                    <p className="text-xs text-muted-foreground">Rebate Saving Plans or RI benefits</p>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="reg-sp-discounted" className="text-sm font-normal cursor-pointer">
+                      <Label htmlFor="reg-sp-discounted" className="text-xs font-normal cursor-pointer">
                         Discounted Usage
                       </Label>
                       <Switch
@@ -251,7 +236,7 @@ export function RegisterUsageDialog({
                       />
                     </div>
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="reg-sp-negation" className="text-sm font-normal cursor-pointer">
+                      <Label htmlFor="reg-sp-negation" className="text-xs font-normal cursor-pointer">
                         SP Negation
                       </Label>
                       <Switch
@@ -272,11 +257,10 @@ export function RegisterUsageDialog({
                 <Card className="border-[#00243E] border-l-4">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm font-medium text-[#00243E]">Discount</CardTitle>
-                    <p className="text-xs text-muted-foreground">Rebate any discounts that AWS applied to your usage</p>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="reg-bundled" className="text-sm font-normal cursor-pointer">
+                      <Label htmlFor="reg-bundled" className="text-xs font-normal cursor-pointer">
                         Bundled Discount
                       </Label>
                       <Switch
@@ -291,7 +275,7 @@ export function RegisterUsageDialog({
                       />
                     </div>
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="reg-discount-credit" className="text-sm font-normal cursor-pointer">
+                      <Label htmlFor="reg-discount-credit" className="text-xs font-normal cursor-pointer">
                         Credit
                       </Label>
                       <Switch
@@ -306,7 +290,7 @@ export function RegisterUsageDialog({
                       />
                     </div>
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="reg-private-rate" className="text-sm font-normal cursor-pointer">
+                      <Label htmlFor="reg-private-rate" className="text-xs font-normal cursor-pointer">
                         Private Rate Discount
                       </Label>
                       <Switch
@@ -324,16 +308,13 @@ export function RegisterUsageDialog({
                 </Card>
 
                 {/* Adjustment */}
-                <Card className="border-[#F26522] border-l-4">
+                <Card className="border-[#F26522] border-l-4 col-span-2">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm font-medium text-[#F26522]">Adjustment</CardTitle>
-                    <p className="text-xs text-muted-foreground">
-                      Rebate any adjustment that AWS applied to your usage
-                    </p>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="grid grid-cols-2 gap-4">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="reg-adj-credit" className="text-sm font-normal cursor-pointer">
+                      <Label htmlFor="reg-adj-credit" className="text-xs font-normal cursor-pointer">
                         Credit
                       </Label>
                       <Switch
@@ -348,7 +329,7 @@ export function RegisterUsageDialog({
                       />
                     </div>
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="reg-adj-refund" className="text-sm font-normal cursor-pointer">
+                      <Label htmlFor="reg-adj-refund" className="text-xs font-normal cursor-pointer">
                         Refund
                       </Label>
                       <Switch

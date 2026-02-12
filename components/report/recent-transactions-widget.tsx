@@ -3,22 +3,16 @@
 import { useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { formatCurrencyUSD, formatCurrency } from "@/lib/format"
-import { Receipt, ArrowRightLeft } from "lucide-react"
+import { formatCurrency } from "@/lib/format"
+import { Receipt } from "lucide-react"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 
 export interface TransactionRow {
   id: string
   dateTime: string
   period: string
   payerAccount: string
+  payerAccountId: string
   usageAccountName: string
   usageAccountId: string
   amountUsd: number
@@ -28,9 +22,12 @@ export interface TransactionRow {
 
 interface RecentTransactionsWidgetProps {
   transactions: TransactionRow[]
+  costCenters: Array<{ costCenterId: string; costCenterName: string; usageAccountIds: string[] }>
 }
 
 type RangeFilter = "3M" | "6M" | "12M"
+
+const COLORS = ['#026172', '#EC9400', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#EC4899']
 
 function getMonthsCutoff(months: number): Date {
   const d = new Date()
@@ -39,16 +36,60 @@ function getMonthsCutoff(months: number): Date {
   return d
 }
 
-export function RecentTransactionsWidget({ transactions }: RecentTransactionsWidgetProps) {
+export function RecentTransactionsWidget({ transactions, costCenters }: RecentTransactionsWidgetProps) {
   const [range, setRange] = useState<RangeFilter>("3M")
 
-  const filtered = useMemo(() => {
+  const chartData = useMemo(() => {
     const months = range === "3M" ? 3 : range === "6M" ? 6 : 12
     const cutoff = getMonthsCutoff(months)
-    return transactions
-      .filter((tx) => new Date(tx.dateTime) >= cutoff)
-      .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime())
-  }, [transactions, range])
+    
+    const filtered = transactions.filter((tx) => new Date(tx.dateTime) >= cutoff)
+    
+    // Build usage account to cost center mapping
+    const accountToCostCenter = new Map<string, { id: string; name: string }>()
+    costCenters.forEach(cc => {
+      cc.usageAccountIds.forEach(accountId => {
+        accountToCostCenter.set(accountId, { id: cc.costCenterId, name: cc.costCenterName })
+      })
+    })
+    
+    // Group by period and cost center
+    const grouped = new Map<string, Map<string, number>>()
+    
+    filtered.forEach(tx => {
+      const costCenter = accountToCostCenter.get(tx.usageAccountId)
+      if (!costCenter) return
+      
+      if (!grouped.has(tx.period)) {
+        grouped.set(tx.period, new Map())
+      }
+      
+      const periodGroup = grouped.get(tx.period)!
+      const current = periodGroup.get(costCenter.name) || 0
+      periodGroup.set(costCenter.name, current + tx.amountEur)
+    })
+    
+    // Convert to chart format
+    return Array.from(grouped.entries())
+      .map(([period, costCenters]) => {
+        const data: any = { period }
+        costCenters.forEach((value, ccName) => {
+          data[ccName] = value
+        })
+        return data
+      })
+      .sort((a, b) => a.period.localeCompare(b.period))
+  }, [transactions, costCenters, range])
+
+  const costCenterNames = useMemo(() => {
+    const names = new Set<string>()
+    chartData.forEach(item => {
+      Object.keys(item).forEach(key => {
+        if (key !== 'period') names.add(key)
+      })
+    })
+    return Array.from(names)
+  }, [chartData])
 
   return (
     <Card className="border-border">
@@ -56,7 +97,7 @@ export function RecentTransactionsWidget({ transactions }: RecentTransactionsWid
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <Receipt className="h-4 w-4 text-secondary" />
-            Transactions
+            Transactions by Cost Center
           </CardTitle>
           <div className="flex items-center gap-1">
             {(["3M", "6M", "12M"] as RangeFilter[]).map((r) => (
@@ -74,51 +115,45 @@ export function RecentTransactionsWidget({ transactions }: RecentTransactionsWid
         </div>
       </CardHeader>
       <CardContent>
-        {filtered.length === 0 ? (
+        {chartData.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
             No transactions found in the last {range === "3M" ? "3 months" : range === "6M" ? "6 months" : "12 months"}
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border hover:bg-transparent">
-                  <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Period</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Payer Account</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Usage Account</TableHead>
-                  <TableHead className="text-right text-xs font-semibold uppercase text-muted-foreground">Value</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((tx) => (
-                  <TableRow key={tx.id} className="border-border">
-                    <TableCell className="py-2.5 text-sm text-muted-foreground whitespace-nowrap">
-                      {tx.period}
-                    </TableCell>
-                    <TableCell className="py-2.5 text-sm text-foreground whitespace-nowrap">
-                      {tx.payerAccount}
-                    </TableCell>
-                    <TableCell className="py-2.5">
-                      <div className="flex flex-col">
-                        <span className="text-sm text-foreground">{tx.usageAccountName}</span>
-                        <span className="text-xs font-mono text-muted-foreground">{tx.usageAccountId}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-2.5 text-right">
-                      <div className="flex flex-col items-end gap-0.5">
-                        <span className="text-sm font-semibold text-foreground">{formatCurrencyUSD(tx.amountUsd)}</span>
-                        <span className="text-xs text-muted-foreground">{formatCurrency(tx.amountEur)}</span>
-                        <span className="flex items-center gap-0.5 text-[10px] font-mono text-muted-foreground">
-                          <ArrowRightLeft className="h-2.5 w-2.5" />
-                          {tx.exchangeRate.toFixed(4)}
-                        </span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis 
+                dataKey="period" 
+                tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }}
+              />
+              <YAxis 
+                tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }}
+                tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`}
+              />
+              <Tooltip 
+                formatter={(value: number) => formatCurrency(value)}
+                contentStyle={{
+                  backgroundColor: 'var(--card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  fontSize: '12px'
+                }}
+              />
+              <Legend 
+                wrapperStyle={{ fontSize: '12px' }}
+                iconType="square"
+              />
+              {costCenterNames.map((name, index) => (
+                <Bar 
+                  key={name} 
+                  dataKey={name} 
+                  stackId="a" 
+                  fill={COLORS[index % COLORS.length]}
+                />
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
         )}
       </CardContent>
     </Card>
