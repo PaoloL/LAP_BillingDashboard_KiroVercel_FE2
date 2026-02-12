@@ -6,7 +6,7 @@ import { FundBalanceWidget } from "@/components/report/fund-balance-widget"
 import { CostBreakdownWidget } from "@/components/report/cost-breakdown-widget"
 import { AwsVsMarketplaceWidget } from "@/components/report/aws-vs-marketplace-widget"
 import { RecentTransactionsWidget, type TransactionRow } from "@/components/report/recent-transactions-widget"
-import { RecentDepositsWidget, type DepositRow } from "@/components/report/recent-deposits-widget"
+import { DepositsVsCostsWidget, type DepositRow } from "@/components/report/deposits-vs-costs-widget"
 import { dataService } from "@/lib/data/data-service"
 import { Loader2 } from "lucide-react"
 import {
@@ -91,13 +91,14 @@ export function ReportPageContent() {
       // Transform backend response to match frontend format
       const transactionRows: TransactionRow[] = (report.transactions || []).map((tx: any) => ({
         id: tx.id || tx.transactionId,
-        dateTime: tx.dateTime || tx.updatedAt,
+        dateTime: tx.createdAt || tx.dateTime || tx.updatedAt,
         period: tx.billingPeriod || '',
         payerAccount: tx.accounts?.payer?.name || report.customerName,
+        payerAccountId: tx.accounts?.payer?.id || '',
         usageAccountName: tx.accounts?.usage?.name || '',
         usageAccountId: tx.accounts?.usage?.id || '',
-        amountUsd: tx.costs?.customer?.totals?.usd || 0,
-        amountEur: tx.costs?.customer?.totals?.eur || 0,
+        amountUsd: tx.totals?.customer?.usd || 0,
+        amountEur: tx.totals?.customer?.eur || 0,
         exchangeRate: tx.exchangeRate || 1.0,
       }))
 
@@ -199,6 +200,12 @@ export function ReportPageContent() {
             costCenterBalances={reportData.costCenterBalances}
           />
 
+          {/* Deposits vs Costs - Stacked Area Chart */}
+          <DepositsVsCostsWidget
+            deposits={reportData.deposits}
+            transactions={reportData.transactions}
+          />
+
           {/* Cost Breakdown + AWS vs Marketplace - Same Row */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
             <div className="lg:col-span-3">
@@ -219,11 +226,15 @@ export function ReportPageContent() {
             </div>
           </div>
 
-          {/* Transactions Section: Last 10 Transactions (left) + Last 10 Deposits (right) */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <RecentTransactionsWidget transactions={reportData.transactions} />
-            <RecentDepositsWidget deposits={reportData.deposits} />
-          </div>
+          {/* Transactions Section */}
+          <RecentTransactionsWidget 
+            transactions={reportData.transactions} 
+            costCenters={reportData.costCenterBalances.map(cc => ({
+              costCenterId: cc.costCenterId,
+              costCenterName: cc.costCenterName,
+              usageAccountIds: cc.usageAccountIds || []
+            }))}
+          />
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card py-24">

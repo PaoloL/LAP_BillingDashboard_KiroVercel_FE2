@@ -18,10 +18,10 @@ export interface DepositRow {
   id: string
   dateTime: string
   period: string
-  payerAccount: string
-  usageAccountName: string
-  usageAccountId: string
+  costCenter: string
   amountEur: number
+  description: string
+  poNumber: string
 }
 
 interface RecentDepositsWidgetProps {
@@ -82,8 +82,8 @@ export function RecentDepositsWidget({ deposits }: RecentDepositsWidgetProps) {
               <TableHeader>
                 <TableRow className="border-border hover:bg-transparent">
                   <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Period</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Payer Account</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Usage Account</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Cost Center</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Description</TableHead>
                   <TableHead className="text-right text-xs font-semibold uppercase text-muted-foreground">Value (EUR)</TableHead>
                 </TableRow>
               </TableHeader>
@@ -94,13 +94,10 @@ export function RecentDepositsWidget({ deposits }: RecentDepositsWidgetProps) {
                       {dep.period}
                     </TableCell>
                     <TableCell className="py-2.5 text-sm text-foreground whitespace-nowrap">
-                      {dep.payerAccount}
+                      {dep.costCenter}
                     </TableCell>
-                    <TableCell className="py-2.5">
-                      <div className="flex flex-col">
-                        <span className="text-sm text-foreground">{dep.usageAccountName}</span>
-                        <span className="text-xs font-mono text-muted-foreground">{dep.usageAccountId}</span>
-                      </div>
+                    <TableCell className="py-2.5 text-sm text-muted-foreground">
+                      {dep.description || '-'}
                     </TableCell>
                     <TableCell className="py-2.5 text-right text-sm font-semibold text-secondary whitespace-nowrap">
                       {formatCurrency(dep.amountEur)}
