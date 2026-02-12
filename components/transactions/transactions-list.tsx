@@ -93,10 +93,10 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
           ) : (
             <div className="space-y-0.5">
               <div className="font-semibold text-[#EC9400]">
-                -{formatCurrency(transaction.totals?.customer?.eur || 0)}
+                {formatCurrency(-(transaction.totals?.customer?.eur || 0))}
               </div>
               <div className="text-sm text-[#EC9400]/70">
-                -${(transaction.totals?.customer?.usd || 0).toLocaleString("en-US", {
+                ${(-(transaction.totals?.customer?.usd || 0)).toLocaleString("en-US", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}

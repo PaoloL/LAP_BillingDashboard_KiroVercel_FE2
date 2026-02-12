@@ -60,32 +60,43 @@ export function StatsCards() {
         const currentMonth = String(now.getMonth() + 1).padStart(2, '0')
         const currentPeriod = `${currentYear}-${currentMonth}`
         
-        console.log('Fetching stats:', { currentPeriod, currentYear })
-        
-        // Fetch accounts, cost totals, and transactions in parallel
-        const [payerAccounts, usageAccounts, yearTotals, monthTotals, allTransactions] = await Promise.all([
+        // Fetch accounts and transactions
+        const [payerAccounts, usageAccounts, allTransactions] = await Promise.all([
           dataService.getPayerAccounts(),
           dataService.getUsageAccounts(),
-          dataService.getCostTotals({ period: String(currentYear), entityType: 'OrgYearTotal' }),
-          dataService.getCostTotals({ period: currentPeriod, entityType: 'OrgMonthTotal' }),
           dataService.getTransactions({ startPeriod: `${currentYear}-01`, endPeriod: `${currentYear}-12` }),
         ])
 
-        // Calculate totals from cost data
-        const yearTotal = yearTotals.data[0]?.totals || { seller: { eur: 0 }, customer: { eur: 0 }, distributor: { eur: 0 } }
-        const monthTotal = monthTotals.data[0]?.totals || { seller: { eur: 0 }, customer: { eur: 0 }, distributor: { eur: 0 } }
-
-        // Calculate deposits from transactions
-        const yearDeposits = allTransactions.data
-          .filter((tx: any) => tx.transactionType === 'DEPOSIT')
-          .reduce((sum: number, tx: any) => sum + (tx.totals?.customer?.eur || 0), 0)
+        // Filter transactions by type
+        const costTransactions = allTransactions.data.filter((tx: any) => tx.transactionType === 'DATAEXPORT')
+        const depositTransactions = allTransactions.data.filter((tx: any) => 
+          tx.transactionType === 'MANUAL' || tx.transactionType === 'DEPOSIT'
+        )
         
-        const monthDeposits = allTransactions.data
-          .filter((tx: any) => tx.transactionType === 'DEPOSIT' && tx.billingPeriod === currentPeriod)
-          .reduce((sum: number, tx: any) => sum + (tx.totals?.customer?.eur || 0), 0)
-
-        console.log('Year total:', yearTotal, 'Year deposits:', yearDeposits)
-        console.log('Month total:', monthTotal, 'Month deposits:', monthDeposits)
+        // Calculate year totals
+        const yearSellerCost = costTransactions.reduce((sum: number, tx: any) => 
+          sum + (tx.totals?.seller?.eur || 0), 0
+        )
+        const yearCustomerCost = costTransactions.reduce((sum: number, tx: any) => 
+          sum + (tx.totals?.customer?.eur || 0), 0
+        )
+        const yearDepositTotal = depositTransactions.reduce((sum: number, tx: any) => 
+          sum + Math.abs(tx.details?.value || 0), 0
+        )
+        
+        // Calculate month totals
+        const monthCostTransactions = costTransactions.filter((tx: any) => tx.billingPeriod === currentPeriod)
+        const monthDepositTransactions = depositTransactions.filter((tx: any) => tx.billingPeriod === currentPeriod)
+        
+        const monthSellerCost = monthCostTransactions.reduce((sum: number, tx: any) => 
+          sum + (tx.totals?.seller?.eur || 0), 0
+        )
+        const monthCustomerCost = monthCostTransactions.reduce((sum: number, tx: any) => 
+          sum + (tx.totals?.customer?.eur || 0), 0
+        )
+        const monthDepositTotal = monthDepositTransactions.reduce((sum: number, tx: any) => 
+          sum + Math.abs(tx.details?.value || 0), 0
+        )
 
         // Calculate account stats
         const activePayerAccounts = payerAccounts.filter((a: PayerAccount) => a.status !== "Archived")
@@ -99,23 +110,18 @@ export function StatsCards() {
           registeredUsageAccounts: registeredUsage.length,
           unregisteredUsageAccounts: unregisteredUsage.length,
           year: {
-            totalSellerCost: yearTotal.seller.eur,
-            totalCustomerCost: yearTotal.customer.eur,
-            totalDeposit: yearDeposits,
-            totalMargin: yearTotal.customer.eur - yearTotal.seller.eur,
+            totalSellerCost: yearSellerCost,
+            totalCustomerCost: yearCustomerCost,
+            totalDeposit: yearDepositTotal,
+            totalMargin: yearCustomerCost - yearSellerCost,
           },
           month: {
-            totalSellerCost: monthTotal.seller.eur,
-            totalCustomerCost: monthTotal.customer.eur,
-            totalDeposit: monthDeposits,
-            totalMargin: monthTotal.customer.eur - monthTotal.seller.eur,
+            totalSellerCost: monthSellerCost,
+            totalCustomerCost: monthCustomerCost,
+            totalDeposit: monthDepositTotal,
+            totalMargin: monthCustomerCost - monthSellerCost,
             period: currentPeriod,
           },
-        })
-        
-        console.log('Stats set:', {
-          year: yearTotal,
-          month: monthTotal
         })
       } catch (error) {
         console.error("Failed to load dashboard stats:", error)

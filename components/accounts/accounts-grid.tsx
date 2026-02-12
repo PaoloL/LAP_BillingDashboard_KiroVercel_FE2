@@ -382,37 +382,6 @@ export function AccountsGrid() {
                       </div>
                     </div>
                   </div>
-                  {/* </CHANGE> */}
-
-                  <div>
-                    <div className="mb-2 flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Funds Utilization</span>
-                      <span className="font-semibold text-foreground">
-                        {account.totalDeposit > 0 
-                          ? ((account.totalCustomerCost / account.totalDeposit) * 100).toFixed(1)
-                          : 0}%
-                      </span>
-                    </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                      <div
-                        className="h-full rounded-full bg-[#026172]"
-                        style={{ 
-                          width: `${account.totalDeposit > 0 
-                            ? Math.min((account.totalCustomerCost / account.totalDeposit) * 100, 100)
-                            : 0}%` 
-                        }}
-                      />
-                    </div>
-                    <p className="mt-1.5 text-xs text-muted-foreground">
-                      {formatCurrency(account.totalCustomerCost)} of {formatCurrency(account.totalDeposit)} used
-                    </p>
-                    <div className="mt-2 flex items-center justify-between border-t border-border pt-2 text-sm">
-                      <span className="text-muted-foreground">Available Fund</span>
-                      <span className={cn("font-semibold", account.availableFund >= 0 ? "text-green-600" : "text-red-600")}>
-                        {formatCurrency(account.availableFund)}
-                      </span>
-                    </div>
-                  </div>
 
                   <div className="border-t border-border pt-3">
                     {account.status === "Registered" && (
