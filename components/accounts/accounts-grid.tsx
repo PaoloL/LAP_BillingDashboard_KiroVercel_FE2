@@ -19,11 +19,11 @@ import {
   Tag,
   FileEdit,
 } from "lucide-react"
-import { RegisterPayerDialog } from "@/components/register-payer-dialog"
-import { EditPayerDialog } from "@/components/edit-payer-dialog"
-import { RegisterUsageDialog } from "@/components/register-usage-dialog"
-import { EditUsageDialog } from "@/components/edit-usage-dialog"
-import { UsageDetailsDialog } from "@/components/usage-details-dialog"
+import { RegisterPayerDialog } from "@/components/accounts/register-payer-dialog"
+import { EditPayerDialog } from "@/components/accounts/edit-payer-dialog"
+import { RegisterUsageDialog } from "@/components/accounts/register-usage-dialog"
+import { EditUsageDialog } from "@/components/accounts/edit-usage-dialog"
+import { UsageDetailsDialog } from "@/components/accounts/usage-details-dialog"
 import type { PayerAccount, UsageAccount } from "@/lib/types"
 import { dataService } from "@/lib/data/data-service"
 import { formatCurrency } from "@/lib/format"
@@ -380,37 +380,6 @@ export function AccountsGrid() {
                         <p className="text-xs text-muted-foreground">Reseller Discount</p>
                         <p className="text-sm font-semibold text-[#026172]">{account.resellerDiscount}%</p>
                       </div>
-                    </div>
-                  </div>
-                  {/* </CHANGE> */}
-
-                  <div>
-                    <div className="mb-2 flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Funds Utilization</span>
-                      <span className="font-semibold text-foreground">
-                        {account.totalDeposit > 0 
-                          ? ((account.totalCustomerCost / account.totalDeposit) * 100).toFixed(1)
-                          : 0}%
-                      </span>
-                    </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                      <div
-                        className="h-full rounded-full bg-[#026172]"
-                        style={{ 
-                          width: `${account.totalDeposit > 0 
-                            ? Math.min((account.totalCustomerCost / account.totalDeposit) * 100, 100)
-                            : 0}%` 
-                        }}
-                      />
-                    </div>
-                    <p className="mt-1.5 text-xs text-muted-foreground">
-                      {formatCurrency(account.totalCustomerCost)} of {formatCurrency(account.totalDeposit)} used
-                    </p>
-                    <div className="mt-2 flex items-center justify-between border-t border-border pt-2 text-sm">
-                      <span className="text-muted-foreground">Available Fund</span>
-                      <span className={cn("font-semibold", account.availableFund >= 0 ? "text-green-600" : "text-red-600")}>
-                        {formatCurrency(account.availableFund)}
-                      </span>
                     </div>
                   </div>
 

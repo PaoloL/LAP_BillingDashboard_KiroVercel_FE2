@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react'
-import { TransactionsList } from '../components/transactions-list'
+import { TransactionsList } from '../components/transactions/transactions-list'
 
 // Mock the data service
 jest.mock('../lib/data/data-service', () => ({

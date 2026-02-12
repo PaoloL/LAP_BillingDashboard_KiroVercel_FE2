@@ -15,6 +15,24 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
   
   const isDeposit = transaction.transactionType === 'DEPOSIT' || transaction.transactionType === 'MANUAL'
 
+  // Generate description based on transaction type
+  const getDescription = () => {
+    if (isDeposit) {
+      // Deposit: "Deposit on <customer-name> in <cost-center>"
+      const customerName = transaction.accounts?.payer?.name || 'Unknown Customer'
+      const costCenter = transaction.details?.costCenterName || 'Unknown Cost Center'
+      return `Deposit on ${customerName} in ${costCenter}`
+    } else {
+      // Transaction: "Withdrawal on <usage-account> (<usage-id>)"
+      const usageName = transaction.accounts?.usage?.name || 'Unknown Usage'
+      const usageId = transaction.accounts?.usage?.id || 'N/A'
+      return `Withdrawal on ${usageName} (${usageId})`
+    }
+  }
+
+  const description = getDescription()
+  const exchangeRate = transaction.exchangeRate || null
+
   // For deposits, margin = deposit amount, costs are empty
   const marginEur = isDeposit 
     ? (transaction.details?.value || 0)
@@ -26,34 +44,37 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
 
   return (
     <>
-      <tr className="cursor-pointer hover:bg-muted/50" onClick={() => setIsExpanded(!isExpanded)}>
+      <tr className="hover:bg-muted/50">
+        <td className="px-4 py-3 w-12">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation()
+              setIsExpanded(!isExpanded)
+            }}
+          >
+            {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </Button>
+        </td>
         <td className="px-4 py-3">
-          <div className="flex items-center gap-2">
-            {isExpanded ? (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <div className="font-medium text-foreground whitespace-nowrap">
+            {transaction.billingPeriod
+              ? new Date(transaction.billingPeriod + "-01").toLocaleDateString("en-GB", {
+                  month: "short",
+                  year: "numeric",
+                })
+              : transaction.dateTime?.toLocaleDateString("en-GB", { month: "short", year: "numeric" }) || 'N/A'}
+          </div>
+        </td>
+        <td className="px-4 py-3">
+          <div className="space-y-1">
+            <div className="text-sm text-foreground">{description}</div>
+            {exchangeRate && (
+              <div className="text-xs text-muted-foreground">
+                Exchange Rate: {exchangeRate.toFixed(2)}
+              </div>
             )}
-            <div className="font-medium text-foreground whitespace-nowrap">
-              {transaction.billingPeriod
-                ? new Date(transaction.billingPeriod + "-01").toLocaleDateString("en-GB", {
-                    month: "short",
-                    year: "numeric",
-                  })
-                : transaction.dateTime.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}
-            </div>
-          </div>
-        </td>
-        <td className="px-4 py-3">
-          <div className="space-y-0.5">
-            <div className="font-medium text-foreground">{transaction.accounts?.payer?.name || 'N/A'}</div>
-            <div className="text-xs font-mono text-muted-foreground">{transaction.accounts?.payer?.id || 'N/A'}</div>
-          </div>
-        </td>
-        <td className="px-4 py-3">
-          <div className="space-y-0.5">
-            <div className="font-medium text-foreground">{transaction.accounts?.usage?.name || 'N/A'}</div>
-            <div className="text-xs font-mono text-muted-foreground">{transaction.accounts?.usage?.id || 'N/A'}</div>
           </div>
         </td>
         <td className="px-4 py-3 text-right">
@@ -72,10 +93,10 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
           ) : (
             <div className="space-y-0.5">
               <div className="font-semibold text-[#EC9400]">
-                -{formatCurrency(transaction.totals?.customer?.eur || 0)}
+                {formatCurrency(-(transaction.totals?.customer?.eur || 0))}
               </div>
               <div className="text-sm text-[#EC9400]/70">
-                -${(transaction.totals?.customer?.usd || 0).toLocaleString("en-US", {
+                ${(-(transaction.totals?.customer?.usd || 0)).toLocaleString("en-US", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}
@@ -83,10 +104,11 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
             </div>
           )}
         </td>
+        <td className="px-4 py-3"></td>
       </tr>
       {isExpanded && (
         <tr className="bg-muted/30">
-          <td colSpan={4} className="px-4 py-4">
+          <td colSpan={5} className="px-4 py-4">
             <div className="ml-10 space-y-4">
               {isDeposit ? (
                 <>
@@ -654,15 +676,19 @@ export function TransactionsList({
                 <table className="w-full">
                   <thead className="border-b border-border bg-muted/50">
                     <tr>
+                      <th className="px-4 py-3 w-12"></th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Period</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Payer Account</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Usage Account</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Description</th>
                       <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Amount (EUR / USD)</th>
+                      <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Info</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {currentTransactions.map((transaction) => (
-                      <TransactionRow key={transaction.id} transaction={transaction} />
+                    {currentTransactions.map((transaction, index) => (
+                      <TransactionRow 
+                        key={`${transaction.id}-${transaction.accounts?.usage?.id || index}`} 
+                        transaction={transaction} 
+                      />
                     ))}
                   </tbody>
                 </table>
