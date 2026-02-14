@@ -7,6 +7,7 @@ import { CostBreakdownWidget } from "@/components/report/cost-breakdown-widget"
 import { AwsVsMarketplaceWidget } from "@/components/report/aws-vs-marketplace-widget"
 import { RecentTransactionsWidget, type TransactionRow } from "@/components/report/recent-transactions-widget"
 import { DepositsVsCostsWidget, type DepositRow } from "@/components/report/deposits-vs-costs-widget"
+import { TransactionsByAccountWidget } from "@/components/report/transactions-by-account-widget"
 import { dataService } from "@/lib/data/data-service"
 import { Loader2 } from "lucide-react"
 import {
@@ -235,6 +236,9 @@ export function ReportPageContent() {
               usageAccountIds: cc.usageAccountIds || []
             }))}
           />
+
+          {/* Transactions by Usage Account - Stacked Bar Chart */}
+          <TransactionsByAccountWidget transactions={reportData.transactions} />
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card py-24">

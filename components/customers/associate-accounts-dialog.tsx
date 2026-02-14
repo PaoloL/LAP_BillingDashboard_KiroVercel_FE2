@@ -94,7 +94,7 @@ export function AssociateAccountsDialog({
                   />
                   <div className="flex-1 min-w-0 overflow-hidden">
                     <p className="text-sm font-medium text-foreground truncate">
-                      {account.accountName || 'Unnamed Account'} ({account.accountId})
+                      {account.customer || account.accountName || 'Unnamed Account'} ({account.accountId})
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
