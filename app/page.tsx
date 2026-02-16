@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth/auth-context"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, BarChart3, CreditCard, Shield } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
 export default function LandingPage() {
   const router = useRouter()
@@ -35,17 +36,11 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#00243E]">
-                <BarChart3 className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-semibold text-[#00243E]">AWS Billing</span>
+              <Image src="/logo.png" alt="Company Logo" width={96} height={96} className="rounded-lg" />
             </div>
             <div className="flex items-center gap-4">
               <Link href="/auth/login">
-                <Button variant="ghost">Sign In</Button>
-              </Link>
-              <Link href="/auth/register">
-                <Button className="bg-[#026172] hover:bg-[#026172]/90">Sign Up</Button>
+                <Button className="bg-[#026172] hover:bg-[#026172]/90">Sign In</Button>
               </Link>
             </div>
           </div>
@@ -64,15 +59,10 @@ export default function LandingPage() {
               accounts, and optimize spending with precision.
             </p>
             <div className="mt-10 flex items-center justify-center gap-4">
-              <Link href="/auth/register">
-                <Button size="lg" className="gap-2 bg-[#026172] hover:bg-[#026172]/90">
-                  Get Started
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
               <Link href="/auth/login">
-                <Button size="lg" variant="outline">
+                <Button size="lg" className="gap-2 bg-[#026172] hover:bg-[#026172]/90">
                   Sign In
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
             </div>

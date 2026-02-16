@@ -1,8 +1,9 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { BarChart3, Home, Building2, Receipt, Settings, LogOut, User, FileText, Users } from "lucide-react"
+import { Home, Building2, Receipt, Settings, LogOut, User, FileText, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth/auth-context"
 import { Button } from "@/components/ui/button"
@@ -34,10 +35,7 @@ export function DashboardNav() {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-8">
             <Link href="/dashboard" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#00243E]">
-                <BarChart3 className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-semibold text-[#00243E]">AWS Billing</span>
+              <Image src="/logo.png" alt="Company Logo" width={96} height={96} className="rounded-lg" />
             </Link>
 
             <div className="flex gap-1">

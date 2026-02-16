@@ -14,13 +14,6 @@ const poolData = {
 
 const userPool = new CognitoUserPool(poolData)
 
-export interface SignUpParams {
-  email: string
-  password: string
-  givenName: string
-  familyName: string
-}
-
 export interface SignInParams {
   email: string
   password: string
@@ -32,50 +25,6 @@ export interface User {
   givenName?: string
   familyName?: string
   sub: string
-}
-
-// Sign up a new user
-export const signUp = (params: SignUpParams): Promise<CognitoUser> => {
-  return new Promise((resolve, reject) => {
-    const attributeList = [
-      new CognitoUserAttribute({ Name: "email", Value: params.email }),
-      new CognitoUserAttribute({ Name: "given_name", Value: params.givenName }),
-      new CognitoUserAttribute({ Name: "family_name", Value: params.familyName }),
-    ]
-
-    // Generate a unique username (UUID) since user pool uses email alias
-    const username = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
-
-    userPool.signUp(username, params.password, attributeList, [], (err, result) => {
-      if (err) {
-        reject(err)
-        return
-      }
-      if (result?.user) {
-        resolve(result.user)
-      } else {
-        reject(new Error("User creation failed"))
-      }
-    })
-  })
-}
-
-// Verify email with confirmation code
-export const verifyEmail = (email: string, code: string): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    const cognitoUser = new CognitoUser({
-      Username: email,
-      Pool: userPool,
-    })
-
-    cognitoUser.confirmRegistration(code, true, (err) => {
-      if (err) {
-        reject(err)
-        return
-      }
-      resolve()
-    })
-  })
 }
 
 // Sign in user
