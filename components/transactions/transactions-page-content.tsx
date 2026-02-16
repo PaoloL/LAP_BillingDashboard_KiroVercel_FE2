@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { TransactionsList } from "@/components/transactions/transactions-list"
 import { TransactionFilters } from "@/components/transactions/transaction-filters"
+import { Button } from "@/components/ui/button"
+import { RefreshCw } from "lucide-react"
 
 export function TransactionsPageContent() {
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
@@ -24,6 +26,10 @@ export function TransactionsPageContent() {
           <h1 className="text-3xl font-bold tracking-tight text-[#00243E]">Transactions</h1>
           <p className="mt-2 text-muted-foreground">View and manage your billing transactions</p>
         </div>
+        <Button onClick={() => setRefreshKey(prev => prev + 1)} variant="outline">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
       <TransactionFilters

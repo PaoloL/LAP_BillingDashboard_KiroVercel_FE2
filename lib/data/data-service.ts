@@ -541,7 +541,7 @@ export const dataService = {
     return apiClient.updateCostCenterAccounts(customer.vatNumber, costCenterId, usageAccountIds)
   },
 
-  async createDeposit(customerId: string, data: { costCenterId: string; amountEur: number; description: string; poNumber: string }): Promise<any> {
+  async createDeposit(customerId: string, data: { costCenterId: string; amountEur: number; description: string; poNumber: string; createdBy?: string }): Promise<any> {
     if (config.useMockData) {
       console.log("[v0] Mock: Created deposit", data)
       return Promise.resolve({ 

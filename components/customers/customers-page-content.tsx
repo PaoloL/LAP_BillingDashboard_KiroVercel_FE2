@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { dataService } from "@/lib/data/data-service"
+import { useAuth } from "@/lib/auth/auth-context"
 import type { Customer, UsageAccount, CostCenter } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -61,6 +62,7 @@ import { CustomerDepositDialog } from "@/components/customers/customer-deposit-d
 import { AssociateAccountsDialog } from "@/components/customers/associate-accounts-dialog"
 
 export function CustomersPageContent() {
+  const { user } = useAuth()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [usageAccounts, setUsageAccounts] = useState<UsageAccount[]>([])
   const [loading, setLoading] = useState(true)
@@ -205,7 +207,12 @@ export function CustomersPageContent() {
   async function handleDeposit(deposit: { costCenterId: string; amountEur: number; description: string; poNumber: string }) {
     if (!depositCustomer) return
     try {
-      await dataService.createDeposit(depositCustomer.id, deposit)
+      console.log('Creating deposit with user:', user)
+      const depositWithUser = {
+        ...deposit,
+        createdBy: user?.email || user?.sub || 'system'
+      }
+      await dataService.createDeposit(depositCustomer.id, depositWithUser)
       await loadData()
     } catch (err) {
       console.error("Failed to create deposit:", err)

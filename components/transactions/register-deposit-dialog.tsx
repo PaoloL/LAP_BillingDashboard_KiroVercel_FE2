@@ -71,12 +71,15 @@ export function RegisterDepositDialog({ open, onOpenChange, onSuccess }: Registe
     try {
       setLoading(true)
       
+      console.log('User object:', user)
+      console.log('User email:', user?.email)
+      
       await dataService.createDeposit({
         usageAccountId: selectedAccountId,
         amountEur: amount,
         date: new Date(date).toISOString(),
         description: description.trim(),
-        createdBy: user?.email || 'unknown',
+        createdBy: user?.email || user?.sub || 'system',
       })
 
       onSuccess()
