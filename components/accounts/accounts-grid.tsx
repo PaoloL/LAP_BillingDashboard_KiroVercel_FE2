@@ -18,12 +18,14 @@ import {
   PiggyBank,
   Tag,
   FileEdit,
+  DollarSign,
 } from "lucide-react"
 import { RegisterPayerDialog } from "@/components/accounts/register-payer-dialog"
 import { EditPayerDialog } from "@/components/accounts/edit-payer-dialog"
 import { RegisterUsageDialog } from "@/components/accounts/register-usage-dialog"
 import { EditUsageDialog } from "@/components/accounts/edit-usage-dialog"
 import { UsageDetailsDialog } from "@/components/accounts/usage-details-dialog"
+import { ExchangeRateDialog } from "@/components/accounts/exchange-rate-dialog"
 import type { PayerAccount, UsageAccount } from "@/lib/types"
 import { dataService } from "@/lib/data/data-service"
 import { formatCurrency } from "@/lib/format"
@@ -44,6 +46,8 @@ export function AccountsGrid() {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
   const [selectedAccount, setSelectedAccount] = useState<UsageAccount | null>(null)
   const [refreshingUsage, setRefreshingUsage] = useState(false)
+  const [exchangeRateDialogOpen, setExchangeRateDialogOpen] = useState(false)
+  const [selectedPayerForExchangeRate, setSelectedPayerForExchangeRate] = useState<PayerAccount | null>(null)
 
   useEffect(() => {
     loadAccounts()
@@ -261,6 +265,19 @@ export function AccountsGrid() {
                           title="Edit"
                         >
                           <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-[#026172] hover:bg-[#026172]/10 hover:text-[#026172]"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedPayerForExchangeRate(account)
+                            setExchangeRateDialogOpen(true)
+                          }}
+                          title="Exchange Rate"
+                        >
+                          <DollarSign className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -583,6 +600,14 @@ export function AccountsGrid() {
       />
       {selectedAccount && (
         <UsageDetailsDialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen} account={selectedAccount} />
+      )}
+      {selectedPayerForExchangeRate && (
+        <ExchangeRateDialog
+          open={exchangeRateDialogOpen}
+          onOpenChange={setExchangeRateDialogOpen}
+          payerAccountId={selectedPayerForExchangeRate.accountId}
+          payerAccountName={selectedPayerForExchangeRate.accountName}
+        />
       )}
     </>
   )

@@ -37,6 +37,7 @@ import {
   Trash2,
   Building2,
   Users,
+  DollarSign,
 } from "lucide-react"
 import type { PayerAccount, UsageAccount } from "@/lib/types"
 import { dataService } from "@/lib/data/data-service"
@@ -45,6 +46,8 @@ import { EditPayerDialog } from "@/components/accounts/edit-payer-dialog"
 import { RegisterUsageDialog } from "@/components/accounts/register-usage-dialog"
 import { EditUsageDialog } from "@/components/accounts/edit-usage-dialog"
 import { UsageDetailsDialog } from "@/components/accounts/usage-details-dialog"
+import { ExchangeRateDialog } from "@/components/accounts/exchange-rate-dialog"
+import { PayerDetailsDialog } from "@/components/accounts/payer-details-dialog"
 
 export function AccountsPageContent() {
   const [payerAccounts, setPayerAccounts] = useState<PayerAccount[]>([])
@@ -64,6 +67,8 @@ export function AccountsPageContent() {
   const [payerDialogOpen, setPayerDialogOpen] = useState(false)
   const [editPayerDialogOpen, setEditPayerDialogOpen] = useState(false)
   const [selectedPayerAccount, setSelectedPayerAccount] = useState<PayerAccount | null>(null)
+  const [payerDetailsDialogOpen, setPayerDetailsDialogOpen] = useState(false)
+  const [selectedPayerForDetails, setSelectedPayerForDetails] = useState<PayerAccount | null>(null)
   const [usageDialogOpen, setUsageDialogOpen] = useState(false)
   const [selectedPayerForUsage, setSelectedPayerForUsage] = useState<PayerAccount | null>(null)
   const [editUsageDialogOpen, setEditUsageDialogOpen] = useState(false)
@@ -71,6 +76,8 @@ export function AccountsPageContent() {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
   const [selectedAccount, setSelectedAccount] = useState<UsageAccount | null>(null)
   const [refreshingUsage, setRefreshingUsage] = useState(false)
+  const [exchangeRateDialogOpen, setExchangeRateDialogOpen] = useState(false)
+  const [selectedPayerForExchangeRate, setSelectedPayerForExchangeRate] = useState<PayerAccount | null>(null)
 
   useEffect(() => {
     loadAccounts()
@@ -228,11 +235,25 @@ export function AccountsPageContent() {
                             {account.status === "Registered" ? (
                               <>
                                 <DropdownMenuItem onClick={() => {
+                                  setSelectedPayerForDetails(account)
+                                  setPayerDetailsDialogOpen(true)
+                                }}>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => {
                                   setSelectedPayerAccount(account)
                                   setEditPayerDialogOpen(true)
                                 }}>
                                   <Pencil className="mr-2 h-4 w-4" />
                                   Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => {
+                                  setSelectedPayerForExchangeRate(account)
+                                  setExchangeRateDialogOpen(true)
+                                }}>
+                                  <DollarSign className="mr-2 h-4 w-4" />
+                                  Exchange Rate
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => dataService.archivePayerAccount(account.accountId).then(loadAccounts)}>
@@ -500,6 +521,13 @@ export function AccountsPageContent() {
         account={selectedPayerAccount}
         onSuccess={loadAccounts}
       />
+      {selectedPayerForDetails && (
+        <PayerDetailsDialog
+          open={payerDetailsDialogOpen}
+          onOpenChange={setPayerDetailsDialogOpen}
+          account={selectedPayerForDetails}
+        />
+      )}
       <RegisterUsageDialog
         open={usageDialogOpen}
         onOpenChange={setUsageDialogOpen}
@@ -516,6 +544,14 @@ export function AccountsPageContent() {
       />
       {selectedAccount && (
         <UsageDetailsDialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen} account={selectedAccount} />
+      )}
+      {selectedPayerForExchangeRate && (
+        <ExchangeRateDialog
+          open={exchangeRateDialogOpen}
+          onOpenChange={setExchangeRateDialogOpen}
+          payerAccountId={selectedPayerForExchangeRate.accountId}
+          payerAccountName={selectedPayerForExchangeRate.accountName}
+        />
       )}
     </>
   )
