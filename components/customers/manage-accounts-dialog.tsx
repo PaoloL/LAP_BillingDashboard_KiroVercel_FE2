@@ -26,7 +26,7 @@ export function ManageAccountsDialog({
 
   function getAccountName(accountId: string) {
     const acc = usageAccounts.find((a) => a.accountId === accountId)
-    return acc?.accountName || accountId
+    return acc?.customer || acc?.accountName || 'Unnamed Account'
   }
 
   return (

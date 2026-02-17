@@ -1,5 +1,3 @@
-import { ExchangeRateSettings } from "@/components/settings/exchange-rate-settings"
-
 export function SettingsPageContent() {
   return (
     <div className="space-y-6">
@@ -8,7 +6,7 @@ export function SettingsPageContent() {
         <p className="mt-2 text-muted-foreground">Configure your application settings</p>
       </div>
 
-      <ExchangeRateSettings />
+      {/* Settings content will be added here */}
     </div>
   )
 }

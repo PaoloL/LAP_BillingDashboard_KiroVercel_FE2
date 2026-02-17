@@ -1,7 +1,36 @@
+"use client"
+
 import { StatsCards } from "@/components/dashboard/stats-cards"
 import { CostCharts } from "@/components/dashboard/cost-charts"
+import { MarginByAccountsWidget } from "@/components/dashboard/margin-by-accounts-widget"
+import { useEffect, useState } from "react"
+import { dataService } from "@/lib/data/data-service"
 
 export function DashboardPageContent() {
+  const [transactions, setTransactions] = useState<any[]>([])
+  
+  useEffect(() => {
+    async function loadTransactions() {
+      try {
+        // Get transactions for the last 12 months
+        const now = new Date()
+        const startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1)
+        const startPeriod = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`
+        
+        const response = await dataService.getTransactions({ 
+          startPeriod,
+          limit: 1000 
+        })
+        // Extract the data array from the response
+        setTransactions(response?.data || response || [])
+      } catch (error) {
+        console.error("Failed to load transactions:", error)
+        setTransactions([])
+      }
+    }
+    loadTransactions()
+  }, [])
+  
   return (
     <div className="space-y-6">
       <div>
@@ -11,6 +40,7 @@ export function DashboardPageContent() {
 
       <StatsCards />
       <CostCharts />
+      <MarginByAccountsWidget transactions={transactions} />
     </div>
   )
 }

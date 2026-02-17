@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { dataService } from "@/lib/data/data-service"
+import { useAuth } from "@/lib/auth/auth-context"
 import type { Customer, UsageAccount, CostCenter } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -47,7 +48,6 @@ import {
   Archive,
   RotateCcw,
   Trash2,
-  Banknote,
   Users,
   Link2,
 } from "lucide-react"
@@ -57,10 +57,10 @@ import { CustomerDetailsDialog } from "@/components/customers/customer-details-d
 import { CustomerInfoDialog } from "@/components/customers/customer-info-dialog"
 import { CostCentersDialog } from "@/components/customers/cost-centers-dialog"
 import { ManageAccountsDialog } from "@/components/customers/manage-accounts-dialog"
-import { CustomerDepositDialog } from "@/components/customers/customer-deposit-dialog"
 import { AssociateAccountsDialog } from "@/components/customers/associate-accounts-dialog"
 
 export function CustomersPageContent() {
+  const { user } = useAuth()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [usageAccounts, setUsageAccounts] = useState<UsageAccount[]>([])
   const [loading, setLoading] = useState(true)
@@ -77,8 +77,6 @@ export function CustomersPageContent() {
   const [manageOpen, setManageOpen] = useState(false)
   const [detailsCustomer, setDetailsCustomer] = useState<Customer | null>(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
-  const [depositCustomer, setDepositCustomer] = useState<Customer | null>(null)
-  const [depositOpen, setDepositOpen] = useState(false)
   const [associateOpen, setAssociateOpen] = useState(false)
   const [associateCostCenter, setAssociateCostCenter] = useState<CostCenter | null>(null)
   const [associateCustomerId, setAssociateCustomerId] = useState<string>("")
@@ -201,18 +199,6 @@ export function CustomersPageContent() {
     }
     setDeleteTarget(null)
   }
-
-  async function handleDeposit(deposit: { costCenterId: string; amountEur: number; description: string; poNumber: string }) {
-    if (!depositCustomer) return
-    try {
-      await dataService.createDeposit(depositCustomer.id, deposit)
-      await loadData()
-    } catch (err) {
-      console.error("Failed to create deposit:", err)
-    }
-    setDepositCustomer(null)
-  }
-
 
   async function handleSaveAccounts(costCenterId: string, accountIds: string[]) {
     if (!associateCustomerId) return
@@ -360,10 +346,6 @@ export function CustomersPageContent() {
                                 <Link2 className="h-4 w-4 mr-2" /> Manage Accounts
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => { setDepositCustomer(customer); setDepositOpen(true) }}>
-                                <Banknote className="h-4 w-4 mr-2" /> Make Deposit
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => setArchiveTarget(customer)} className="text-amber-600 focus:text-amber-600">
                                 <Archive className="h-4 w-4 mr-2" /> Archive
                               </DropdownMenuItem>
@@ -427,13 +409,6 @@ export function CustomersPageContent() {
         onOpenChange={setDetailsOpen}
         customer={detailsCustomer}
         usageAccounts={usageAccounts}
-      />
-
-      <CustomerDepositDialog
-        open={depositOpen}
-        onOpenChange={setDepositOpen}
-        customer={depositCustomer}
-        onDeposit={handleDeposit}
       />
 
       <AssociateAccountsDialog

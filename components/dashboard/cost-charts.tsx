@@ -29,6 +29,7 @@ interface ChartData {
 
 const PAYER_COLORS = ["#00243E", "#026172", "#0891B2", "#22D3EE", "#67E8F9"]
 const USAGE_COLORS = ["#EC9400", "#F59E0B", "#FBBF24", "#FCD34D", "#FDE68A", "#FEF3C7", "#D97706", "#B45309", "#92400E", "#78350F"]
+const CUSTOMER_COLORS = ["#10B981", "#059669", "#34D399", "#6EE7B7", "#A7F3D0"]
 
 export function CostCharts() {
   const [chartData, setChartData] = useState<ChartData>({
@@ -80,7 +81,7 @@ export function CostCharts() {
           })
 
           // Aggregate by payer (only DATAEXPORT)
-          if (isDataExport) {
+          if (isDataExport && sellerCost > 0) {
             const payerId = tx.accounts?.payer?.id
             const payerName = tx.accounts?.payer?.name || payerId
             if (payerId) {
@@ -105,6 +106,7 @@ export function CostCharts() {
 
               // Aggregate by customer
               const customerName = usageAccountMap.get(usageId) || 'Unknown Customer'
+              console.log('Customer lookup:', { usageId, customerName })
               const current2 = customerMap.get(customerName)
               if (current2) {
                 current2.value += sellerCost
@@ -112,14 +114,23 @@ export function CostCharts() {
                 customerMap.set(customerName, { name: customerName, value: sellerCost })
               }
             }
+          }
 
-            // Build trend data by month
-            const period = tx.billingPeriod
-            if (period) {
+          // Build trend data by month
+          const period = tx.billingPeriod
+          if (period) {
+            if (isDataExport) {
               if (trendMap.has(period)) {
                 trendMap.get(period)!.usage += sellerCost
               } else {
                 trendMap.set(period, { usage: sellerCost, deposit: 0 })
+              }
+            } else if (tx.transactionType === 'MANUAL' || tx.transactionType === 'DEPOSIT') {
+              const depositAmount = Math.abs(tx.details?.value || 0)
+              if (trendMap.has(period)) {
+                trendMap.get(period)!.deposit += depositAmount
+              } else {
+                trendMap.set(period, { usage: 0, deposit: depositAmount })
               }
             }
           }
@@ -132,11 +143,11 @@ export function CostCharts() {
 
         const costByUsage = Array.from(usageMap.values())
           .sort((a, b) => b.value - a.value)
-          .slice(0, 10)
+          .slice(0, 5)
 
         const costByCustomer = Array.from(customerMap.values())
           .sort((a, b) => b.value - a.value)
-          .slice(0, 10)
+          .slice(0, 5)
 
         // Format trend data
         const trendData = Array.from(trendMap.entries())
@@ -272,10 +283,10 @@ export function CostCharts() {
           </CardContent>
         </Card>
 
-        {/* Seller Cost by Usage Account (Pie Chart, Top 10) */}
+        {/* Seller Cost by Usage Account (Pie Chart, Top 5) */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-[#00243E]">Total Seller Cost by Usage Account (Top 10)</CardTitle>
+            <CardTitle className="text-[#00243E]">Total Seller Cost by Usage Account (Top 5)</CardTitle>
           </CardHeader>
           <CardContent>
             {chartData.costByUsage.length > 0 ? (
@@ -314,10 +325,10 @@ export function CostCharts() {
           </CardContent>
         </Card>
 
-        {/* Seller Cost by Customer (Pie Chart, Top 10) */}
+        {/* Seller Cost by Customer (Pie Chart, Top 5) */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-[#00243E]">Total Seller Cost by Customer (Top 10)</CardTitle>
+            <CardTitle className="text-[#00243E]">Total Seller Cost by Customer (Top 5)</CardTitle>
           </CardHeader>
           <CardContent>
             {chartData.costByCustomer.length > 0 ? (
@@ -333,7 +344,7 @@ export function CostCharts() {
                     dataKey="value"
                   >
                     {chartData.costByCustomer.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={USAGE_COLORS[index % USAGE_COLORS.length]} />
+                      <Cell key={`cell-${index}`} fill={CUSTOMER_COLORS[index % CUSTOMER_COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip
@@ -357,42 +368,48 @@ export function CostCharts() {
         </Card>
       </div>
 
-      {/* Usage vs Deposit Trend */}
+      {/* Deposits vs Costs Trend */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-[#00243E]">Usage vs Deposit Trend</CardTitle>
+          <CardTitle className="text-[#00243E]">Deposits vs Costs (Last 12 Months)</CardTitle>
         </CardHeader>
         <CardContent>
           {chartData.trendData.length > 0 ? (
             <ResponsiveContainer width="100%" height={350}>
               <ComposedChart data={chartData.trendData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <defs>
+                  <linearGradient id="colorDeposits" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#026172" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#026172" stopOpacity={0.1}/>
+                  </linearGradient>
+                  <linearGradient id="colorCosts" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#EC9400" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#EC9400" stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-                <XAxis dataKey="period" />
-                <YAxis tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`} />
+                <XAxis dataKey="period" tick={{ fontSize: 12 }} />
+                <YAxis tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} />
                 <Tooltip
-                  formatter={(value: number, name: string) => [
-                    formatCurrency(value),
-                    name === "usage" ? "Total Usage (Seller Cost)" : "Total Deposit",
-                  ]}
-                  contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e5e5", borderRadius: "8px" }}
+                  formatter={(value: number) => formatCurrency(value)}
+                  contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e5e5", borderRadius: "8px", fontSize: "12px" }}
                 />
-                <Legend />
+                <Legend wrapperStyle={{ fontSize: "12px" }} iconType="square" />
                 <Area
                   type="monotone"
                   dataKey="deposit"
-                  name="Total Deposit"
-                  fill="#22C55E"
-                  fillOpacity={0.2}
-                  stroke="#22C55E"
-                  strokeWidth={2}
+                  name="Deposits"
+                  stackId="1"
+                  stroke="#026172"
+                  fill="url(#colorDeposits)"
                 />
-                <Line
+                <Area
                   type="monotone"
                   dataKey="usage"
-                  name="Total Usage (Seller Cost)"
+                  name="Costs"
+                  stackId="1"
                   stroke="#EC9400"
-                  strokeWidth={2}
-                  dot={{ fill: "#EC9400", r: 4 }}
+                  fill="url(#colorCosts)"
                 />
               </ComposedChart>
             </ResponsiveContainer>

@@ -350,10 +350,13 @@ class ApiClient {
     })
   }
 
-  async createDeposit(vatNumber: string, data: { costCenterId: string; amountEur: number; description: string; poNumber: string }): Promise<any> {
-    return this.request(`/customers/${vatNumber}/deposits`, {
+  async createDeposit(vatNumber: string, data: { costCenterId: string; amountEur: number; description: string; poNumber: string; createdBy?: string }): Promise<any> {
+    return this.request(`/transactions`, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        customerVatNumber: vatNumber
+      }),
     })
   }
 

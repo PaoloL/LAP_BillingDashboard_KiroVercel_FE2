@@ -23,10 +23,9 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
       const costCenter = transaction.details?.costCenterName || 'Unknown Cost Center'
       return `Deposit on ${customerName} in ${costCenter}`
     } else {
-      // Transaction: "Withdrawal on <usage-account> (<usage-id>)"
+      // Transaction: "Transaction on <usage-account-name> by Amazon Data Export"
       const usageName = transaction.accounts?.usage?.name || 'Unknown Usage'
-      const usageId = transaction.accounts?.usage?.id || 'N/A'
-      return `Withdrawal on ${usageName} (${usageId})`
+      return `Transaction on ${usageName} by Amazon Data Export`
     }
   }
 
@@ -70,11 +69,12 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
         <td className="px-4 py-3">
           <div className="space-y-1">
             <div className="text-sm text-foreground">{description}</div>
-            {exchangeRate && (
-              <div className="text-xs text-muted-foreground">
-                Exchange Rate: {exchangeRate.toFixed(2)}
-              </div>
-            )}
+            <div className="text-xs text-muted-foreground">
+              Payer: {transaction.accounts?.payer?.name || 'N/A'} ({transaction.accounts?.payer?.id || 'N/A'})
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Usage: {transaction.accounts?.usage?.name || 'N/A'} ({transaction.accounts?.usage?.id || 'N/A'})
+            </div>
           </div>
         </td>
         <td className="px-4 py-3 text-right">
@@ -104,7 +104,13 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
             </div>
           )}
         </td>
-        <td className="px-4 py-3"></td>
+        <td className="px-4 py-3 text-center">
+          {exchangeRate && (
+            <div className="text-sm text-muted-foreground">
+              {exchangeRate.toFixed(2)}
+            </div>
+          )}
+        </td>
       </tr>
       {isExpanded && (
         <tr className="bg-muted/30">

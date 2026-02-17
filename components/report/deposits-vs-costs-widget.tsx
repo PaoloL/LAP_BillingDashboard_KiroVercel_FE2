@@ -110,14 +110,12 @@ export function DepositsVsCostsWidget({ deposits, transactions }: DepositsVsCost
             <Area 
               type="monotone" 
               dataKey="Deposits" 
-              stackId="1"
               stroke="#026172" 
               fill="url(#colorDeposits)" 
             />
             <Area 
               type="monotone" 
               dataKey="Costs" 
-              stackId="1"
               stroke="#EC9400" 
               fill="url(#colorCosts)" 
             />

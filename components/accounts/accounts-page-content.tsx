@@ -37,6 +37,7 @@ import {
   Trash2,
   Building2,
   Users,
+  DollarSign,
 } from "lucide-react"
 import type { PayerAccount, UsageAccount } from "@/lib/types"
 import { dataService } from "@/lib/data/data-service"
@@ -45,6 +46,8 @@ import { EditPayerDialog } from "@/components/accounts/edit-payer-dialog"
 import { RegisterUsageDialog } from "@/components/accounts/register-usage-dialog"
 import { EditUsageDialog } from "@/components/accounts/edit-usage-dialog"
 import { UsageDetailsDialog } from "@/components/accounts/usage-details-dialog"
+import { ExchangeRateDialog } from "@/components/accounts/exchange-rate-dialog"
+import { PayerDetailsDialog } from "@/components/accounts/payer-details-dialog"
 
 export function AccountsPageContent() {
   const [payerAccounts, setPayerAccounts] = useState<PayerAccount[]>([])
@@ -54,11 +57,18 @@ export function AccountsPageContent() {
   const [usageSearch, setUsageSearch] = useState("")
   const [payerStatusFilter, setPayerStatusFilter] = useState<"all" | "Registered" | "Archived">("all")
   const [usageStatusFilter, setUsageStatusFilter] = useState<"all" | "Registered" | "Unregistered" | "Archived">("all")
+  
+  // Pagination states
+  const [payerPage, setPayerPage] = useState(1)
+  const [usagePage, setUsagePage] = useState(1)
+  const itemsPerPage = 10
 
   // Dialog states
   const [payerDialogOpen, setPayerDialogOpen] = useState(false)
   const [editPayerDialogOpen, setEditPayerDialogOpen] = useState(false)
   const [selectedPayerAccount, setSelectedPayerAccount] = useState<PayerAccount | null>(null)
+  const [payerDetailsDialogOpen, setPayerDetailsDialogOpen] = useState(false)
+  const [selectedPayerForDetails, setSelectedPayerForDetails] = useState<PayerAccount | null>(null)
   const [usageDialogOpen, setUsageDialogOpen] = useState(false)
   const [selectedPayerForUsage, setSelectedPayerForUsage] = useState<PayerAccount | null>(null)
   const [editUsageDialogOpen, setEditUsageDialogOpen] = useState(false)
@@ -66,6 +76,8 @@ export function AccountsPageContent() {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
   const [selectedAccount, setSelectedAccount] = useState<UsageAccount | null>(null)
   const [refreshingUsage, setRefreshingUsage] = useState(false)
+  const [exchangeRateDialogOpen, setExchangeRateDialogOpen] = useState(false)
+  const [selectedPayerForExchangeRate, setSelectedPayerForExchangeRate] = useState<PayerAccount | null>(null)
 
   useEffect(() => {
     loadAccounts()
@@ -112,6 +124,17 @@ export function AccountsPageContent() {
     const matchesStatus = usageStatusFilter === "all" || acc.status === usageStatusFilter
     return matchesSearch && matchesStatus
   })
+
+  // Pagination calculations
+  const payerTotalPages = Math.ceil(filteredPayers.length / itemsPerPage)
+  const payerStartIndex = (payerPage - 1) * itemsPerPage
+  const payerEndIndex = payerStartIndex + itemsPerPage
+  const paginatedPayers = filteredPayers.slice(payerStartIndex, payerEndIndex)
+
+  const usageTotalPages = Math.ceil(filteredUsage.length / itemsPerPage)
+  const usageStartIndex = (usagePage - 1) * itemsPerPage
+  const usageEndIndex = usageStartIndex + itemsPerPage
+  const paginatedUsage = filteredUsage.slice(usageStartIndex, usageEndIndex)
 
   if (loading) {
     return <div className="flex items-center justify-center py-12">
@@ -169,6 +192,7 @@ export function AccountsPageContent() {
                   <TableHead>Account Name</TableHead>
                   <TableHead>Account ID</TableHead>
                   <TableHead>Distributor</TableHead>
+                  <TableHead>Last Update</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -176,16 +200,25 @@ export function AccountsPageContent() {
               <TableBody>
                 {filteredPayers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                       No payer accounts found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredPayers.map((account) => (
+                  paginatedPayers.map((account) => (
                     <TableRow key={account.id}>
                       <TableCell className="font-medium">{account.accountName}</TableCell>
                       <TableCell className="font-mono text-sm">{account.accountId}</TableCell>
                       <TableCell>{account.distributorName}</TableCell>
+                      <TableCell>{account.updatedAt ? new Date(account.updatedAt).toLocaleString('en-GB', { 
+                        day: '2-digit', 
+                        month: '2-digit', 
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                      }).replace(',', ' -') : "-"}</TableCell>
                       <TableCell>
                         <Badge variant={account.status === "Registered" ? "default" : "secondary"}>
                           {account.status}
@@ -202,11 +235,25 @@ export function AccountsPageContent() {
                             {account.status === "Registered" ? (
                               <>
                                 <DropdownMenuItem onClick={() => {
+                                  setSelectedPayerForDetails(account)
+                                  setPayerDetailsDialogOpen(true)
+                                }}>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => {
                                   setSelectedPayerAccount(account)
                                   setEditPayerDialogOpen(true)
                                 }}>
                                   <Pencil className="mr-2 h-4 w-4" />
                                   Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => {
+                                  setSelectedPayerForExchangeRate(account)
+                                  setExchangeRateDialogOpen(true)
+                                }}>
+                                  <DollarSign className="mr-2 h-4 w-4" />
+                                  Exchange Rate
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => dataService.archivePayerAccount(account.accountId).then(loadAccounts)}>
@@ -236,6 +283,36 @@ export function AccountsPageContent() {
               </TableBody>
             </Table>
           </div>
+
+          {/* Payer Pagination */}
+          {payerTotalPages > 1 && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Showing {payerStartIndex + 1} to {Math.min(payerEndIndex, filteredPayers.length)} of {filteredPayers.length} accounts
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPayerPage(p => Math.max(1, p - 1))}
+                  disabled={payerPage === 1}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm">
+                  Page {payerPage} of {payerTotalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPayerPage(p => Math.min(payerTotalPages, p + 1))}
+                  disabled={payerPage === payerTotalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Usage Accounts Section */}
@@ -280,7 +357,6 @@ export function AccountsPageContent() {
                 <TableRow>
                   <TableHead>Account Name</TableHead>
                   <TableHead>Account ID</TableHead>
-                  <TableHead>Distributor</TableHead>
                   <TableHead>Discount</TableHead>
                   <TableHead>Rebate</TableHead>
                   <TableHead>Status</TableHead>
@@ -290,16 +366,15 @@ export function AccountsPageContent() {
               <TableBody>
                 {filteredUsage.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                       No usage accounts found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredUsage.map((account) => (
+                  paginatedUsage.map((account) => (
                     <TableRow key={account.id}>
                       <TableCell className="font-medium">{account.customer}</TableCell>
                       <TableCell className="font-mono text-sm">{account.id}</TableCell>
-                      <TableCell>{account.distributorName || "-"}</TableCell>
                       <TableCell>
                         <div className="text-sm">
                           <div>Customer: {account.customerDiscount}%</div>
@@ -406,6 +481,36 @@ export function AccountsPageContent() {
               </TableBody>
             </Table>
           </div>
+
+          {/* Usage Pagination */}
+          {usageTotalPages > 1 && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Showing {usageStartIndex + 1} to {Math.min(usageEndIndex, filteredUsage.length)} of {filteredUsage.length} accounts
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setUsagePage(p => Math.max(1, p - 1))}
+                  disabled={usagePage === 1}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm">
+                  Page {usagePage} of {usageTotalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setUsagePage(p => Math.min(usageTotalPages, p + 1))}
+                  disabled={usagePage === usageTotalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </section>
       </div>
 
@@ -416,6 +521,13 @@ export function AccountsPageContent() {
         account={selectedPayerAccount}
         onSuccess={loadAccounts}
       />
+      {selectedPayerForDetails && (
+        <PayerDetailsDialog
+          open={payerDetailsDialogOpen}
+          onOpenChange={setPayerDetailsDialogOpen}
+          account={selectedPayerForDetails}
+        />
+      )}
       <RegisterUsageDialog
         open={usageDialogOpen}
         onOpenChange={setUsageDialogOpen}
@@ -432,6 +544,14 @@ export function AccountsPageContent() {
       />
       {selectedAccount && (
         <UsageDetailsDialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen} account={selectedAccount} />
+      )}
+      {selectedPayerForExchangeRate && (
+        <ExchangeRateDialog
+          open={exchangeRateDialogOpen}
+          onOpenChange={setExchangeRateDialogOpen}
+          payerAccountId={selectedPayerForExchangeRate.accountId}
+          payerAccountName={selectedPayerForExchangeRate.accountName}
+        />
       )}
     </>
   )

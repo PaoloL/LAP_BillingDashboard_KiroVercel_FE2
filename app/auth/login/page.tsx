@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { signIn } from "@/lib/auth/cognito"
 import { useAuth } from "@/lib/auth/auth-context"
@@ -12,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { BarChart3, AlertCircle } from "lucide-react"
+import { AlertCircle } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -49,8 +50,8 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#00243E] to-[#026172] p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-[#00243E]">
-            <BarChart3 className="h-7 w-7 text-white" />
+          <div className="mx-auto">
+            <Image src="/logo.png" alt="Company Logo" width={96} height={96} className="rounded-lg mx-auto" />
           </div>
           <CardTitle className="text-2xl">Sign In</CardTitle>
           <CardDescription>Enter your credentials to access the billing dashboard</CardDescription>
