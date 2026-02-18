@@ -60,8 +60,8 @@ export function MarginByAccountsWidget({ transactions }: MarginByAccountsWidgetP
       
       if (!accountId || !period) return
       
-      const sellerCost = tx.totals?.seller?.eur || 0
-      const customerCost = tx.totals?.customer?.eur || 0
+      const sellerCost = tx.totals?.seller?.net?.eur || tx.totals?.seller?.eur || 0
+      const customerCost = tx.totals?.customer?.net?.eur || tx.totals?.customer?.eur || 0
       const margin = customerCost - sellerCost
       
       if (!marginByAccountByMonth.has(period)) {

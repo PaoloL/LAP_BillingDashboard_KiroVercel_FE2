@@ -35,10 +35,10 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
   // For deposits, margin = deposit amount, costs are empty
   const marginEur = isDeposit 
     ? (transaction.details?.value || 0)
-    : (transaction.totals?.customer?.eur || 0) - (transaction.totals?.seller?.eur || 0)
+    : (transaction.totals?.customer?.net?.eur || transaction.totals?.customer?.eur || 0) - (transaction.totals?.seller?.net?.eur || transaction.totals?.seller?.eur || 0)
   const marginUsd = isDeposit
     ? (transaction.details?.value || 0)
-    : (transaction.totals?.customer?.usd || 0) - (transaction.totals?.seller?.usd || 0)
+    : (transaction.totals?.customer?.net?.usd || transaction.totals?.customer?.usd || 0) - (transaction.totals?.seller?.net?.usd || transaction.totals?.seller?.usd || 0)
   const marginColor = marginEur < 0 ? "text-[#F26522]" : "text-green-600"
 
   return (
@@ -93,10 +93,10 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
           ) : (
             <div className="space-y-0.5">
               <div className="font-semibold text-[#EC9400]">
-                {formatCurrency(-(transaction.totals?.customer?.eur || 0))}
+                {formatCurrency(-(transaction.totals?.customer?.net?.eur || transaction.totals?.customer?.eur || 0))}
               </div>
               <div className="text-sm text-[#EC9400]/70">
-                ${(-(transaction.totals?.customer?.usd || 0)).toLocaleString("en-US", {
+                ${(-(transaction.totals?.customer?.net?.usd || transaction.totals?.customer?.usd || 0)).toLocaleString("en-US", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}
@@ -105,11 +105,7 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
           )}
         </td>
         <td className="px-4 py-3 text-center">
-          {exchangeRate && (
-            <div className="text-sm text-muted-foreground">
-              {exchangeRate.toFixed(2)}
-            </div>
-          )}
+          {/* Reserved for future implementation */}
         </td>
       </tr>
       {isExpanded && (
@@ -182,13 +178,13 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                       <div className="text-sm font-semibold text-muted-foreground">Seller Cost</div>
                       <div className="space-y-1">
                         <div className="text-xl font-bold text-foreground">
-                          {formatCurrency(transaction.totals?.seller?.eur || 0)}
+                          {formatCurrency(transaction.totals?.seller?.net?.eur || transaction.totals?.seller?.eur || 0)}
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          ${(transaction.totals?.seller?.usd || 0).toLocaleString("en-US", {
+                        <div className="text-xs text-muted-foreground">
+                          Gross: ${(transaction.totals?.seller?.gross?.usd || transaction.totals?.seller?.usd || 0).toLocaleString("en-US", {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
-                          })}
+                          })} / {formatCurrency(transaction.totals?.seller?.gross?.eur || transaction.totals?.seller?.eur || 0)}
                         </div>
                       </div>
                     </div>
@@ -196,13 +192,13 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                       <div className="text-sm font-semibold text-muted-foreground">Customer Cost</div>
                       <div className="space-y-1">
                         <div className="text-xl font-bold text-[#F26522]">
-                          {formatCurrency(transaction.totals?.customer?.eur || 0)}
+                          {formatCurrency(transaction.totals?.customer?.net?.eur || transaction.totals?.customer?.eur || 0)}
                         </div>
-                        <div className="text-sm text-[#F26522]/70">
-                          ${(transaction.totals?.customer?.usd || 0).toLocaleString("en-US", {
+                        <div className="text-xs text-[#F26522]/70">
+                          Gross: ${(transaction.totals?.customer?.gross?.usd || transaction.totals?.customer?.usd || 0).toLocaleString("en-US", {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
-                          })}
+                          })} / {formatCurrency(transaction.totals?.customer?.gross?.eur || transaction.totals?.customer?.eur || 0)}
                         </div>
                       </div>
                     </div>

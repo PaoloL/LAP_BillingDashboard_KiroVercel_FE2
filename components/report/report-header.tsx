@@ -1,14 +1,13 @@
 "use client"
 
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, Building2, Mail, User } from "lucide-react"
+import { Clock, Building2, Mail, User } from "lucide-react"
 
 interface ReportHeaderProps {
   customerName: string
   customerVat: string
   contactName: string
   contactEmail: string
-  billingPeriod: string
   generatedDate: string
   status: string
 }
@@ -18,10 +17,25 @@ export function ReportHeader({
   customerVat,
   contactName,
   contactEmail,
-  billingPeriod,
   generatedDate,
   status,
 }: ReportHeaderProps) {
+  // Format date as dd/mm/yyyy - hh:mm:ss
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString)
+      const day = String(date.getDate()).padStart(2, '0')
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const year = date.getFullYear()
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      const seconds = String(date.getSeconds()).padStart(2, '0')
+      return `${day}/${month}/${year} - ${hours}:${minutes}:${seconds}`
+    } catch {
+      return dateString
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6">
       <div className="flex items-start justify-between">
@@ -41,33 +55,28 @@ export function ReportHeader({
             <div className="flex items-center gap-2 text-sm">
               <Building2 className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Customer:</span>
-              <span className="font-semibold text-foreground">{customerName}</span>
+              <span className="font-semibold text-foreground">{customerName || 'N/A'}</span>
               <span className="font-mono text-xs text-muted-foreground">
-                (VAT: {customerVat})
+                (VAT: {customerVat || 'N/A'})
               </span>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <User className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Contact:</span>
-              <span className="font-medium text-foreground">{contactName}</span>
+              <span className="font-medium text-foreground">{contactName || 'N/A'}</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Mail className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Email:</span>
-              <span className="font-medium text-foreground">{contactEmail}</span>
+              <span className="font-medium text-foreground">{contactEmail || 'N/A'}</span>
             </div>
           </div>
         </div>
         <div className="flex flex-col items-end gap-2">
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <Calendar className="h-3.5 w-3.5" />
-            <span>Period:</span>
-            <strong className="text-foreground">{billingPeriod}</strong>
-          </div>
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Clock className="h-3.5 w-3.5" />
             <span>Updated:</span>
-            <strong className="text-foreground">{generatedDate}</strong>
+            <strong className="text-foreground">{formatDate(generatedDate)}</strong>
           </div>
         </div>
       </div>
