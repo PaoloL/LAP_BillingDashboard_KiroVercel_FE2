@@ -89,7 +89,7 @@ export function CostCharts({ dashboardData }: CostChartsProps) {
         {/* Cost by Usage Account */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Cost by Usage Account (Top 10)</CardTitle>
+            <CardTitle className="text-base">Cost by Usage Account (Top 5)</CardTitle>
           </CardHeader>
           <CardContent>
             {costByUsage && costByUsage.length > 0 ? (
