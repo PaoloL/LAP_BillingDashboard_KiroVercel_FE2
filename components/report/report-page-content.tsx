@@ -189,7 +189,6 @@ export function ReportPageContent() {
             customerVat={reportData.customerVat}
             contactName={reportData.contactName}
             contactEmail={reportData.contactEmail}
-            billingPeriod={reportData.billingPeriod}
             generatedDate={reportData.generatedDate}
             status={reportData.status}
           />
