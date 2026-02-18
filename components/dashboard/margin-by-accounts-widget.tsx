@@ -52,7 +52,7 @@ export function MarginByAccountsWidget({ transactions }: MarginByAccountsWidgetP
     
     txArray.forEach(tx => {
       // Skip deposits - only include AWS transactions
-      if (tx.transactionType === 'MANUAL' || tx.transactionType === 'deposit') return
+      if (tx.transactionType === 'MANUAL' || tx.transactionType === 'DEPOSIT') return
       
       const period = tx.billingPeriod
       const accountId = tx.accounts?.usage?.id
@@ -63,6 +63,17 @@ export function MarginByAccountsWidget({ transactions }: MarginByAccountsWidgetP
       const sellerCost = tx.totals?.seller?.net?.eur || tx.totals?.seller?.eur || 0
       const customerCost = tx.totals?.customer?.net?.eur || tx.totals?.customer?.eur || 0
       const margin = customerCost - sellerCost
+      
+      if (period === '2026-01') {
+        console.log('January transaction found:', {
+          period,
+          accountId,
+          accountName,
+          sellerCost,
+          customerCost,
+          margin
+        })
+      }
       
       if (!marginByAccountByMonth.has(period)) {
         marginByAccountByMonth.set(period, new Map())
@@ -90,8 +101,13 @@ export function MarginByAccountsWidget({ transactions }: MarginByAccountsWidgetP
       .map(([id]) => id)
     
     // Build chart data
-    return months.map(month => {
-      const data: any = { period: month }
+    const result = months.map(month => {
+      const data: any = { 
+        period: new Date(month + "-01").toLocaleDateString("en-GB", {
+          month: "short",
+          year: "numeric",
+        })
+      }
       const monthData = marginByAccountByMonth.get(month)
       
       topAccounts.forEach(accountId => {
@@ -101,6 +117,8 @@ export function MarginByAccountsWidget({ transactions }: MarginByAccountsWidgetP
       
       return data
     })
+    
+    return result
   }, [transactions])
   
   const accountKeys = useMemo(() => {

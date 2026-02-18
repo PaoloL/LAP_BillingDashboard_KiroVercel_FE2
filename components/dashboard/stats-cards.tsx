@@ -73,13 +73,6 @@ export function StatsCards() {
           tx.transactionType === 'MANUAL' || tx.transactionType === 'DEPOSIT'
         )
         
-        console.log('Deposit transactions:', depositTransactions.map((tx: any) => ({
-          type: tx.transactionType,
-          value: tx.details?.value,
-          amount: tx.details?.amount,
-          totals: tx.totals
-        })))
-        
         // Calculate year totals
         const yearSellerCost = costTransactions.reduce((sum: number, tx: any) => 
           sum + (tx.totals?.seller?.net?.eur || tx.totals?.seller?.eur || 0), 0

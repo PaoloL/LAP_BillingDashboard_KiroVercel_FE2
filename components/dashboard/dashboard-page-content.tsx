@@ -15,10 +15,15 @@ export function DashboardPageContent() {
         // Get transactions for the last 12 months
         const now = new Date()
         const startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1)
+        const endDate = new Date(now.getFullYear(), now.getMonth(), 1)
         const startPeriod = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`
+        const endPeriod = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}`
+        
+        console.log('Dashboard fetching transactions:', { startPeriod, endPeriod })
         
         const response = await dataService.getTransactions({ 
           startPeriod,
+          endPeriod,
           limit: 1000 
         })
         // Extract the data array from the response

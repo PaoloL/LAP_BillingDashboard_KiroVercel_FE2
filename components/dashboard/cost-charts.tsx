@@ -56,7 +56,7 @@ export function CostCharts() {
           dataService.getCustomers(),
         ])
 
-        // Create usage account to customer map
+        // Create usage account to customer VAT map
         const usageToCustomerMap = new Map<string, string>()
         usageAccounts.forEach((acc: UsageAccount) => {
           if (acc.customer) {
@@ -64,10 +64,11 @@ export function CostCharts() {
           }
         })
         
-        // Create customer name map
+        // Create customer VAT to name map
         const customerNameMap = new Map<string, string>()
         customers.forEach((cust: any) => {
-          customerNameMap.set(cust.vatNumber, cust.name || cust.vatNumber)
+          const name = cust.name || cust.vatNumber
+          customerNameMap.set(cust.vatNumber, name)
         })
 
         // Group by payer, usage, and customer
@@ -79,15 +80,6 @@ export function CostCharts() {
         transactions.data.forEach(tx => {
           const isDataExport = tx.transactionType === 'DATAEXPORT'
           const sellerCost = isDataExport ? (tx.totals?.seller?.net?.eur || tx.totals?.seller?.eur || 0) : 0
-
-          console.log('Transaction:', {
-            type: tx.transactionType,
-            isDataExport,
-            sellerCost,
-            totals: tx.totals,
-            payer: tx.accounts?.payer,
-            usage: tx.accounts?.usage
-          })
 
           // Aggregate by payer (only DATAEXPORT)
           if (isDataExport && sellerCost > 0) {
@@ -160,30 +152,34 @@ export function CostCharts() {
           .sort((a, b) => b.value - a.value)
           .slice(0, 5)
 
-        // Format trend data
-        const trendData = Array.from(trendMap.entries())
-          .sort((a, b) => a[0].localeCompare(b[0]))
-          .map(([period, data]) => ({
-            period: new Date(period + "-01").toLocaleDateString("en-GB", {
-              month: "short",
-              year: "numeric",
-            }),
-            usage: data.usage,
-            deposit: data.deposit,
-          }))
+        // Get last 12 months
+        const getLast12Months = (): string[] => {
+          const months: string[] = []
+          const now = new Date()
+          for (let i = 11; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+            months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
+          }
+          return months
+        }
+
+        const last12Months = getLast12Months()
+
+        // Format trend data - only last 12 months
+        const trendData = last12Months.map(period => ({
+          period: new Date(period + "-01").toLocaleDateString("en-GB", {
+            month: "short",
+            year: "numeric",
+          }),
+          usage: trendMap.get(period)?.usage || 0,
+          deposit: trendMap.get(period)?.deposit || 0,
+        }))
 
         setChartData({
           costByPayer,
           costByUsage,
           costByCustomer,
           trendData,
-        })
-
-        console.log('Chart data set:', {
-          costByPayer,
-          costByUsage,
-          costByCustomer,
-          totalTransactions: transactions.data.length
         })
       } catch (error) {
         console.error("Failed to load chart data:", error)
@@ -386,44 +382,58 @@ export function CostCharts() {
         </CardHeader>
         <CardContent>
           {chartData.trendData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={350}>
-              <AreaChart data={chartData.trendData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={chartData.trendData}>
                 <defs>
-                  <linearGradient id="colorDeposits" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="dashboardColorDeposits" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#026172" stopOpacity={0.8}/>
                     <stop offset="95%" stopColor="#026172" stopOpacity={0.1}/>
                   </linearGradient>
-                  <linearGradient id="colorCosts" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="dashboardColorCosts" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#EC9400" stopOpacity={0.8}/>
                     <stop offset="95%" stopColor="#EC9400" stopOpacity={0.1}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-                <XAxis dataKey="period" tick={{ fontSize: 12 }} />
-                <YAxis tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} />
+                <XAxis 
+                  dataKey="period" 
+                  tick={{ fontSize: 12 }} 
+                />
+                <YAxis 
+                  tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`} 
+                  tick={{ fontSize: 12 }} 
+                />
                 <Tooltip
                   formatter={(value: number) => formatCurrency(value)}
-                  contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e5e5", borderRadius: "8px", fontSize: "12px" }}
+                  contentStyle={{ 
+                    backgroundColor: "#fff", 
+                    border: "1px solid #e5e5e5", 
+                    borderRadius: "8px", 
+                    fontSize: "12px" 
+                  }}
                 />
-                <Legend wrapperStyle={{ fontSize: "12px" }} iconType="square" />
+                <Legend 
+                  wrapperStyle={{ fontSize: "12px" }} 
+                  iconType="square" 
+                />
                 <Area
                   type="monotone"
                   dataKey="deposit"
                   name="Deposits"
                   stroke="#026172"
-                  fill="url(#colorDeposits)"
+                  fill="url(#dashboardColorDeposits)"
                 />
                 <Area
                   type="monotone"
                   dataKey="usage"
                   name="Costs"
                   stroke="#EC9400"
-                  fill="url(#colorCosts)"
+                  fill="url(#dashboardColorCosts)"
                 />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex h-[350px] items-center justify-center text-muted-foreground">
+            <div className="flex h-[300px] items-center justify-center text-muted-foreground">
               No trend data available
             </div>
           )}
