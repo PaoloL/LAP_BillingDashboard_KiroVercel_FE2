@@ -364,6 +364,11 @@ class ApiClient {
     const params = billingPeriod ? `?billingPeriod=${billingPeriod}` : ''
     return this.request(`/reports/customers/${vatNumber}${params}`)
   }
+
+  // Dashboard
+  async getDashboard(): Promise<any> {
+    return this.request('/dashboard')
+  }
 }
 
 export const apiClient = new ApiClient()
