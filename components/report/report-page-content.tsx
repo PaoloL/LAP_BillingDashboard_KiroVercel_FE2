@@ -98,8 +98,8 @@ export function ReportPageContent() {
         payerAccountId: tx.accounts?.payer?.id || '',
         usageAccountName: tx.accounts?.usage?.name || '',
         usageAccountId: tx.accounts?.usage?.id || '',
-        amountUsd: tx.totals?.customer?.usd || 0,
-        amountEur: tx.totals?.customer?.eur || 0,
+        amountUsd: tx.totals?.customer?.net?.usd || tx.totals?.customer?.usd || 0,
+        amountEur: tx.totals?.customer?.net?.eur || tx.totals?.customer?.eur || 0,
         exchangeRate: tx.exchangeRate || 1.0,
       }))
 
