@@ -8,8 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   Area,
-  ComposedChart,
-  Line,
+  AreaChart,
   PieChart,
   Pie,
   Cell,
@@ -47,19 +46,29 @@ export function CostCharts() {
 
         const currentYear = new Date().getFullYear()
 
-        // Fetch transactions and usage accounts
-        const [transactions, usageAccounts] = await Promise.all([
+        // Fetch transactions, usage accounts, and customers
+        const [transactions, usageAccounts, customers] = await Promise.all([
           dataService.getTransactions({
             startPeriod: `${currentYear}-01`,
             endPeriod: `${currentYear}-12`,
           }),
           dataService.getUsageAccounts(),
+          dataService.getCustomers(),
         ])
 
-        // Create usage account map for customer lookup
-        const usageAccountMap = new Map(
-          usageAccounts.map((acc: UsageAccount) => [acc.accountId, acc.customer])
-        )
+        // Create usage account to customer map
+        const usageToCustomerMap = new Map<string, string>()
+        usageAccounts.forEach((acc: UsageAccount) => {
+          if (acc.customer) {
+            usageToCustomerMap.set(acc.accountId, acc.customer)
+          }
+        })
+        
+        // Create customer name map
+        const customerNameMap = new Map<string, string>()
+        customers.forEach((cust: any) => {
+          customerNameMap.set(cust.vatNumber, cust.name || cust.vatNumber)
+        })
 
         // Group by payer, usage, and customer
         const payerMap = new Map<string, { name: string; value: number }>()
@@ -105,13 +114,15 @@ export function CostCharts() {
               }
 
               // Aggregate by customer
-              const customerName = usageAccountMap.get(usageId) || 'Unknown Customer'
-              console.log('Customer lookup:', { usageId, customerName })
-              const current2 = customerMap.get(customerName)
-              if (current2) {
-                current2.value += sellerCost
-              } else {
-                customerMap.set(customerName, { name: customerName, value: sellerCost })
+              const customerVat = usageToCustomerMap.get(usageId)
+              if (customerVat) {
+                const customerName = customerNameMap.get(customerVat) || customerVat
+                const current2 = customerMap.get(customerVat)
+                if (current2) {
+                  current2.value += sellerCost
+                } else {
+                  customerMap.set(customerVat, { name: customerName, value: sellerCost })
+                }
               }
             }
           }
@@ -126,7 +137,7 @@ export function CostCharts() {
                 trendMap.set(period, { usage: sellerCost, deposit: 0 })
               }
             } else if (tx.transactionType === 'MANUAL' || tx.transactionType === 'DEPOSIT') {
-              const depositAmount = Math.abs(tx.details?.value || 0)
+              const depositAmount = Math.abs(tx.details?.amount?.eur || tx.details?.value || 0)
               if (trendMap.has(period)) {
                 trendMap.get(period)!.deposit += depositAmount
               } else {
@@ -376,7 +387,7 @@ export function CostCharts() {
         <CardContent>
           {chartData.trendData.length > 0 ? (
             <ResponsiveContainer width="100%" height={350}>
-              <ComposedChart data={chartData.trendData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+              <AreaChart data={chartData.trendData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <defs>
                   <linearGradient id="colorDeposits" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#026172" stopOpacity={0.8}/>
@@ -399,7 +410,6 @@ export function CostCharts() {
                   type="monotone"
                   dataKey="deposit"
                   name="Deposits"
-                  stackId="1"
                   stroke="#026172"
                   fill="url(#colorDeposits)"
                 />
@@ -407,11 +417,10 @@ export function CostCharts() {
                   type="monotone"
                   dataKey="usage"
                   name="Costs"
-                  stackId="1"
                   stroke="#EC9400"
                   fill="url(#colorCosts)"
                 />
-              </ComposedChart>
+              </AreaChart>
             </ResponsiveContainer>
           ) : (
             <div className="flex h-[350px] items-center justify-center text-muted-foreground">

@@ -186,27 +186,6 @@ export function UsageDetailsDialog({ open, onOpenChange, account }: UsageDetails
                   )}
                 </div>
               </div>
-
-              <div className="space-y-3 rounded-lg border border-border p-4">
-                <h4 className="font-semibold text-[#00243E]">Funds Utilization</h4>
-                <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200">
-                  <div className="h-full rounded-full bg-[#026172]" style={{ width: `${account.fundsUtilization}%` }} />
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">{formatCurrency(account.totalUsage)} used</span>
-                  <span className="font-semibold text-foreground">{account.fundsUtilization}%</span>
-                </div>
-                <div className="flex items-center justify-between border-t border-border pt-3 text-sm">
-                  <span className="text-muted-foreground">Total Deposit</span>
-                  <span className="font-semibold text-foreground">{formatCurrency(account.totalDeposit)}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Remaining</span>
-                  <span className="font-semibold text-[#026172]">
-                    {formatCurrency(account.totalDeposit - account.totalUsage)}
-                  </span>
-                </div>
-              </div>
             </TabsContent>
 
             <TabsContent value="transactions" className="space-y-3">
