@@ -75,10 +75,10 @@ export function StatsCards() {
         
         // Calculate year totals
         const yearSellerCost = costTransactions.reduce((sum: number, tx: any) => 
-          sum + (tx.totals?.seller?.eur || 0), 0
+          sum + (tx.totals?.seller?.net?.eur || tx.totals?.seller?.eur || 0), 0
         )
         const yearCustomerCost = costTransactions.reduce((sum: number, tx: any) => 
-          sum + (tx.totals?.customer?.eur || 0), 0
+          sum + (tx.totals?.customer?.net?.eur || tx.totals?.customer?.eur || 0), 0
         )
         const yearDepositTotal = depositTransactions.reduce((sum: number, tx: any) => 
           sum + Math.abs(tx.details?.value || 0), 0
@@ -89,10 +89,10 @@ export function StatsCards() {
         const monthDepositTransactions = depositTransactions.filter((tx: any) => tx.billingPeriod === currentPeriod)
         
         const monthSellerCost = monthCostTransactions.reduce((sum: number, tx: any) => 
-          sum + (tx.totals?.seller?.eur || 0), 0
+          sum + (tx.totals?.seller?.net?.eur || tx.totals?.seller?.eur || 0), 0
         )
         const monthCustomerCost = monthCostTransactions.reduce((sum: number, tx: any) => 
-          sum + (tx.totals?.customer?.eur || 0), 0
+          sum + (tx.totals?.customer?.net?.eur || tx.totals?.customer?.eur || 0), 0
         )
         const monthDepositTotal = monthDepositTransactions.reduce((sum: number, tx: any) => 
           sum + Math.abs(tx.details?.value || 0), 0

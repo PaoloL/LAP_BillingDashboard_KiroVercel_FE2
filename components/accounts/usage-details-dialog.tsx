@@ -82,8 +82,8 @@ export function UsageDetailsDialog({ open, onOpenChange, account }: UsageDetails
         
         const data = periodMap.get(period)!
         data.distributorCost += tx.totals?.distributor?.eur || 0
-        data.sellerCost += tx.totals?.seller?.eur || 0
-        data.customerCost += tx.totals?.customer?.eur || 0
+        data.sellerCost += tx.totals?.seller?.net?.eur || tx.totals?.seller?.eur || 0
+        data.customerCost += tx.totals?.customer?.net?.eur || tx.totals?.customer?.eur || 0
         data.margin = data.customerCost - data.sellerCost
       })
 
