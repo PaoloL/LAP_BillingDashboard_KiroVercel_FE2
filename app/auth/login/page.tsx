@@ -51,7 +51,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4 text-center">
           <div className="mx-auto">
-            <Image src="/logo.png" alt="Company Logo" width={96} height={96} className="rounded-lg mx-auto" />
+            <Image src="/logo.png" alt="Company Logo" width={96} height={96} className="mx-auto" />
           </div>
           <CardTitle className="text-2xl">Sign In</CardTitle>
           <CardDescription>Enter your credentials to access the billing dashboard</CardDescription>
