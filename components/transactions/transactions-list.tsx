@@ -184,11 +184,11 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                         <div className="text-xl font-bold text-foreground">
                           {formatCurrency(transaction.totals?.seller?.net?.eur || transaction.totals?.seller?.eur || 0)}
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          ${(transaction.totals?.seller?.net?.usd || transaction.totals?.seller?.usd || 0).toLocaleString("en-US", {
+                        <div className="text-xs text-muted-foreground">
+                          Gross: ${(transaction.totals?.seller?.gross?.usd || transaction.totals?.seller?.usd || 0).toLocaleString("en-US", {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
-                          })}
+                          })} / {formatCurrency(transaction.totals?.seller?.gross?.eur || transaction.totals?.seller?.eur || 0)}
                         </div>
                       </div>
                     </div>
@@ -198,11 +198,11 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
                         <div className="text-xl font-bold text-[#F26522]">
                           {formatCurrency(transaction.totals?.customer?.net?.eur || transaction.totals?.customer?.eur || 0)}
                         </div>
-                        <div className="text-sm text-[#F26522]/70">
-                          ${(transaction.totals?.customer?.net?.usd || transaction.totals?.customer?.usd || 0).toLocaleString("en-US", {
+                        <div className="text-xs text-[#F26522]/70">
+                          Gross: ${(transaction.totals?.customer?.gross?.usd || transaction.totals?.customer?.usd || 0).toLocaleString("en-US", {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
-                          })}
+                          })} / {formatCurrency(transaction.totals?.customer?.gross?.eur || transaction.totals?.customer?.eur || 0)}
                         </div>
                       </div>
                     </div>
