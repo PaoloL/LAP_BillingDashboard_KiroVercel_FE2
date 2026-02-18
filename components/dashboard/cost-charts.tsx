@@ -94,13 +94,22 @@ export function CostCharts({ dashboardData }: CostChartsProps) {
           <CardContent>
             {costByUsage && costByUsage.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={costByUsage} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis type="category" dataKey="name" width={150} />
+                <PieChart>
+                  <Pie
+                    data={costByUsage}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    label={(entry) => `€${entry.value.toFixed(0)}`}
+                  >
+                    {costByUsage.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
                   <Tooltip formatter={(value: number) => `€${value.toFixed(2)}`} />
-                  <Bar dataKey="value" fill="#026172" />
-                </BarChart>
+                </PieChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex h-[300px] items-center justify-center text-muted-foreground">
