@@ -89,12 +89,15 @@ export function ReportPageContent() {
         return
       }
 
+      // Get customer details from customers list
+      const customer = customers.find(c => c.vatNumber === vatNumber)
+
       // Transform backend response to match frontend format
       const transactionRows: TransactionRow[] = (report.transactions || []).map((tx: any) => ({
         id: tx.id || tx.transactionId,
         dateTime: tx.createdAt || tx.dateTime || tx.updatedAt,
         period: tx.billingPeriod || '',
-        payerAccount: tx.accounts?.payer?.name || report.customerName,
+        payerAccount: tx.accounts?.payer?.name || customer?.name || report.customerName,
         payerAccountId: tx.accounts?.payer?.id || '',
         usageAccountName: tx.accounts?.usage?.name || '',
         usageAccountId: tx.accounts?.usage?.id || '',
@@ -114,13 +117,13 @@ export function ReportPageContent() {
       }))
 
       setReportData({
-        customerName: report.customerName,
-        customerVat: report.customerVat,
-        contactName: report.contactName || '',
-        contactEmail: report.contactEmail || '',
+        customerName: customer?.name || report.customerName || '',
+        customerVat: customer?.vatNumber || report.customerVat || vatNumber,
+        contactName: customer?.contactName || report.contactName || '',
+        contactEmail: customer?.contactEmail || report.contactEmail || '',
         billingPeriod: report.billingPeriod || '',
         generatedDate: report.generatedDate || new Date().toISOString(),
-        status: report.status || 'Active',
+        status: customer?.status || report.status || 'Active',
         totalDeposit: report.totalDeposit || 0,
         totalCost: report.totalCost || 0,
         costCenterBalances: report.costCenterBalances || [],
@@ -137,7 +140,7 @@ export function ReportPageContent() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [customers])
 
   useEffect(() => {
     if (selectedCustomerVat) {

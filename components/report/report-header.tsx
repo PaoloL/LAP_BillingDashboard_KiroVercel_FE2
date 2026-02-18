@@ -56,26 +56,20 @@ export function ReportHeader({
               <Building2 className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Customer:</span>
               <span className="font-semibold text-foreground">{customerName || 'N/A'}</span>
-              {customerVat && (
-                <span className="font-mono text-xs text-muted-foreground">
-                  (VAT: {customerVat})
-                </span>
-              )}
+              <span className="font-mono text-xs text-muted-foreground">
+                (VAT: {customerVat || 'N/A'})
+              </span>
             </div>
-            {contactName && (
-              <div className="flex items-center gap-2 text-sm">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Contact:</span>
-                <span className="font-medium text-foreground">{contactName}</span>
-              </div>
-            )}
-            {contactEmail && (
-              <div className="flex items-center gap-2 text-sm">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Email:</span>
-                <span className="font-medium text-foreground">{contactEmail}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2 text-sm">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Contact:</span>
+              <span className="font-medium text-foreground">{contactName || 'N/A'}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Email:</span>
+              <span className="font-medium text-foreground">{contactEmail || 'N/A'}</span>
+            </div>
           </div>
         </div>
         <div className="flex flex-col items-end gap-2">
