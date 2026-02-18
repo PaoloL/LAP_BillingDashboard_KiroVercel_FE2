@@ -107,7 +107,7 @@ function TransactionRow({ transaction }: { transaction: TransactionDetail }) {
         <td className="px-4 py-3 text-center">
           {exchangeRate && (
             <div className="text-sm text-muted-foreground">
-              {exchangeRate.toFixed(2)}
+              FX: {exchangeRate.toFixed(4)}
             </div>
           )}
         </td>
