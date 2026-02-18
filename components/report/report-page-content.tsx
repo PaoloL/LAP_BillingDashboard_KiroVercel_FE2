@@ -116,13 +116,36 @@ export function ReportPageContent() {
         poNumber: dep.details?.poNumber || '',
       }))
 
+      // Find the most recent transaction/deposit time
+      let lastUpdated = report.lastUpdated || report.generatedDate || new Date().toISOString()
+      
+      // Check transaction times
+      if (transactionRows.length > 0) {
+        const latestTx = transactionRows.reduce((latest, tx) => {
+          return new Date(tx.dateTime) > new Date(latest) ? tx.dateTime : latest
+        }, transactionRows[0].dateTime)
+        if (new Date(latestTx) > new Date(lastUpdated)) {
+          lastUpdated = latestTx
+        }
+      }
+      
+      // Check deposit times
+      if (depositRows.length > 0) {
+        const latestDep = depositRows.reduce((latest, dep) => {
+          return new Date(dep.dateTime) > new Date(latest) ? dep.dateTime : latest
+        }, depositRows[0].dateTime)
+        if (new Date(latestDep) > new Date(lastUpdated)) {
+          lastUpdated = latestDep
+        }
+      }
+
       setReportData({
         customerName: customer?.name || report.customerName || '',
         customerVat: customer?.vatNumber || report.customerVat || vatNumber,
         contactName: customer?.contactName || report.contactName || '',
         contactEmail: customer?.contactEmail || report.contactEmail || '',
         billingPeriod: report.billingPeriod || '',
-        generatedDate: report.generatedDate || new Date().toISOString(),
+        generatedDate: lastUpdated,
         status: customer?.status || report.status || 'Active',
         totalDeposit: report.totalDeposit || 0,
         totalCost: report.totalCost || 0,
