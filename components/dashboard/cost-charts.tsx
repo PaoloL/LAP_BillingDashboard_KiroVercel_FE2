@@ -56,7 +56,7 @@ export function CostCharts({ dashboardData }: CostChartsProps) {
         {/* Cost by Payer */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Cost by Payer (Top 5)</CardTitle>
+            <CardTitle className="text-base">Seller Cost by Payer (Top 5)</CardTitle>
           </CardHeader>
           <CardContent>
             {costByPayer && costByPayer.length > 0 ? (
@@ -89,7 +89,7 @@ export function CostCharts({ dashboardData }: CostChartsProps) {
         {/* Cost by Usage Account */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Cost by Usage Account (Top 5)</CardTitle>
+            <CardTitle className="text-base">Seller Cost by Usage Account (Top 5)</CardTitle>
           </CardHeader>
           <CardContent>
             {costByUsage && costByUsage.length > 0 ? (
@@ -122,18 +122,27 @@ export function CostCharts({ dashboardData }: CostChartsProps) {
         {/* Cost by Customer */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Cost by Customer (Top 5)</CardTitle>
+            <CardTitle className="text-base">Seller Cost by Customer (Top 5)</CardTitle>
           </CardHeader>
           <CardContent>
             {costByCustomer && costByCustomer.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={costByCustomer}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
-                  <YAxis />
+                <PieChart>
+                  <Pie
+                    data={costByCustomer}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                  >
+                    {costByCustomer.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
                   <Tooltip formatter={(value: number) => `€${value.toFixed(2)}`} />
-                  <Bar dataKey="value" fill="#EC9400" />
-                </BarChart>
+                  <Legend />
+                </PieChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex h-[300px] items-center justify-center text-muted-foreground">
