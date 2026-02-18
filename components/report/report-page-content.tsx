@@ -89,17 +89,20 @@ export function ReportPageContent() {
         return
       }
 
+      // Get customer details from customers list
+      const customer = customers.find(c => c.vatNumber === vatNumber)
+
       // Transform backend response to match frontend format
       const transactionRows: TransactionRow[] = (report.transactions || []).map((tx: any) => ({
         id: tx.id || tx.transactionId,
         dateTime: tx.createdAt || tx.dateTime || tx.updatedAt,
         period: tx.billingPeriod || '',
-        payerAccount: tx.accounts?.payer?.name || report.customerName,
+        payerAccount: tx.accounts?.payer?.name || customer?.name || report.customerName,
         payerAccountId: tx.accounts?.payer?.id || '',
         usageAccountName: tx.accounts?.usage?.name || '',
         usageAccountId: tx.accounts?.usage?.id || '',
-        amountUsd: tx.totals?.customer?.usd || 0,
-        amountEur: tx.totals?.customer?.eur || 0,
+        amountUsd: tx.totals?.customer?.net?.usd || tx.totals?.customer?.usd || 0,
+        amountEur: tx.totals?.customer?.net?.eur || tx.totals?.customer?.eur || 0,
         exchangeRate: tx.exchangeRate || 1.0,
       }))
 
@@ -113,14 +116,37 @@ export function ReportPageContent() {
         poNumber: dep.details?.poNumber || '',
       }))
 
+      // Find the most recent transaction/deposit time
+      let lastUpdated = report.lastUpdated || report.generatedDate || new Date().toISOString()
+      
+      // Check transaction times
+      if (transactionRows.length > 0) {
+        const latestTx = transactionRows.reduce((latest, tx) => {
+          return new Date(tx.dateTime) > new Date(latest) ? tx.dateTime : latest
+        }, transactionRows[0].dateTime)
+        if (new Date(latestTx) > new Date(lastUpdated)) {
+          lastUpdated = latestTx
+        }
+      }
+      
+      // Check deposit times
+      if (depositRows.length > 0) {
+        const latestDep = depositRows.reduce((latest, dep) => {
+          return new Date(dep.dateTime) > new Date(latest) ? dep.dateTime : latest
+        }, depositRows[0].dateTime)
+        if (new Date(latestDep) > new Date(lastUpdated)) {
+          lastUpdated = latestDep
+        }
+      }
+
       setReportData({
-        customerName: report.customerName,
-        customerVat: report.customerVat,
-        contactName: report.contactName || '',
-        contactEmail: report.contactEmail || '',
+        customerName: customer?.name || report.customerName || '',
+        customerVat: customer?.vatNumber || report.customerVat || vatNumber,
+        contactName: customer?.contactName || report.contactName || '',
+        contactEmail: customer?.contactEmail || report.contactEmail || '',
         billingPeriod: report.billingPeriod || '',
-        generatedDate: report.generatedDate || new Date().toISOString(),
-        status: report.status || 'Active',
+        generatedDate: lastUpdated,
+        status: customer?.status || report.status || 'Active',
         totalDeposit: report.totalDeposit || 0,
         totalCost: report.totalCost || 0,
         costCenterBalances: report.costCenterBalances || [],
@@ -137,7 +163,7 @@ export function ReportPageContent() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [customers])
 
   useEffect(() => {
     if (selectedCustomerVat) {
@@ -189,7 +215,6 @@ export function ReportPageContent() {
             customerVat={reportData.customerVat}
             contactName={reportData.contactName}
             contactEmail={reportData.contactEmail}
-            billingPeriod={reportData.billingPeriod}
             generatedDate={reportData.generatedDate}
             status={reportData.status}
           />

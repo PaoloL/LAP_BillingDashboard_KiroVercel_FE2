@@ -76,7 +76,7 @@ export default function ForgotPasswordPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4 text-center">
           <div className="mx-auto">
-            <Image src="/logo.png" alt="Company Logo" width={96} height={96} className="rounded-lg mx-auto" />
+            <Image src="/logo.png" alt="Company Logo" width={96} height={96} className="mx-auto" />
           </div>
           <CardTitle className="text-2xl">Reset Password</CardTitle>
           <CardDescription>

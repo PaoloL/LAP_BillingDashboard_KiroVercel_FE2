@@ -69,7 +69,7 @@ export function CostCharts() {
 
         transactions.data.forEach(tx => {
           const isDataExport = tx.transactionType === 'DATAEXPORT'
-          const sellerCost = isDataExport ? (tx.totals?.seller?.eur || 0) : 0
+          const sellerCost = isDataExport ? (tx.totals?.seller?.net?.eur || tx.totals?.seller?.eur || 0) : 0
 
           console.log('Transaction:', {
             type: tx.transactionType,
