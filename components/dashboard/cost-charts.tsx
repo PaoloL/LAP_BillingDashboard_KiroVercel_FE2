@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from "recharts"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, Legend } from "recharts"
 
 interface DashboardData {
   costByPayer: Array<{ name: string; value: number }>
@@ -69,13 +69,13 @@ export function CostCharts({ dashboardData }: CostChartsProps) {
                     cx="50%"
                     cy="50%"
                     outerRadius={80}
-                    label={(entry) => `€${entry.value.toFixed(0)}`}
                   >
                     {costByPayer.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value: number) => `€${value.toFixed(2)}`} />
+                  <Legend />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -102,13 +102,13 @@ export function CostCharts({ dashboardData }: CostChartsProps) {
                     cx="50%"
                     cy="50%"
                     outerRadius={80}
-                    label={(entry) => `€${entry.value.toFixed(0)}`}
                   >
                     {costByUsage.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value: number) => `€${value.toFixed(2)}`} />
+                  <Legend />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -125,21 +125,9 @@ export function CostCharts({ dashboardData }: CostChartsProps) {
             <CardTitle className="text-base">Cost by Customer (Top 5)</CardTitle>
           </CardHeader>
           <CardContent>
-            {costByCustomer && costByCustomer.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={costByCustomer}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
-                  <YAxis />
-                  <Tooltip formatter={(value: number) => `€${value.toFixed(2)}`} />
-                  <Bar dataKey="value" fill="#EC9400" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex h-[300px] items-center justify-center text-muted-foreground">
-                No data available
-              </div>
-            )}
+            <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+              No data available
+            </div>
           </CardContent>
         </Card>
       </div>

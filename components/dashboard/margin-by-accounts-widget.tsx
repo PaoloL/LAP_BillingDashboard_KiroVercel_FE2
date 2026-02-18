@@ -96,6 +96,7 @@ export function MarginByAccountsWidget({ dashboardData }: MarginByAccountsWidget
             <YAxis 
               tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }}
               tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`}
+              reversed
             />
             <Tooltip 
               formatter={(value: number) => formatCurrency(value)}
