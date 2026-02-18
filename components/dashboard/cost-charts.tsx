@@ -125,9 +125,21 @@ export function CostCharts({ dashboardData }: CostChartsProps) {
             <CardTitle className="text-base">Cost by Customer (Top 5)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex h-[300px] items-center justify-center text-muted-foreground">
-              No data available
-            </div>
+            {costByCustomer && costByCustomer.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={costByCustomer}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                  <YAxis />
+                  <Tooltip formatter={(value: number) => `€${value.toFixed(2)}`} />
+                  <Bar dataKey="value" fill="#EC9400" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+                No data available
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
