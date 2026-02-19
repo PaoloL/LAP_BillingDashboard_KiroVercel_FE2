@@ -37,6 +37,7 @@ interface TransactionData {
 export function UsageDetailsDialog({ open, onOpenChange, account }: UsageDetailsDialogProps) {
   const [accountDetails, setAccountDetails] = useState<any>(null)
   const [transactions, setTransactions] = useState<TransactionData[]>([])
+  const [customerInfo, setCustomerInfo] = useState<{ customerName: string; costCenterName: string } | null>(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -52,6 +53,30 @@ export function UsageDetailsDialog({ open, onOpenChange, account }: UsageDetails
       const accounts = await dataService.getUsageAccounts()
       const accountData = accounts.find((a: any) => a.id === account.id)
       setAccountDetails(accountData)
+
+      // Fetch customer and cost center information
+      try {
+        const customers = await dataService.getCustomers()
+        let found = false
+        for (const customer of customers) {
+          // Check if this customer has cost centers with this usage account
+          if (customer.costCenters) {
+            for (const cc of customer.costCenters) {
+              if (cc.usageAccountIds?.includes(accountData?.accountId)) {
+                setCustomerInfo({
+                  customerName: customer.legalName || customer.name,
+                  costCenterName: cc.name
+                })
+                found = true
+                break
+              }
+            }
+          }
+          if (found) break
+        }
+      } catch (error) {
+        console.error('Failed to load customer info:', error)
+      }
 
       // Fetch last 3 months transactions
       const endDate = new Date()
@@ -108,9 +133,8 @@ export function UsageDetailsDialog({ open, onOpenChange, account }: UsageDetails
           </div>
         ) : (
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-1">
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="transactions">Transactions 3M</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
@@ -127,18 +151,24 @@ export function UsageDetailsDialog({ open, onOpenChange, account }: UsageDetails
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">VAT Number</span>
-                  <span className="text-sm font-semibold text-foreground">{accountDetails?.vatNumber || account.vatNumber}</span>
+                  <span className="text-sm font-medium text-muted-foreground">Seller Discount</span>
+                  <span className="text-sm font-semibold text-foreground">{accountDetails?.sellerDiscount || account.sellerDiscount || 0}%</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-muted-foreground">Customer Discount</span>
                   <span className="text-sm font-semibold text-foreground">{accountDetails?.customerDiscount || account.discountValue}%</span>
                 </div>
+              </div>
+
+              <div className="space-y-4 rounded-lg border border-border p-4">
+                <h4 className="font-semibold text-[#00243E]">Customer & Cost Center</h4>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">Available Fund</span>
-                  <span className={cn("text-sm font-semibold", (account.totalDeposit - account.totalUsage) >= 0 ? "text-green-600" : "text-red-600")}>
-                    {formatCurrency(account.totalDeposit - account.totalUsage)}
-                  </span>
+                  <span className="text-sm font-medium text-muted-foreground">Customer</span>
+                  <span className="text-sm font-semibold text-foreground">{customerInfo?.customerName || 'N/A'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">Cost Center</span>
+                  <span className="text-sm font-semibold text-foreground">{customerInfo?.costCenterName || 'N/A'}</span>
                 </div>
               </div>
 
@@ -186,43 +216,6 @@ export function UsageDetailsDialog({ open, onOpenChange, account }: UsageDetails
                   )}
                 </div>
               </div>
-            </TabsContent>
-
-            <TabsContent value="transactions" className="space-y-3">
-              {transactions.length === 0 ? (
-                <div className="py-12 text-center text-muted-foreground">
-                  No transactions found for the last 3 months
-                </div>
-              ) : (
-                <div className="divide-y divide-border rounded-lg border border-border">
-                  {transactions.map((transaction, index) => (
-                    <div key={index} className="p-4 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-foreground">
-                          {format(new Date(transaction.period + '-01'), 'MMMM yyyy')}
-                        </p>
-                        <p className="text-sm font-semibold text-[#026172]">
-                          Margin: {formatCurrency(transaction.margin)}
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 text-xs">
-                        <div>
-                          <span className="text-muted-foreground">Distributor</span>
-                          <p className="font-medium text-foreground">{formatCurrency(transaction.distributorCost)}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Seller</span>
-                          <p className="font-medium text-foreground">{formatCurrency(transaction.sellerCost)}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Customer</span>
-                          <p className="font-medium text-[#EC9400]">{formatCurrency(transaction.customerCost)}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </TabsContent>
           </Tabs>
         )}

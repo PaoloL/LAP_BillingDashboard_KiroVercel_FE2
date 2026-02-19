@@ -107,10 +107,6 @@ export function MarginByAccountsWidget({ dashboardData }: MarginByAccountsWidget
                 fontSize: '12px'
               }}
             />
-            <Legend 
-              wrapperStyle={{ fontSize: '11px' }}
-              iconType="square"
-            />
             {accountKeys.map((key, index) => (
               <Bar 
                 key={key}

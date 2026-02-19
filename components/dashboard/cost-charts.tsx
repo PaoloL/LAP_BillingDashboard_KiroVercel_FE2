@@ -1,7 +1,10 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, Legend } from "recharts"
+import { apiClient } from "@/lib/data/api-client"
 
 interface DashboardData {
   costByPayer: Array<{ name: string; value: number }>
@@ -16,7 +19,65 @@ interface CostChartsProps {
 
 const COLORS = ['#EC9400', '#026172', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#EC4899']
 
+const PERIOD_OPTIONS = [
+  { label: '1M', value: 1 },
+  { label: '3M', value: 3 },
+  { label: '6M', value: 6 },
+  { label: '12M', value: 12 },
+]
+
 export function CostCharts({ dashboardData }: CostChartsProps) {
+  const [payerPeriod, setPayerPeriod] = useState(12)
+  const [usagePeriod, setUsagePeriod] = useState(12)
+  const [customerPeriod, setCustomerPeriod] = useState(12)
+  
+  const [payerData, setPayerData] = useState<Array<{ name: string; value: number }> | null>(null)
+  const [usageData, setUsageData] = useState<Array<{ name: string; value: number }> | null>(null)
+  const [customerData, setCustomerData] = useState<Array<{ name: string; value: number }> | null>(null)
+  
+  const [payerLoading, setPayerLoading] = useState(false)
+  const [usageLoading, setUsageLoading] = useState(false)
+  const [customerLoading, setCustomerLoading] = useState(false)
+
+  // Initialize with dashboard data
+  useEffect(() => {
+    if (dashboardData) {
+      setPayerData(dashboardData.costByPayer)
+      setUsageData(dashboardData.costByUsage)
+      setCustomerData(dashboardData.costByCustomer)
+    }
+  }, [dashboardData])
+
+  const loadPayerData = async (months: number) => {
+    setPayerLoading(true)
+    try {
+      const data = await apiClient.getDashboard(months)
+      setPayerData(data.costByPayer)
+    } finally {
+      setPayerLoading(false)
+    }
+  }
+
+  const loadUsageData = async (months: number) => {
+    setUsageLoading(true)
+    try {
+      const data = await apiClient.getDashboard(months)
+      setUsageData(data.costByUsage)
+    } finally {
+      setUsageLoading(false)
+    }
+  }
+
+  const loadCustomerData = async (months: number) => {
+    setCustomerLoading(true)
+    try {
+      const data = await apiClient.getDashboard(months)
+      setCustomerData(data.costByCustomer)
+    } finally {
+      setCustomerLoading(false)
+    }
+  }
+
   if (!dashboardData) {
     return (
       <div className="space-y-6">
@@ -37,7 +98,7 @@ export function CostCharts({ dashboardData }: CostChartsProps) {
     )
   }
 
-  const { costByPayer, costByUsage, costByCustomer, trendByMonth } = dashboardData
+  const { trendByMonth } = dashboardData
 
   // Format trend data for chart
   const trendData = Object.entries(trendByMonth || {})
@@ -56,26 +117,49 @@ export function CostCharts({ dashboardData }: CostChartsProps) {
         {/* Cost by Payer */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Seller Cost by Payer (Top 5)</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Seller Cost by Payer (Top 5)</CardTitle>
+              <div className="flex gap-1">
+                {PERIOD_OPTIONS.map((option) => (
+                  <Button
+                    key={option.value}
+                    variant={payerPeriod === option.value ? "default" : "outline"}
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => {
+                      setPayerPeriod(option.value)
+                      loadPayerData(option.value)
+                    }}
+                    disabled={payerLoading}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            {costByPayer && costByPayer.length > 0 ? (
+            {payerLoading ? (
+              <div className="flex h-[300px] items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : payerData && payerData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={costByPayer}
+                    data={payerData}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
                     cy="50%"
                     outerRadius={80}
+                    label={(entry) => entry.name}
                   >
-                    {costByPayer.map((_, index) => (
+                    {payerData.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value: number) => `€${value.toFixed(2)}`} />
-                  <Legend />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -89,26 +173,49 @@ export function CostCharts({ dashboardData }: CostChartsProps) {
         {/* Cost by Usage Account */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Seller Cost by Usage Account (Top 5)</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Seller Cost by Usage Account (Top 5)</CardTitle>
+              <div className="flex gap-1">
+                {PERIOD_OPTIONS.map((option) => (
+                  <Button
+                    key={option.value}
+                    variant={usagePeriod === option.value ? "default" : "outline"}
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => {
+                      setUsagePeriod(option.value)
+                      loadUsageData(option.value)
+                    }}
+                    disabled={usageLoading}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            {costByUsage && costByUsage.length > 0 ? (
+            {usageLoading ? (
+              <div className="flex h-[300px] items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : usageData && usageData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={costByUsage}
+                    data={usageData}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
                     cy="50%"
                     outerRadius={80}
+                    label={(entry) => entry.name}
                   >
-                    {costByUsage.map((_, index) => (
+                    {usageData.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value: number) => `€${value.toFixed(2)}`} />
-                  <Legend />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -122,26 +229,49 @@ export function CostCharts({ dashboardData }: CostChartsProps) {
         {/* Cost by Customer */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Seller Cost by Customer (Top 5)</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Seller Cost by Customer (Top 5)</CardTitle>
+              <div className="flex gap-1">
+                {PERIOD_OPTIONS.map((option) => (
+                  <Button
+                    key={option.value}
+                    variant={customerPeriod === option.value ? "default" : "outline"}
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => {
+                      setCustomerPeriod(option.value)
+                      loadCustomerData(option.value)
+                    }}
+                    disabled={customerLoading}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            {costByCustomer && costByCustomer.length > 0 ? (
+            {customerLoading ? (
+              <div className="flex h-[300px] items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : customerData && customerData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={costByCustomer}
+                    data={customerData}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
                     cy="50%"
                     outerRadius={80}
+                    label={(entry) => entry.name}
                   >
-                    {costByCustomer.map((_, index) => (
+                    {customerData.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value: number) => `€${value.toFixed(2)}`} />
-                  <Legend />
                 </PieChart>
               </ResponsiveContainer>
             ) : (

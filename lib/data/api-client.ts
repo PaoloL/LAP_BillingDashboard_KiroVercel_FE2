@@ -366,8 +366,8 @@ class ApiClient {
   }
 
   // Dashboard
-  async getDashboard(): Promise<any> {
-    return this.request('/dashboard')
+  async getDashboard(months: number = 12): Promise<any> {
+    return this.request(`/dashboard?months=${months}`)
   }
 }
 
