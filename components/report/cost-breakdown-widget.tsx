@@ -19,6 +19,7 @@ interface CostBreakdownWidgetProps {
   discount: number
   credits: number
   adjustment: number
+  rebateEnabled?: boolean
 }
 
 export function CostBreakdownWidget({
@@ -28,16 +29,18 @@ export function CostBreakdownWidget({
   discount,
   credits,
   adjustment,
+  rebateEnabled = false,
 }: CostBreakdownWidgetProps) {
-  const rows = [
-    { label: "Usage", value: usage, colorClass: "text-usage" },
-    { label: "Tax", value: tax, colorClass: "text-tax" },
-    { label: "Fees", value: fee, colorClass: "text-fees" },
-    { label: "Discount", value: discount, colorClass: "text-secondary" },
-    { label: "Credits", value: credits, colorClass: "text-credits" },
-    { label: "Adjustment", value: adjustment, colorClass: "text-muted-foreground" },
+  const allRows = [
+    { label: "Usage", value: usage, colorClass: "text-usage", show: true },
+    { label: "Tax", value: tax, colorClass: "text-tax", show: true },
+    { label: "Fees", value: fee, colorClass: "text-fees", show: true },
+    { label: "Discount", value: discount, colorClass: "text-secondary", show: rebateEnabled },
+    { label: "Credits", value: credits, colorClass: "text-credits", show: rebateEnabled },
+    { label: "Adjustment", value: adjustment, colorClass: "text-muted-foreground", show: rebateEnabled },
   ]
 
+  const rows = allRows.filter(row => row.show)
   const total = usage + tax + fee + discount + credits + adjustment
 
   return (

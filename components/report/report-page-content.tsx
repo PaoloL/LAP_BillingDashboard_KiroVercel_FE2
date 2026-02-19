@@ -5,6 +5,7 @@ import { ReportHeader } from "@/components/report/report-header"
 import { FundBalanceWidget } from "@/components/report/fund-balance-widget"
 import { CostBreakdownWidget } from "@/components/report/cost-breakdown-widget"
 import { AwsVsMarketplaceWidget } from "@/components/report/aws-vs-marketplace-widget"
+import { CustomerCostWidget } from "@/components/report/customer-cost-widget"
 import { RecentTransactionsWidget, type TransactionRow } from "@/components/report/recent-transactions-widget"
 import { DepositsVsCostsWidget, type DepositRow } from "@/components/report/deposits-vs-costs-widget"
 import { TransactionsByAccountWidget } from "@/components/report/transactions-by-account-widget"
@@ -46,6 +47,7 @@ interface ReportData {
     credits: number
     adjustment: number
   }
+  rebateEnabled: boolean
   awsTotal: number
   marketplaceTotal: number
   transactions: TransactionRow[]
@@ -153,6 +155,7 @@ export function ReportPageContent() {
         costBreakdown: report.costBreakdown || {
           usage: 0, tax: 0, fee: 0, discount: 0, credits: 0, adjustment: 0
         },
+        rebateEnabled: report.rebateEnabled || false,
         awsTotal: report.awsTotal || 0,
         marketplaceTotal: report.marketplaceTotal || 0,
         transactions: transactionRows,
@@ -232,8 +235,8 @@ export function ReportPageContent() {
             transactions={reportData.transactions}
           />
 
-          {/* Cost Breakdown + AWS vs Marketplace - Same Row */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+          {/* Cost Breakdown + AWS vs Marketplace + Customer Cost - Same Row */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-7">
             <div className="lg:col-span-3">
               <CostBreakdownWidget
                 usage={reportData.costBreakdown.usage}
@@ -242,12 +245,20 @@ export function ReportPageContent() {
                 discount={reportData.costBreakdown.discount}
                 credits={reportData.costBreakdown.credits}
                 adjustment={reportData.costBreakdown.adjustment}
+                rebateEnabled={reportData.rebateEnabled}
               />
             </div>
             <div className="lg:col-span-2">
               <AwsVsMarketplaceWidget
                 awsTotal={reportData.awsTotal}
                 marketplaceTotal={reportData.marketplaceTotal}
+              />
+            </div>
+            <div className="lg:col-span-2">
+              <CustomerCostWidget
+                grossCustomerCost={reportData.transactions.reduce((sum, tx) => sum + (tx.amountEur || 0), 0) + reportData.costBreakdown.discount}
+                discountApplied={reportData.costBreakdown.discount}
+                netCustomerCost={reportData.transactions.reduce((sum, tx) => sum + (tx.amountEur || 0), 0)}
               />
             </div>
           </div>
