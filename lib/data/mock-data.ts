@@ -1,4 +1,4 @@
-import type { PayerAccount, UsageAccount, TransactionDetail, Customer } from "@/lib/types"
+import type { PayerAccount, UsageAccount, TransactionDetail, Customer, PlatformUser } from "@/lib/types"
 
 export const mockPayerAccounts: PayerAccount[] = [
   {
@@ -381,6 +381,68 @@ export const mockDeposits: MockDeposit[] = [
     amountUsd: 8137.5,
     exchangeRate: 1.085,
     description: "Infrastructure fund",
+  },
+]
+
+export const mockUsers: PlatformUser[] = [
+  {
+    id: "user-001",
+    email: "admin@platform.com",
+    firstName: "Paolo",
+    lastName: "Rossi",
+    role: "Admin",
+    status: "Active",
+    lastLoginAt: "2026-02-19T08:30:00Z",
+    createdAt: "2024-06-01T10:00:00Z",
+    updatedAt: "2026-02-19T08:30:00Z",
+  },
+  {
+    id: "user-002",
+    email: "finance@platform.com",
+    firstName: "Maria",
+    lastName: "Bianchi",
+    role: "Finance",
+    status: "Active",
+    lastLoginAt: "2026-02-18T14:15:00Z",
+    createdAt: "2024-08-15T09:00:00Z",
+    updatedAt: "2026-02-18T14:15:00Z",
+  },
+  {
+    id: "user-003",
+    email: "hans.mueller@acme-corp.de",
+    firstName: "Hans",
+    lastName: "Mueller",
+    role: "Customer",
+    status: "Active",
+    customerId: "cust-001",
+    customerName: "Acme Corporation GmbH",
+    lastLoginAt: "2026-02-17T10:45:00Z",
+    createdAt: "2024-10-01T10:00:00Z",
+    updatedAt: "2026-02-17T10:45:00Z",
+  },
+  {
+    id: "user-004",
+    email: "maria.schmidt@techstart.de",
+    firstName: "Maria",
+    lastName: "Schmidt",
+    role: "Customer",
+    status: "Active",
+    customerId: "cust-002",
+    customerName: "TechStart GmbH",
+    lastLoginAt: "2026-01-20T16:00:00Z",
+    createdAt: "2024-11-15T08:00:00Z",
+    updatedAt: "2026-01-20T16:00:00Z",
+  },
+  {
+    id: "user-005",
+    email: "inactive@platform.com",
+    firstName: "John",
+    lastName: "Smith",
+    role: "Finance",
+    status: "Inactive",
+    lastLoginAt: undefined,
+    createdAt: "2024-03-10T12:00:00Z",
+    updatedAt: "2025-06-01T09:00:00Z",
   },
 ]
 

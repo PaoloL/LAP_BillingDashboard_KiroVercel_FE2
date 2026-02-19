@@ -240,3 +240,39 @@ export interface UpdateExchangeRateDTO {
   billingPeriod: string
   exchangeRate: number
 }
+
+// Users
+export type UserRole = "Admin" | "Finance" | "Customer"
+export type UserStatus = "Active" | "Inactive"
+
+export interface PlatformUser {
+  id: string
+  email: string
+  firstName: string
+  lastName: string
+  role: UserRole
+  status: UserStatus
+  customerId?: string
+  customerName?: string
+  lastLoginAt?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateUserDTO {
+  email: string
+  firstName: string
+  lastName: string
+  role: UserRole
+  password: string
+  customerId?: string
+}
+
+export interface UpdateUserDTO {
+  firstName?: string
+  lastName?: string
+  role?: UserRole
+  status?: UserStatus
+  customerId?: string | null
+  password?: string
+}

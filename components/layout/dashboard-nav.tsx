@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Home, Building2, Receipt, Settings, LogOut, User, FileText, Users } from "lucide-react"
+import { Home, Building2, Receipt, Settings, LogOut, User, FileText, Users, UserCog } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth/auth-context"
 import { Button } from "@/components/ui/button"
@@ -20,6 +20,7 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Accounts", href: "/accounts", icon: Building2 },
   { name: "Customers", href: "/customers", icon: Users },
+  { name: "Users", href: "/users", icon: UserCog },
   { name: "Transactions", href: "/transactions", icon: Receipt },
   { name: "Report", href: "/report", icon: FileText },
   { name: "Settings", href: "/settings", icon: Settings },

@@ -1,12 +1,13 @@
 import { config } from "@/lib/config"
-import { mockPayerAccounts, mockUsageAccounts, mockTransactionsByPeriod, mockCustomers } from "./mock-data"
+import { mockPayerAccounts, mockUsageAccounts, mockTransactionsByPeriod, mockCustomers, mockUsers } from "./mock-data"
 import { apiClient } from "./api-client"
-import type { PayerAccount, UsageAccount, TransactionDetail, ExchangeRateConfig, CreateExchangeRateDTO, UpdateExchangeRateDTO, Customer, CreateCustomerDTO, CostCenter } from "@/lib/types"
+import type { PayerAccount, UsageAccount, TransactionDetail, ExchangeRateConfig, CreateExchangeRateDTO, UpdateExchangeRateDTO, Customer, CreateCustomerDTO, CostCenter, PlatformUser, CreateUserDTO, UpdateUserDTO } from "@/lib/types"
 
 // Create mutable copies for mock data
 const mutablePayerAccounts = [...mockPayerAccounts]
 const mutableUsageAccounts = [...mockUsageAccounts]
 const mutableCustomers = [...mockCustomers]
+const mutableUsers = [...mockUsers]
 
 export const dataService = {
   // Payer Accounts
@@ -552,6 +553,68 @@ export const dataService = {
     const customer = mutableCustomers.find(c => c.id === customerId)
     if (!customer) throw new Error("Customer not found")
     return apiClient.createDeposit(customer.vatNumber, data)
+  },
+
+  // Users
+  async getUsers(): Promise<PlatformUser[]> {
+    if (config.useMockData) {
+      return Promise.resolve([...mutableUsers])
+    }
+    return apiClient.getUsers()
+  },
+
+  async createUser(data: CreateUserDTO): Promise<PlatformUser> {
+    if (config.useMockData) {
+      const customerName = data.customerId
+        ? mutableCustomers.find((c) => c.id === data.customerId)?.legalName
+        : undefined
+      const newUser: PlatformUser = {
+        id: `user-${Math.random().toString(36).substr(2, 9)}`,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        role: data.role,
+        status: "Active",
+        customerId: data.customerId,
+        customerName,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      mutableUsers.push(newUser)
+      return Promise.resolve(newUser)
+    }
+    return apiClient.createUser(data)
+  },
+
+  async updateUser(id: string, data: UpdateUserDTO): Promise<PlatformUser> {
+    if (config.useMockData) {
+      const index = mutableUsers.findIndex((u) => u.id === id)
+      if (index === -1) throw new Error("User not found")
+      const customerName = data.customerId
+        ? mutableCustomers.find((c) => c.id === data.customerId)?.legalName
+        : data.customerId === null
+          ? undefined
+          : mutableUsers[index].customerName
+      const updated = {
+        ...mutableUsers[index],
+        ...data,
+        customerName,
+        updatedAt: new Date().toISOString(),
+      }
+      mutableUsers[index] = updated as PlatformUser
+      return Promise.resolve(updated as PlatformUser)
+    }
+    return apiClient.updateUser(id, data)
+  },
+
+  async deleteUser(id: string): Promise<void> {
+    if (config.useMockData) {
+      const index = mutableUsers.findIndex((u) => u.id === id)
+      if (index === -1) throw new Error("User not found")
+      mutableUsers.splice(index, 1)
+      return Promise.resolve()
+    }
+    return apiClient.deleteUser(id)
   },
 
   // Reports

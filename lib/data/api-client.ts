@@ -1,5 +1,5 @@
 import { config } from "@/lib/config"
-import type { PayerAccount, UsageAccount, TransactionDetail, ExchangeRateConfig, CreateExchangeRateDTO, UpdateExchangeRateDTO, Customer, CreateCustomerDTO, CostCenter } from "@/lib/types"
+import type { PayerAccount, UsageAccount, TransactionDetail, ExchangeRateConfig, CreateExchangeRateDTO, UpdateExchangeRateDTO, Customer, CreateCustomerDTO, CostCenter, PlatformUser, CreateUserDTO, UpdateUserDTO } from "@/lib/types"
 
 class ApiClient {
   private baseUrl: string
@@ -368,6 +368,32 @@ class ApiClient {
   // Dashboard
   async getDashboard(months: number = 12): Promise<any> {
     return this.request(`/dashboard?months=${months}`)
+  }
+
+  // Users
+  async getUsers(): Promise<PlatformUser[]> {
+    const response = await this.request<any>("/users")
+    return Array.isArray(response) ? response : (response.data || [])
+  }
+
+  async createUser(data: CreateUserDTO): Promise<PlatformUser> {
+    return this.request<PlatformUser>("/users", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateUser(id: string, data: UpdateUserDTO): Promise<PlatformUser> {
+    return this.request<PlatformUser>(`/users/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await this.request<void>(`/users/${id}`, {
+      method: "DELETE",
+    })
   }
 }
 
