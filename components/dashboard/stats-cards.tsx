@@ -80,9 +80,10 @@ export function StatsCards() {
         const yearCustomerCost = costTransactions.reduce((sum: number, tx: any) => 
           sum + (tx.totals?.customer?.net?.eur || tx.totals?.customer?.eur || 0), 0
         )
-        const yearDepositTotal = depositTransactions.reduce((sum: number, tx: any) => 
-          sum + Math.abs(tx.details?.value || 0), 0
-        )
+        const yearDepositTotal = depositTransactions.reduce((sum: number, tx: any) => {
+          const value = tx.details?.amount?.eur || tx.details?.value || 0
+          return sum + Math.abs(value)
+        }, 0)
         
         // Calculate month totals
         const monthCostTransactions = costTransactions.filter((tx: any) => tx.billingPeriod === currentPeriod)
@@ -94,9 +95,10 @@ export function StatsCards() {
         const monthCustomerCost = monthCostTransactions.reduce((sum: number, tx: any) => 
           sum + (tx.totals?.customer?.net?.eur || tx.totals?.customer?.eur || 0), 0
         )
-        const monthDepositTotal = monthDepositTransactions.reduce((sum: number, tx: any) => 
-          sum + Math.abs(tx.details?.value || 0), 0
-        )
+        const monthDepositTotal = monthDepositTransactions.reduce((sum: number, tx: any) => {
+          const value = tx.details?.amount?.eur || tx.details?.value || 0
+          return sum + Math.abs(value)
+        }, 0)
 
         // Calculate account stats
         const activePayerAccounts = payerAccounts.filter((a: PayerAccount) => a.status !== "Archived")
