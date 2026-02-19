@@ -6,22 +6,8 @@ import { formatCurrency } from "@/lib/format"
 import { TrendingUp } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 
-interface Transaction {
-  billingPeriod: string
-  accounts: {
-    usage: {
-      id: string
-      name: string
-    }
-  }
-  totals: {
-    seller: { eur: number }
-    customer: { eur: number }
-  }
-}
-
 interface MarginByAccountsWidgetProps {
-  transactions: Transaction[]
+  dashboardData: any
 }
 
 const COLORS = [
@@ -39,69 +25,52 @@ function getLast12Months(): string[] {
   return months
 }
 
-export function MarginByAccountsWidget({ transactions }: MarginByAccountsWidgetProps) {
+export function MarginByAccountsWidget({ dashboardData }: MarginByAccountsWidgetProps) {
   const chartData = useMemo(() => {
+    if (!dashboardData || !dashboardData.marginByAccountByMonth) {
+      return []
+    }
+
     const months = getLast12Months()
+    const marginByAccountByMonth = dashboardData.marginByAccountByMonth
     
-    // Handle case where transactions is not an array or is the API response object
-    const txArray = Array.isArray(transactions) ? transactions : (transactions?.data || [])
-    
-    // Calculate margin by account by month
-    const marginByAccountByMonth = new Map<string, Map<string, number>>()
-    const accountNames = new Map<string, string>()
-    
-    txArray.forEach(tx => {
-      // Skip deposits - only include AWS transactions
-      if (tx.transactionType === 'MANUAL' || tx.transactionType === 'deposit') return
-      
-      const period = tx.billingPeriod
-      const accountId = tx.accounts?.usage?.id
-      const accountName = tx.accounts?.usage?.name || accountId
-      
-      if (!accountId || !period) return
-      
-      const sellerCost = tx.totals?.seller?.net?.eur || tx.totals?.seller?.eur || 0
-      const customerCost = tx.totals?.customer?.net?.eur || tx.totals?.customer?.eur || 0
-      const margin = customerCost - sellerCost
-      
-      if (!marginByAccountByMonth.has(period)) {
-        marginByAccountByMonth.set(period, new Map())
-      }
-      
-      const monthData = marginByAccountByMonth.get(period)!
-      const current = monthData.get(accountId) || 0
-      monthData.set(accountId, current + margin)
-      
-      accountNames.set(accountId, accountName)
+    // Get all unique account names
+    const allAccounts = new Set<string>()
+    Object.values(marginByAccountByMonth).forEach((monthData: any) => {
+      Object.keys(monthData).forEach(accountName => allAccounts.add(accountName))
     })
     
     // Get top 10 accounts by total margin
     const accountTotals = new Map<string, number>()
-    marginByAccountByMonth.forEach(monthData => {
-      monthData.forEach((margin, accountId) => {
-        const current = accountTotals.get(accountId) || 0
-        accountTotals.set(accountId, current + margin)
+    Object.values(marginByAccountByMonth).forEach((monthData: any) => {
+      Object.entries(monthData).forEach(([accountName, margin]: [string, any]) => {
+        const current = accountTotals.get(accountName) || 0
+        accountTotals.set(accountName, current + margin)
       })
     })
     
     const topAccounts = Array.from(accountTotals.entries())
       .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
       .slice(0, 10)
-      .map(([id]) => id)
+      .map(([name]) => name)
     
     // Build chart data
     return months.map(month => {
-      const data: any = { period: month }
-      const monthData = marginByAccountByMonth.get(month)
+      const data: any = { 
+        period: new Date(month + "-01").toLocaleDateString("en-GB", {
+          month: "short",
+          year: "numeric",
+        })
+      }
+      const monthData = marginByAccountByMonth[month] || {}
       
-      topAccounts.forEach(accountId => {
-        const accountName = accountNames.get(accountId) || accountId
-        data[accountName] = monthData?.get(accountId) || 0
+      topAccounts.forEach(accountName => {
+        data[accountName] = monthData[accountName] || 0
       })
       
       return data
     })
-  }, [transactions])
+  }, [dashboardData])
   
   const accountKeys = useMemo(() => {
     if (chartData.length === 0) return []
@@ -127,6 +96,7 @@ export function MarginByAccountsWidget({ transactions }: MarginByAccountsWidgetP
             <YAxis 
               tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }}
               tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`}
+              reversed
             />
             <Tooltip 
               formatter={(value: number) => formatCurrency(value)}
@@ -136,10 +106,6 @@ export function MarginByAccountsWidget({ transactions }: MarginByAccountsWidgetP
                 borderRadius: '8px',
                 fontSize: '12px'
               }}
-            />
-            <Legend 
-              wrapperStyle={{ fontSize: '11px' }}
-              iconType="square"
             />
             {accountKeys.map((key, index) => (
               <Bar 

@@ -1,213 +1,84 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Area,
-  ComposedChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-} from "recharts"
-import { formatCurrency } from "@/lib/format"
-import { useEffect, useState } from "react"
-import { dataService } from "@/lib/data/data-service"
-import type { TransactionDetail, UsageAccount } from "@/lib/types"
+import { Button } from "@/components/ui/button"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, Legend } from "recharts"
+import { apiClient } from "@/lib/data/api-client"
 
-interface ChartData {
-  costByPayer: { name: string; value: number }[]
-  costByUsage: { name: string; value: number }[]
-  costByCustomer: { name: string; value: number }[]
-  trendData: { period: string; usage: number; deposit: number }[]
+interface DashboardData {
+  costByPayer: Array<{ name: string; value: number }>
+  costByUsage: Array<{ name: string; value: number }>
+  costByCustomer: Array<{ name: string; value: number }>
+  trendByMonth: Record<string, { usage: number; deposit: number }>
 }
 
-const PAYER_COLORS = ["#00243E", "#026172", "#0891B2", "#22D3EE", "#67E8F9"]
-const USAGE_COLORS = ["#EC9400", "#F59E0B", "#FBBF24", "#FCD34D", "#FDE68A", "#FEF3C7", "#D97706", "#B45309", "#92400E", "#78350F"]
-const CUSTOMER_COLORS = ["#10B981", "#059669", "#34D399", "#6EE7B7", "#A7F3D0"]
+interface CostChartsProps {
+  dashboardData: DashboardData | null
+}
 
-export function CostCharts() {
-  const [chartData, setChartData] = useState<ChartData>({
-    costByPayer: [],
-    costByUsage: [],
-    costByCustomer: [],
-    trendData: [],
-  })
-  const [loading, setLoading] = useState(true)
+const COLORS = ['#EC9400', '#026172', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#EC4899']
 
+const PERIOD_OPTIONS = [
+  { label: '1M', value: 1 },
+  { label: '3M', value: 3 },
+  { label: '6M', value: 6 },
+  { label: '12M', value: 12 },
+]
+
+export function CostCharts({ dashboardData }: CostChartsProps) {
+  const [payerPeriod, setPayerPeriod] = useState(12)
+  const [usagePeriod, setUsagePeriod] = useState(12)
+  const [customerPeriod, setCustomerPeriod] = useState(12)
+  
+  const [payerData, setPayerData] = useState<Array<{ name: string; value: number }> | null>(null)
+  const [usageData, setUsageData] = useState<Array<{ name: string; value: number }> | null>(null)
+  const [customerData, setCustomerData] = useState<Array<{ name: string; value: number }> | null>(null)
+  
+  const [payerLoading, setPayerLoading] = useState(false)
+  const [usageLoading, setUsageLoading] = useState(false)
+  const [customerLoading, setCustomerLoading] = useState(false)
+
+  // Initialize with dashboard data
   useEffect(() => {
-    async function loadChartData() {
-      try {
-        setLoading(true)
-
-        const currentYear = new Date().getFullYear()
-
-        // Fetch transactions and usage accounts
-        const [transactions, usageAccounts] = await Promise.all([
-          dataService.getTransactions({
-            startPeriod: `${currentYear}-01`,
-            endPeriod: `${currentYear}-12`,
-          }),
-          dataService.getUsageAccounts(),
-        ])
-
-        // Create usage account map for customer lookup
-        const usageAccountMap = new Map(
-          usageAccounts.map((acc: UsageAccount) => [acc.accountId, acc.customer])
-        )
-
-        // Group by payer, usage, and customer
-        const payerMap = new Map<string, { name: string; value: number }>()
-        const usageMap = new Map<string, { name: string; value: number }>()
-        const customerMap = new Map<string, { name: string; value: number }>()
-        const trendMap = new Map<string, { usage: number; deposit: number }>()
-
-        transactions.data.forEach(tx => {
-          const isDataExport = tx.transactionType === 'DATAEXPORT'
-          const sellerCost = isDataExport ? (tx.totals?.seller?.net?.eur || tx.totals?.seller?.eur || 0) : 0
-
-          console.log('Transaction:', {
-            type: tx.transactionType,
-            isDataExport,
-            sellerCost,
-            totals: tx.totals,
-            payer: tx.accounts?.payer,
-            usage: tx.accounts?.usage
-          })
-
-          // Aggregate by payer (only DATAEXPORT)
-          if (isDataExport && sellerCost > 0) {
-            const payerId = tx.accounts?.payer?.id
-            const payerName = tx.accounts?.payer?.name || payerId
-            if (payerId) {
-              const current = payerMap.get(payerId)
-              if (current) {
-                current.value += sellerCost
-              } else {
-                payerMap.set(payerId, { name: payerName, value: sellerCost })
-              }
-            }
-
-            // Aggregate by usage account
-            const usageId = tx.accounts?.usage?.id
-            const usageName = tx.accounts?.usage?.name || usageId
-            if (usageId) {
-              const current = usageMap.get(usageId)
-              if (current) {
-                current.value += sellerCost
-              } else {
-                usageMap.set(usageId, { name: usageName, value: sellerCost })
-              }
-
-              // Aggregate by customer
-              const customerName = usageAccountMap.get(usageId) || 'Unknown Customer'
-              console.log('Customer lookup:', { usageId, customerName })
-              const current2 = customerMap.get(customerName)
-              if (current2) {
-                current2.value += sellerCost
-              } else {
-                customerMap.set(customerName, { name: customerName, value: sellerCost })
-              }
-            }
-          }
-
-          // Build trend data by month
-          const period = tx.billingPeriod
-          if (period) {
-            if (isDataExport) {
-              if (trendMap.has(period)) {
-                trendMap.get(period)!.usage += sellerCost
-              } else {
-                trendMap.set(period, { usage: sellerCost, deposit: 0 })
-              }
-            } else if (tx.transactionType === 'MANUAL' || tx.transactionType === 'DEPOSIT') {
-              const depositAmount = Math.abs(tx.details?.value || 0)
-              if (trendMap.has(period)) {
-                trendMap.get(period)!.deposit += depositAmount
-              } else {
-                trendMap.set(period, { usage: 0, deposit: depositAmount })
-              }
-            }
-          }
-        })
-
-        // Get top payers, usage accounts, and customers
-        const costByPayer = Array.from(payerMap.values())
-          .sort((a, b) => b.value - a.value)
-          .slice(0, 5)
-
-        const costByUsage = Array.from(usageMap.values())
-          .sort((a, b) => b.value - a.value)
-          .slice(0, 5)
-
-        const costByCustomer = Array.from(customerMap.values())
-          .sort((a, b) => b.value - a.value)
-          .slice(0, 5)
-
-        // Format trend data
-        const trendData = Array.from(trendMap.entries())
-          .sort((a, b) => a[0].localeCompare(b[0]))
-          .map(([period, data]) => ({
-            period: new Date(period + "-01").toLocaleDateString("en-GB", {
-              month: "short",
-              year: "numeric",
-            }),
-            usage: data.usage,
-            deposit: data.deposit,
-          }))
-
-        setChartData({
-          costByPayer,
-          costByUsage,
-          costByCustomer,
-          trendData,
-        })
-
-        console.log('Chart data set:', {
-          costByPayer,
-          costByUsage,
-          costByCustomer,
-          totalTransactions: transactions.data.length
-        })
-      } catch (error) {
-        console.error("Failed to load chart data:", error)
-      } finally {
-        setLoading(false)
-      }
+    if (dashboardData) {
+      setPayerData(dashboardData.costByPayer)
+      setUsageData(dashboardData.costByUsage)
+      setCustomerData(dashboardData.costByCustomer)
     }
+  }, [dashboardData])
 
-    loadChartData()
-  }, [])
-
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }: {
-    cx: number
-    cy: number
-    midAngle: number
-    innerRadius: number
-    outerRadius: number
-    percent: number
-    name: string
-  }) => {
-    const RADIAN = Math.PI / 180
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5
-    const x = cx + radius * Math.cos(-midAngle * RADIAN)
-    const y = cy + radius * Math.sin(-midAngle * RADIAN)
-
-    if (percent < 0.05) return null
-
-    return (
-      <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={12} fontWeight="bold">
-        {`${(percent * 100).toFixed(0)}%`}
-      </text>
-    )
+  const loadPayerData = async (months: number) => {
+    setPayerLoading(true)
+    try {
+      const data = await apiClient.getDashboard(months)
+      setPayerData(data.costByPayer)
+    } finally {
+      setPayerLoading(false)
+    }
   }
 
-  if (loading) {
+  const loadUsageData = async (months: number) => {
+    setUsageLoading(true)
+    try {
+      const data = await apiClient.getDashboard(months)
+      setUsageData(data.costByUsage)
+    } finally {
+      setUsageLoading(false)
+    }
+  }
+
+  const loadCustomerData = async (months: number) => {
+    setCustomerLoading(true)
+    try {
+      const data = await apiClient.getDashboard(months)
+      setCustomerData(data.costByCustomer)
+    } finally {
+      setCustomerLoading(false)
+    }
+  }
+
+  if (!dashboardData) {
     return (
       <div className="space-y-6">
         <h2 className="text-lg font-semibold text-[#00243E]">Charts</h2>
@@ -223,56 +94,72 @@ export function CostCharts() {
             </Card>
           ))}
         </div>
-        <Card>
-          <CardHeader>
-            <div className="h-6 w-48 animate-pulse rounded bg-muted" />
-          </CardHeader>
-          <CardContent>
-            <div className="h-[350px] animate-pulse rounded bg-muted" />
-          </CardContent>
-        </Card>
       </div>
     )
   }
 
+  const { trendByMonth } = dashboardData
+
+  // Format trend data for chart
+  const trendData = Object.entries(trendByMonth || {})
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([period, data]) => ({
+      period: new Date(period + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      usage: data.usage,
+      deposit: data.deposit
+    }))
+
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-semibold text-[#00243E]">Charts</h2>
-
-      {/* Pie Charts Row */}
+      
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Seller Cost by Payer Account (Pie Chart, Top 5) */}
+        {/* Cost by Payer */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-[#00243E]">Total Seller Cost by Payer Account (Top 5)</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Seller Cost by Payer (Top 5)</CardTitle>
+              <div className="flex gap-1">
+                {PERIOD_OPTIONS.map((option) => (
+                  <Button
+                    key={option.value}
+                    variant={payerPeriod === option.value ? "default" : "outline"}
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => {
+                      setPayerPeriod(option.value)
+                      loadPayerData(option.value)
+                    }}
+                    disabled={payerLoading}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            {chartData.costByPayer.length > 0 ? (
+            {payerLoading ? (
+              <div className="flex h-[300px] items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : payerData && payerData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={chartData.costByPayer}
+                    data={payerData}
+                    dataKey="value"
+                    nameKey="name"
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={renderCustomizedLabel}
-                    outerRadius={100}
-                    dataKey="value"
+                    outerRadius={80}
+                    label={(entry) => entry.name}
                   >
-                    {chartData.costByPayer.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={PAYER_COLORS[index % PAYER_COLORS.length]} />
+                    {payerData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip
-                    formatter={(value: number) => formatCurrency(value)}
-                    contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e5e5", borderRadius: "8px" }}
-                  />
-                  <Legend
-                    layout="horizontal"
-                    verticalAlign="bottom"
-                    align="center"
-                    wrapperStyle={{ paddingTop: "20px" }}
-                  />
+                  <Tooltip formatter={(value: number) => `€${value.toFixed(2)}`} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -283,38 +170,52 @@ export function CostCharts() {
           </CardContent>
         </Card>
 
-        {/* Seller Cost by Usage Account (Pie Chart, Top 5) */}
+        {/* Cost by Usage Account */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-[#00243E]">Total Seller Cost by Usage Account (Top 5)</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Seller Cost by Usage Account (Top 5)</CardTitle>
+              <div className="flex gap-1">
+                {PERIOD_OPTIONS.map((option) => (
+                  <Button
+                    key={option.value}
+                    variant={usagePeriod === option.value ? "default" : "outline"}
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => {
+                      setUsagePeriod(option.value)
+                      loadUsageData(option.value)
+                    }}
+                    disabled={usageLoading}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            {chartData.costByUsage.length > 0 ? (
+            {usageLoading ? (
+              <div className="flex h-[300px] items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : usageData && usageData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={chartData.costByUsage}
+                    data={usageData}
+                    dataKey="value"
+                    nameKey="name"
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={renderCustomizedLabel}
-                    outerRadius={100}
-                    dataKey="value"
+                    outerRadius={80}
+                    label={(entry) => entry.name}
                   >
-                    {chartData.costByUsage.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={USAGE_COLORS[index % USAGE_COLORS.length]} />
+                    {usageData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip
-                    formatter={(value: number) => formatCurrency(value)}
-                    contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e5e5", borderRadius: "8px" }}
-                  />
-                  <Legend
-                    layout="horizontal"
-                    verticalAlign="bottom"
-                    align="center"
-                    wrapperStyle={{ paddingTop: "20px", fontSize: "12px" }}
-                  />
+                  <Tooltip formatter={(value: number) => `€${value.toFixed(2)}`} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -325,38 +226,52 @@ export function CostCharts() {
           </CardContent>
         </Card>
 
-        {/* Seller Cost by Customer (Pie Chart, Top 5) */}
+        {/* Cost by Customer */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-[#00243E]">Total Seller Cost by Customer (Top 5)</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Seller Cost by Customer (Top 5)</CardTitle>
+              <div className="flex gap-1">
+                {PERIOD_OPTIONS.map((option) => (
+                  <Button
+                    key={option.value}
+                    variant={customerPeriod === option.value ? "default" : "outline"}
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => {
+                      setCustomerPeriod(option.value)
+                      loadCustomerData(option.value)
+                    }}
+                    disabled={customerLoading}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            {chartData.costByCustomer.length > 0 ? (
+            {customerLoading ? (
+              <div className="flex h-[300px] items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : customerData && customerData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={chartData.costByCustomer}
+                    data={customerData}
+                    dataKey="value"
+                    nameKey="name"
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={renderCustomizedLabel}
-                    outerRadius={100}
-                    dataKey="value"
+                    outerRadius={80}
+                    label={(entry) => entry.name}
                   >
-                    {chartData.costByCustomer.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={CUSTOMER_COLORS[index % CUSTOMER_COLORS.length]} />
+                    {customerData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip
-                    formatter={(value: number) => formatCurrency(value)}
-                    contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e5e5", borderRadius: "8px" }}
-                  />
-                  <Legend
-                    layout="horizontal"
-                    verticalAlign="bottom"
-                    align="center"
-                    wrapperStyle={{ paddingTop: "20px", fontSize: "12px" }}
-                  />
+                  <Tooltip formatter={(value: number) => `€${value.toFixed(2)}`} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -371,50 +286,32 @@ export function CostCharts() {
       {/* Deposits vs Costs Trend */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-[#00243E]">Deposits vs Costs (Last 12 Months)</CardTitle>
+          <CardTitle className="text-base">Deposits vs Costs (Last 12 Months)</CardTitle>
         </CardHeader>
         <CardContent>
-          {chartData.trendData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={350}>
-              <ComposedChart data={chartData.trendData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          {trendData && trendData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={trendData}>
                 <defs>
-                  <linearGradient id="colorDeposits" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#026172" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#026172" stopOpacity={0.1}/>
+                  <linearGradient id="dashboardColorDeposits" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
                   </linearGradient>
-                  <linearGradient id="colorCosts" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#EC9400" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#EC9400" stopOpacity={0.1}/>
+                  <linearGradient id="dashboardColorCosts" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#EC9400" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#EC9400" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-                <XAxis dataKey="period" tick={{ fontSize: 12 }} />
-                <YAxis tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} />
-                <Tooltip
-                  formatter={(value: number) => formatCurrency(value)}
-                  contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e5e5", borderRadius: "8px", fontSize: "12px" }}
-                />
-                <Legend wrapperStyle={{ fontSize: "12px" }} iconType="square" />
-                <Area
-                  type="monotone"
-                  dataKey="deposit"
-                  name="Deposits"
-                  stackId="1"
-                  stroke="#026172"
-                  fill="url(#colorDeposits)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="usage"
-                  name="Costs"
-                  stackId="1"
-                  stroke="#EC9400"
-                  fill="url(#colorCosts)"
-                />
-              </ComposedChart>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="period" />
+                <YAxis />
+                <Tooltip formatter={(value: number) => `€${value.toFixed(2)}`} />
+                <Area type="monotone" dataKey="deposit" stroke="#10B981" fillOpacity={1} fill="url(#dashboardColorDeposits)" />
+                <Area type="monotone" dataKey="usage" stroke="#EC9400" fillOpacity={1} fill="url(#dashboardColorCosts)" />
+              </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex h-[350px] items-center justify-center text-muted-foreground">
+            <div className="flex h-[300px] items-center justify-center text-muted-foreground">
               No trend data available
             </div>
           )}
