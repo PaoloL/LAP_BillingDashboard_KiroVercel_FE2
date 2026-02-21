@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Home, Building2, Receipt, Settings, LogOut, User, FileText, Users } from "lucide-react"
+import { Home, Building2, Receipt, Settings, LogOut, User, FileText, Users, UserCog } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth/auth-context"
 import { Button } from "@/components/ui/button"
@@ -22,6 +22,7 @@ const navigation = [
   { name: "Customers", href: "/customers", icon: Users },
   { name: "Transactions", href: "/transactions", icon: Receipt },
   { name: "Report", href: "/report", icon: FileText },
+  { name: "Users", href: "/users", icon: UserCog },
   { name: "Settings", href: "/settings", icon: Settings },
 ]
 
@@ -66,7 +67,9 @@ export function DashboardNav() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="gap-2">
                   <User className="h-4 w-4" />
-                  <span className="hidden sm:inline">{user.givenName || user.email}</span>
+                  <span className="hidden sm:inline">
+                    {user.givenName && user.familyName ? `${user.givenName} ${user.familyName}` : user.email}
+                  </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -75,7 +78,6 @@ export function DashboardNav() {
                     <p className="text-sm font-medium">
                       {user.givenName && user.familyName ? `${user.givenName} ${user.familyName}` : user.email}
                     </p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />

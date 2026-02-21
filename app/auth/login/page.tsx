@@ -98,13 +98,6 @@ export default function LoginPage() {
             <Button type="submit" className="w-full bg-[#026172] hover:bg-[#026172]/90" disabled={loading}>
               {loading ? "Signing in..." : "Sign In"}
             </Button>
-
-            <p className="text-center text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <Link href="/auth/register" className="text-[#026172] hover:underline">
-                Sign up
-              </Link>
-            </p>
           </form>
         </CardContent>
       </Card>
