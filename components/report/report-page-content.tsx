@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback } from "react"
 import { ReportHeader } from "@/components/report/report-header"
 import { FundBalanceWidget } from "@/components/report/fund-balance-widget"
-import { CostBreakdownWidget } from "@/components/report/cost-breakdown-widget"
-import { AwsVsMarketplaceWidget } from "@/components/report/aws-vs-marketplace-widget"
+import { CustomerCostWidget } from "@/components/report/customer-cost-widget"
+import { CostByCenterWidget } from "@/components/report/cost-by-center-widget"
 import { RecentTransactionsWidget, type TransactionRow } from "@/components/report/recent-transactions-widget"
 import { DepositsVsCostsWidget, type DepositRow } from "@/components/report/deposits-vs-costs-widget"
 import { TransactionsByAccountWidget } from "@/components/report/transactions-by-account-widget"
@@ -37,6 +37,7 @@ interface ReportData {
   status: string
   totalDeposit: number
   totalCost: number
+  totalGross: number
   costCenterBalances: CostCenterBalance[]
   costBreakdown: {
     usage: number
@@ -46,6 +47,7 @@ interface ReportData {
     credits: number
     adjustment: number
   }
+  rebateEnabled: boolean
   awsTotal: number
   marketplaceTotal: number
   transactions: TransactionRow[]
@@ -81,7 +83,6 @@ export function ReportPageContent() {
     if (!vatNumber) return
     setLoading(true)
     try {
-      // Use the backend reports API
       const report = await dataService.getCustomerReport(vatNumber)
       
       if (!report) {
@@ -89,72 +90,56 @@ export function ReportPageContent() {
         return
       }
 
-      // Get customer details from customers list
       const customer = customers.find(c => c.vatNumber === vatNumber)
 
-      // Transform backend response to match frontend format
+      // Transform transactions
       const transactionRows: TransactionRow[] = (report.transactions || []).map((tx: any) => ({
-        id: tx.id || tx.transactionId,
-        dateTime: tx.createdAt || tx.dateTime || tx.updatedAt,
-        period: tx.billingPeriod || '',
-        payerAccount: tx.accounts?.payer?.name || customer?.name || report.customerName,
+        id: tx.id,
+        dateTime: tx.createdAt,
+        period: tx.billingPeriod,
+        payerAccount: tx.accounts?.payer?.name || '',
         payerAccountId: tx.accounts?.payer?.id || '',
         usageAccountName: tx.accounts?.usage?.name || '',
         usageAccountId: tx.accounts?.usage?.id || '',
-        amountUsd: tx.totals?.customer?.net?.usd || tx.totals?.customer?.usd || 0,
-        amountEur: tx.totals?.customer?.net?.eur || tx.totals?.customer?.eur || 0,
+        amountUsd: tx.totals?.customer?.net?.usd || 0,
+        amountEur: tx.totals?.customer?.net?.eur || 0,
         exchangeRate: tx.exchangeRate || 1.0,
       }))
 
+      // Transform deposits
       const depositRows: DepositRow[] = (report.deposits || []).map((dep: any) => ({
         id: dep.id,
-        dateTime: dep.createdAt || dep.dateTime,
-        period: dep.billingPeriod || '',
+        dateTime: dep.createdAt,
+        period: dep.billingPeriod,
         costCenter: dep.details?.costCenterName || '',
         amountEur: dep.details?.value || 0,
         description: dep.details?.description || '',
         poNumber: dep.details?.poNumber || '',
       }))
 
-      // Find the most recent transaction/deposit time
-      let lastUpdated = report.lastUpdated || report.generatedDate || new Date().toISOString()
-      
-      // Check transaction times
-      if (transactionRows.length > 0) {
-        const latestTx = transactionRows.reduce((latest, tx) => {
-          return new Date(tx.dateTime) > new Date(latest) ? tx.dateTime : latest
-        }, transactionRows[0].dateTime)
-        if (new Date(latestTx) > new Date(lastUpdated)) {
-          lastUpdated = latestTx
-        }
-      }
-      
-      // Check deposit times
-      if (depositRows.length > 0) {
-        const latestDep = depositRows.reduce((latest, dep) => {
-          return new Date(dep.dateTime) > new Date(latest) ? dep.dateTime : latest
-        }, depositRows[0].dateTime)
-        if (new Date(latestDep) > new Date(lastUpdated)) {
-          lastUpdated = latestDep
-        }
-      }
-
       setReportData({
-        customerName: customer?.name || report.customerName || '',
-        customerVat: customer?.vatNumber || report.customerVat || vatNumber,
-        contactName: customer?.contactName || report.contactName || '',
-        contactEmail: customer?.contactEmail || report.contactEmail || '',
+        customerName: customer?.legalName || customer?.name || '',
+        customerVat: report.customerVat,
+        contactName: customer?.contactName || '',
+        contactEmail: customer?.contactEmail || '',
         billingPeriod: report.billingPeriod || '',
-        generatedDate: lastUpdated,
-        status: customer?.status || report.status || 'Active',
-        totalDeposit: report.totalDeposit || 0,
-        totalCost: report.totalCost || 0,
+        generatedDate: report.lastUpdated,
+        status: customer?.status || 'Active',
+        totalDeposit: report.totalDeposit,
+        totalCost: report.totalCost,
+        totalGross: report.totalGross || report.totalCost,
         costCenterBalances: report.costCenterBalances || [],
-        costBreakdown: report.costBreakdown || {
-          usage: 0, tax: 0, fee: 0, discount: 0, credits: 0, adjustment: 0
+        costBreakdown: {
+          usage: report.costBreakdown?.usage?.eur || 0,
+          tax: report.costBreakdown?.tax?.eur || 0,
+          fee: report.costBreakdown?.fee?.eur || 0,
+          discount: report.costBreakdown?.discount?.eur || 0,
+          credits: report.costBreakdown?.credits?.eur || 0,
+          adjustment: report.costBreakdown?.adjustment?.eur || 0,
         },
-        awsTotal: report.awsTotal || 0,
-        marketplaceTotal: report.marketplaceTotal || 0,
+        rebateEnabled: report.rebateEnabled || false,
+        awsTotal: report.awsTotal,
+        marketplaceTotal: report.marketplaceTotal,
         transactions: transactionRows,
         deposits: depositRows,
       })
@@ -219,38 +204,27 @@ export function ReportPageContent() {
             status={reportData.status}
           />
 
-          {/* Fund Balance by Cost Center */}
-          <FundBalanceWidget
-            totalDeposit={reportData.totalDeposit}
-            totalCost={reportData.totalCost}
-            costCenterBalances={reportData.costCenterBalances}
-          />
+          {/* Fund Balance + Customer Cost + Cost by Center - Same Row */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <FundBalanceWidget
+              totalDeposit={reportData.totalDeposit}
+              totalCost={reportData.totalCost}
+            />
+            <CustomerCostWidget
+              grossCustomerCost={reportData.totalGross || 0}
+              discountApplied={reportData.totalGross - reportData.totalCost}
+              netCustomerCost={reportData.totalCost}
+            />
+            <CostByCenterWidget
+              costCenterBalances={reportData.costCenterBalances}
+            />
+          </div>
 
           {/* Deposits vs Costs - Stacked Area Chart */}
           <DepositsVsCostsWidget
             deposits={reportData.deposits}
             transactions={reportData.transactions}
           />
-
-          {/* Cost Breakdown + AWS vs Marketplace - Same Row */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-            <div className="lg:col-span-3">
-              <CostBreakdownWidget
-                usage={reportData.costBreakdown.usage}
-                tax={reportData.costBreakdown.tax}
-                fee={reportData.costBreakdown.fee}
-                discount={reportData.costBreakdown.discount}
-                credits={reportData.costBreakdown.credits}
-                adjustment={reportData.costBreakdown.adjustment}
-              />
-            </div>
-            <div className="lg:col-span-2">
-              <AwsVsMarketplaceWidget
-                awsTotal={reportData.awsTotal}
-                marketplaceTotal={reportData.marketplaceTotal}
-              />
-            </div>
-          </div>
 
           {/* Transactions Section */}
           <RecentTransactionsWidget 

@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatCurrencyUSD } from "@/lib/format"
+import { formatCurrency } from "@/lib/format"
 import { Cloud } from "lucide-react"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 
@@ -49,7 +49,7 @@ export function AwsVsMarketplaceWidget({ awsTotal, marketplaceTotal }: AwsVsMark
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value: number) => formatCurrencyUSD(value)}
+                formatter={(value: number) => formatCurrency(value)}
                 contentStyle={{
                   borderRadius: "8px",
                   border: "1px solid var(--border)",
@@ -68,7 +68,7 @@ export function AwsVsMarketplaceWidget({ awsTotal, marketplaceTotal }: AwsVsMark
               <span className="text-sm text-muted-foreground">AWS</span>
               <span className="text-xs text-muted-foreground">({awsPercent.toFixed(1)}%)</span>
             </div>
-            <span className="text-sm font-semibold text-foreground">{formatCurrencyUSD(awsTotal)}</span>
+            <span className="text-sm font-semibold text-foreground">{formatCurrency(awsTotal)}</span>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -76,12 +76,12 @@ export function AwsVsMarketplaceWidget({ awsTotal, marketplaceTotal }: AwsVsMark
               <span className="text-sm text-muted-foreground">Marketplace</span>
               <span className="text-xs text-muted-foreground">({mpPercent.toFixed(1)}%)</span>
             </div>
-            <span className="text-sm font-semibold text-foreground">{formatCurrencyUSD(marketplaceTotal)}</span>
+            <span className="text-sm font-semibold text-foreground">{formatCurrency(marketplaceTotal)}</span>
           </div>
           <div className="border-t border-border pt-2">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">Grand Total</span>
-              <span className="text-sm font-bold text-primary">{formatCurrencyUSD(grandTotal)}</span>
+              <span className="text-sm font-bold text-primary">{formatCurrency(grandTotal)}</span>
             </div>
           </div>
         </div>
